@@ -37,9 +37,6 @@ class Light(Device):
     def toggle(self, client: mqtt.Client):
         "Virtually toggles the light."
         trace(name = self.name, fun = "toggle")
-        if self.is_dimmable():
-            client.publish(self.set_topic(), Payload.toggle)
-            return
         if self.on_off == SimpleLightOnOff.ON:
             self.turn_off(client)
         elif self.on_off == SimpleLightOnOff.OFF:
@@ -55,6 +52,12 @@ class Light(Device):
         self.set_brightness(client, cfg.brightness)
         self.set_white_temp(client, cfg.white_temp)
         self.set_color_temp(client, cfg.color_temp)
+
+    def is_on(self) -> bool:
+        "Indicates whether the light is virtually on."
+        physically_on = self.on_off == SimpleLightOnOff.ON
+        only_virtually_on = self.on_off == SimpleLightOnOff.ON_WITH_INSUFF_BRIGHT
+        return physically_on or only_virtually_on
 
     ##### OVERRIDE #####
 
@@ -124,6 +127,10 @@ class DimmableLight(Light):
         "Sets the scaled brightness if possible."
         trace(name = self.name, fun = "set brightness", cls = "Dimmable")
         client.publish(self.set_topic(), Payload.brightness(brightness))
+        if brightness == 0:
+            self.on_off = SimpleLightOnOff.OFF
+        else:
+            self.on_off = SimpleLightOnOff.ON
 
     def is_dimmable(self) -> bool:
         "Can the light be dimmed in any way?"

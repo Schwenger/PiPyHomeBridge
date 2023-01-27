@@ -32,7 +32,7 @@ class Room(ABC):
         "Adapts the lights to the current time of day.  Should be called periodically."
         trace(name = self.name, fun = "Refresh lights")
         if self.adaptive_dimming or self.colorful:
-            self._apply_config(client)
+            self._apply_config(client, override=False)
 
     def toggle_lights(self, client: mqtt.Client):
         "toggles all lights"
@@ -43,36 +43,36 @@ class Room(ABC):
     def lights_on(self, client: mqtt.Client):
         "turn all lights on"
         trace(name = self.name, fun = "lights on")
-        self._apply_config(client)
+        self._apply_config(client, override=True)
 
     def lights_off(self, client: mqtt.Client):
         "turn all lights off"
         trace(name = self.name, fun = "lights off")
-        self._apply_config(client, LightConfig.OFF)
+        self._apply_config(client, override=True, cfg=LightConfig.OFF)
 
     def shift_color_clockwise(self, client: mqtt.Client):
         "Shift color clockwise"
         trace(name = self.name, fun = "shift color clockwise")
         self.hue_offset += 1
-        self._apply_config(client)
+        self._apply_config(client, override=False)
 
     def shift_color_counter_clockwise(self, client: mqtt.Client):
         "Shift color counter clockwise"
         trace(name = self.name, fun = "shift color counter clockwise")
         self.hue_offset -= 1
-        self._apply_config(client)
+        self._apply_config(client, override=False)
 
     def dim(self, client: mqtt.Client):
         "Dim the lights in the room"
         trace(name = self.name, fun = "dim")
         self.brightness_offset = max(self.brightness_offset - 1, -4)
-        self._apply_config(client)
+        self._apply_config(client, override=False)
 
     def brighten(self, client: mqtt.Client):
         "Brighten the lights in the room"
         trace(name = self.name, fun = "brighten")
         self.brightness_offset = min(self.brightness_offset + 1, 4)
-        self._apply_config(client)
+        self._apply_config(client, override=False)
 
     def enable_adaptive_dimming(self, client: mqtt.Client):
         "Enables AdaptiveDimming"
@@ -100,17 +100,20 @@ class Room(ABC):
 
     def random_effect1(self, client: mqtt.Client):
         "Triggers an effect, yay"
-        # "effect": NEW_VALUE}. The possible values are: blink, breathe, okay, channel_change, candle, fireplace, colorloop, finish_effect, stop_effect, stop_hue_effect.
+        # {"effect": NEW_VALUE}. The possible values are: blink, breathe, okay, channel_change, candle, fireplace, colorloop, finish_effect, stop_effect, stop_hue_effect.
     # {"effect": NEW_VALUE}. The possible values are: blink, breathe, okay, channel_change, finish_effect, stop_effect
 
     def random_effect2(self, client: mqtt.Client):
         "Triggers an effect, yay"
 
-    def _apply_config(self, client: mqtt.Client, cfg: LightConfig = None):
+    def _apply_config(self, client: mqtt.Client, override: bool, cfg: LightConfig = None):
         trace(name = self.name, fun = "_apply config")
         for light in self.lights:
             if cfg is None:
                 cfg = self._get_config()
+            changes_on_off_status = light.is_on() != cfg.is_on
+            if changes_on_off_status and not override:
+                continue
             light.apply_config(client, cfg)
 
     def _get_config(self) -> LightConfig:

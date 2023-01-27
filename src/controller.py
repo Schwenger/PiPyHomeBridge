@@ -18,6 +18,11 @@ client.connect(IP, PORT, 60)
 
 home = Home()
 
+for room in home.rooms:
+    room.lights_off(client)
+    room.lights_on(client)
+    room.refresh_lights(client)
+
 for remote in home.remotes():
     (result, mid) = client.subscribe(remote.topic(), QoS.AT_LEAST_ONCE.value)
     client.message_callback_add(remote.topic(), remote.on_message)

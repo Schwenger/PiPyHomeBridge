@@ -66,10 +66,7 @@ class Light(Device):
         trace(name = self.name, fun = "set brightness")
         info("In set brightness of a simple light to: " + str(brightness))
         if brightness < 0.33:
-            if brightness == 0:
-                self.on_off = SimpleLightOnOff.OFF
-            else:
-                self.on_off = SimpleLightOnOff.ON_WITH_INSUFF_BRIGHT
+            self.on_off = SimpleLightOnOff.ON_WITH_INSUFF_BRIGHT
             self._turn_physically_off(client)
         else:
             self.on_off = SimpleLightOnOff.ON
@@ -126,6 +123,7 @@ class DimmableLight(Light):
     def set_brightness(self, client: mqtt.Client, brightness: float):
         "Sets the scaled brightness if possible."
         trace(name = self.name, fun = "set brightness", cls = "Dimmable")
+        info("In set brightness of a dimmable light to: " + str(brightness))
         client.publish(self.set_topic(), Payload.brightness(brightness))
         if brightness == 0:
             self.on_off = SimpleLightOnOff.OFF

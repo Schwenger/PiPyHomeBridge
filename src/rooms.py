@@ -6,7 +6,7 @@ from paho.mqtt import client as mqtt
 from lights import Light
 from remote import Remote
 from light_config import LightConfig
-from log import trace
+from log import trace, info
 
 class Room(ABC):
     "Abstract base class for rooms"
@@ -48,7 +48,8 @@ class Room(ABC):
     def lights_off(self, client: mqtt.Client):
         "turn all lights off"
         trace(name = self.name, fun = "lights off")
-        self._apply_config(client, override=True, cfg=LightConfig.OFF)
+        for light in self.lights:
+            light.turn_off(client)
 
     def shift_color_clockwise(self, client: mqtt.Client):
         "Shift color clockwise"
@@ -100,8 +101,14 @@ class Room(ABC):
 
     def random_effect1(self, client: mqtt.Client):
         "Triggers an effect, yay"
-        # {"effect": NEW_VALUE}. The possible values are: blink, breathe, okay, channel_change, candle, fireplace, colorloop, finish_effect, stop_effect, stop_hue_effect.
-    # {"effect": NEW_VALUE}. The possible values are: blink, breathe, okay, channel_change, finish_effect, stop_effect
+        # {"effect": NEW_VALUE}.
+        # The possible values are:
+        # blink, breathe, okay, channel_change, candle,
+        # fireplace, colorloop, finish_effect,
+        # stop_effect, stop_hue_effect.
+        # {"effect": NEW_VALUE}.
+        # The possible values are: blink, breathe,
+        # okay, channel_change, finish_effect, stop_effect
 
     def random_effect2(self, client: mqtt.Client):
         "Triggers an effect, yay"

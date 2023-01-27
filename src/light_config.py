@@ -43,7 +43,6 @@ class LightConfig():
         now = datetime.now()
         return now.hour + (now.minute/60)
 
-LightConfig.OFF = LightConfig(0, 0, Color("White"))
 LightConfig.ON =  LightConfig(1, 1, Color("White"))
 
 midnight        = ( 0, Color("DarkGreen"), "midnight")

@@ -6,7 +6,7 @@ from paho.mqtt import client as mqtt
 from lights import Light
 from remote import Remote
 from light_config import LightConfig
-from log import trace, info
+from log import trace
 
 class Room(ABC):
     "Abstract base class for rooms"

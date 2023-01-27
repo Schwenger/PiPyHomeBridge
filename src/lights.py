@@ -49,7 +49,10 @@ class Light(Device):
     def apply_config(self, client: mqtt.Client, cfg: LightConfig):
         "Applies the given LightConfig."
         trace(name = self.name, fun = "apply config")
-        self.set_brightness(client, cfg.brightness)
+        brightness = cfg.brightness
+        if self.is_color() and cfg.is_on:
+            brightness = min(1, brightness + 0.1)  # ToDo: better bias handling.
+        self.set_brightness(client, brightness)
         self.set_white_temp(client, cfg.white_temp)
         self.set_color_temp(client, cfg.color_temp)
 
@@ -82,6 +85,11 @@ class Light(Device):
 
     def is_dimmable(self) -> bool:
         "Can the light be dimmed in any way?"
+        trace(name = self.name, fun = "is dimmable")
+        return False
+
+    def is_color(self) -> bool:
+        "Can the light display color in any way?"
         trace(name = self.name, fun = "is dimmable")
         return False
 
@@ -156,3 +164,8 @@ class ColorLight(DimmableLight):
         "Sets the color to the given hex string"
         trace(name = self.name, fun = "set_color_temp", cls = "ColorLight")
         client.publish(self.set_topic(), Payload.color(color))
+
+    def is_color(self) -> bool:
+        "Can the light display color in any way?"
+        trace(name = self.name, fun = "is dimmable", cls = "ColorLight")
+        return True

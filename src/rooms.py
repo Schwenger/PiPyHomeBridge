@@ -3,6 +3,7 @@
 from typing import List
 from abc import ABC, abstractmethod
 from paho.mqtt import client as mqtt
+import lights
 from lights import Light
 from remote import Remote
 from light_config import LightConfig
@@ -49,7 +50,7 @@ class Room(ABC):
         "turn all lights off"
         trace(name = self.name, fun = "lights off")
         for light in self.lights:
-            light.turn_off(client)
+            light.turn_physically_off(client)
 
     def shift_color_clockwise(self, client: mqtt.Client):
         "Shift color clockwise"
@@ -145,10 +146,10 @@ class LivingRoom(Room):
 
     def _create_lights(self):
         return [
-            Light.simple(  "Comfort Light",     self.name, kind="Outlet"),
-            Light.dimmable("Uplight/Reading",   self.name),
-            Light.color(   "Uplight/Main",      self.name),
-            Light.color(   "Orb",               self.name),
+            lights.create_simple(  "Comfort Light",     self.name, kind="Outlet"),
+            lights.create_dimmable("Uplight/Reading",   self.name),
+            lights.create_color(   "Uplight/Main",      self.name),
+            lights.create_color(   "Orb",               self.name),
         ]
 
 class Office(Room):
@@ -161,7 +162,7 @@ class Office(Room):
         return [ Remote.default_dimmer(self) ]
 
     def _create_lights(self) -> List[Light]:
-        return [ Light.simple("Comfort Light", self.name, kind="Outlet") ]
+        return [ lights.create_simple("Comfort Light", self.name, kind="Outlet") ]
 
 class Home():
     "Collection of rooms"

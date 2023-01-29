@@ -1,11 +1,14 @@
 "Example for contorling tradfri devices over python."
 
 import time
+import threading
+import json
+from queue import Queue
 from paho.mqtt import client as mqtt
 # from common import base
 from rooms import Home
 from payload import QoS
-from log import info
+import queue_data as QData
 
 # config  = base.load_config()
 # ip      = config['mosquitto']['ip']
@@ -16,6 +19,8 @@ PORT = 1883
 client = mqtt.Client("Mac")
 client.connect(IP, PORT, 60)
 
+queue = Queue()
+
 home = Home()
 
 for room in home.rooms:
@@ -25,14 +30,53 @@ for room in home.rooms:
 
 for remote in home.remotes():
     (result, mid) = client.subscribe(remote.topic(), QoS.AT_LEAST_ONCE.value)
-    client.message_callback_add(remote.topic(), remote.on_message)
 
-client.loop_start()
+def find_remote(topic):
+    for room in home.rooms:
+        remote = room.get_remote(topic)
+        if remote is not None:
+            return remote
+    return None
+
+def handle_message(_client, _userdata, message):
+    "Handles the reception of a message"
+    print("Handling a message.")
+    topic = message.topic
+    payload = json.loads(message.payload.decode("utf-8"))
+    remote = find_remote(topic)
+    if remote is not None:
+        queue.put(QData.remote_message(remote, payload["action"]))
+        return
+    raise ValueError(payload)
+
+client.on_message = handle_message
 
 # orb = home.rooms[0].lights[3]
 # client.loop_start()
 
-while True:
-    info("refreshing lights")
-    home.refresh_lights(client)
+def refresh_periodically(msg_q):
+    "Periodically issues a refresh command through the queue."
+    msg_q.put(QData.REFRESH)
     time.sleep(15*60)
+
+thread = threading.Thread(target=refresh_periodically, args=(queue,))
+thread.start()
+
+def process(qdata):
+    "Processes data found in the queue"
+    print("Processing qdata")
+    print(qdata)
+    if qdata["kind"] == QData.KIND_REFRESH:
+        for room in home.rooms:
+            room.refresh_lights(client)
+    elif qdata["kind"] == QData.KIND_REMOTE_MESSAGE:
+        remote = qdata["remote"]
+        action = qdata["action"]
+        remote.execute_command(client, action)
+    else:
+        raise ValueError(qdata["kind"])
+
+client.loop_start()
+while True:
+    process(queue.get(block=True))
+client.loop_stop()

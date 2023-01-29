@@ -29,6 +29,13 @@ class Room(ABC):
     def _create_lights(self) -> List[Light]:
         pass
 
+    def get_remote(self, topic) -> Remote:
+        "Identifies the remote within the room with identical topic or None"
+        for remote in self.remotes:
+            if remote.topic() == topic:
+                return remote
+        return None
+
     def refresh_lights(self, client):
         "Adapts the lights to the current time of day.  Should be called periodically."
         trace(name = self.name, fun = "Refresh lights")

@@ -41,17 +41,9 @@ class Remote(Device):
         super().__init__(name=name, room=room, kind="Remote")
         self.actions = dict(map(lambda a: (a.button.value, a.action), actions))
 
-    def on_message(self, client, _userdata, message):
-        "Handles a message sent by this device"
-        payload = json.loads(message.payload.decode("utf-8"))
-        if "action" not in payload:
-            warn(payload)
-            raise ValueError(payload)
-            # return
-        command = payload["action"]
-        if command not in self.actions:
-            return
-        action = self.actions[payload["action"]]
+    def execute_command(self, client, action):
+        "Executes a command received from the remote."
+        action = self.actions[action]
         action(client)
 
     @staticmethod

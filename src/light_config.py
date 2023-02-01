@@ -1,24 +1,58 @@
 "Allows for altering requests based on time"
 
 import math
+from enum import Enum
 from typing import Tuple
 from datetime import datetime
 from colour import Color
+
+class DimLevel(Enum):
+    "The level of dimming for any quasi-light"
+    OFF = -3
+    SUB_TWO_THIRDS = -2
+    SUB_ONE_THIRD = -1
+    NEUTRAL = 0
+    ADD_ONE_THIRD = 1
+    ADD_TWO_THIRDS = 2
+    SPOTLIGHT = 3
+
+    def apply_to(self, brightness: float) -> float:
+        "Reduces or increases the given brightness based on the dimming level."
+        if self.value < 0:
+            return brightness + brightness * 1/3 * self.value
+        return brightness + (1-brightness) * 1/3 * self.value
+
+    def inc(self) -> 'DimLevel':
+        "Increases dim level, i.e., decreases the light emission."
+        return self.with_bias(-1)
+
+    def dec(self) -> 'DimLevel':
+        "Decreases dim level, i.e., increases the light emission."
+        return self.with_bias(+1)
+
+    def with_bias(self, bias: int) -> 'DimLevel':
+        "In- or decreases the light emission by the specified bias."
+        return DimLevel(max(-3, min(3, self.value + bias)))
+
 
 class LightConfig():
     "A configuration of any light source."
 
     def __init__(self, brightness: float, white_temp: float, color_temp: Color):
-        self.brightness = brightness
-        self.white_temp = white_temp
-        self.color_temp = color_temp
-        self.is_on = brightness > 0
+        self.brightness: float = brightness
+        self.white_temp: float = white_temp
+        self.color_temp: Color = color_temp
+        self.is_on: bool = brightness > 0
 
-    def offset_by(self, brightness: int, hue: int) -> 'LightConfig':
+    def with_hue_offset(self, hue: int) -> 'LightConfig':
         "Reduces or increases brightness  and turns color (counter-)clockwise."
-        self.brightness = _offset_brightness(self.brightness, brightness)
-        self.white_temp = _offset_white_temp(self.white_temp, brightness)
         self.color_temp = _offset_color_temp(self.color_temp, hue)
+        return self
+
+    def with_dim_level(self, dim_level: DimLevel) -> 'LightConfig':
+        "Sets the brightness to the specified value"
+        self.brightness = dim_level.apply_to(self.brightness)
+        self.white_temp = self.brightness
         return self
 
     def purge_color(self) -> 'LightConfig':
@@ -43,8 +77,6 @@ class LightConfig():
         now = datetime.now()
         return now.hour + (now.minute/60)
 
-LightConfig.ON =  LightConfig(1, 1, Color("White"))
-
 midnight        = ( 0, Color("DarkGreen"), "midnight")
 night           = ( 2, Color("Red"), "night")
 early_morning   = ( 4, Color("Orange"), "early morning")
@@ -54,22 +86,11 @@ afternoon       = (15, Color("Yellow"), "afternoon")
 evening         = (18, Color("Orange"), "evening")
 zones = [midnight, night, early_morning, morning, day, afternoon, evening]
 
-def _push_within_bound(val, lower, upper):
-    return min(max(val, lower), upper)
-
-def _offset_brightness(val: int, offset: int) -> int:
-    with_offset = val + offset * 0.2
-    within_bounds = _push_within_bound(with_offset, lower=0, upper=1)
-    return within_bounds
-
-def _offset_white_temp(val: int, offset: int) -> int:
-    return _offset_brightness(val, offset)
-
-def _offset_color_temp(val: Color, offset: int) -> int:
+def _offset_color_temp(val: Color, offset: int) -> Color:
     val.hue += offset * 0.2
     return val
 
-def _recommended_brightness(time: float) -> Color:
+def _recommended_brightness(time: float) -> float:
     return 1 - (abs(12 - time) / 12)
 
 def _recommended_temp(time: float) -> float:

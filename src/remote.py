@@ -1,9 +1,7 @@
 "All things related to remotes"
-import json
 from enum import Enum
-from typing import Callable, Dict
+from typing import Callable, List
 from device import Device
-from log import warn
 
 class Button(Enum):
     "Abstract button class"
@@ -37,14 +35,15 @@ class RemoteAction:
 
 class Remote(Device):
     "Represents a remote."
-    def __init__(self, name: str, room: str, actions: Dict[str, Callable]):
+    def __init__(self, name: str, room: str, actions: List[RemoteAction]):
         super().__init__(name=name, room=room, kind="Remote")
         self.actions = dict(map(lambda a: (a.button.value, a.action), actions))
 
     def execute_command(self, client, action):
         "Executes a command received from the remote."
-        action = self.actions[action]
-        action(client)
+        if action in self.actions:
+            action = self.actions[action]
+            action(client)
 
     @staticmethod
     def default_dimmer(room, name: str = "Dimmer"):

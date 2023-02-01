@@ -3,10 +3,11 @@
 import time
 import threading
 import json
+from typing import Dict, Optional
 from queue import Queue
 from paho.mqtt import client as mqtt
-# from common import base
 from rooms import Home
+from remote import Remote
 from payload import QoS
 import queue_data as QData
 
@@ -28,19 +29,18 @@ for room in home.rooms:
     room.lights_on(client)
     room.refresh_lights(client)
 
+remote_lookup: Dict[str, Remote] = {}
+
 for remote in home.remotes():
     (result, mid) = client.subscribe(remote.topic(), QoS.AT_LEAST_ONCE.value)
+    remote_lookup[remote.topic()] = remote
 
-def find_remote(topic):
-    for room in home.rooms:
-        remote = room.get_remote(topic)
-        if remote is not None:
-            return remote
-    return None
+def find_remote(topic) -> Optional[Remote]:
+    "Returns the remote for the given topic if any."
+    return remote_lookup[topic]
 
 def handle_message(_client, _userdata, message):
     "Handles the reception of a message"
-    print("Handling a message.")
     topic = message.topic
     payload = json.loads(message.payload.decode("utf-8"))
     remote = find_remote(topic)
@@ -64,8 +64,6 @@ thread.start()
 
 def process(qdata):
     "Processes data found in the queue"
-    print("Processing qdata")
-    print(qdata)
     if qdata["kind"] == QData.KIND_REFRESH:
         for room in home.rooms:
             room.refresh_lights(client)

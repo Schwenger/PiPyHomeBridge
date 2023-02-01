@@ -158,10 +158,10 @@ class LivingRoom(Room):
 
     def _create_lights(self):
         return [
-            lights.create_simple(  "Comfort Light",     self.name, kind="Outlet"),
-            lights.create_dimmable("Uplight/Reading",   self.name),
-            lights.create_color(   "Uplight/Main",      self.name),
-            lights.create_color(   "Orb",               self.name),
+            lights.create_simple(    "Comfort Light",     self.name, kind="Outlet"),
+            lights.create_dimmable(  "Uplight/Reading",   self.name),
+            lights.create_white_spec("Uplight/Main",      self.name),
+            lights.create_color(     "Orb",               self.name),
         ]
 
 class Office(Room):

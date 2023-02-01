@@ -54,7 +54,7 @@ class Brightness:
     min: int = 0
 
     @staticmethod
-    def scaled(scale: float) -> int:
+    def scaled(scale: float) -> float:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
         return Brightness.max*scale
 
@@ -64,13 +64,15 @@ class ColorTemp:
     ikea_min: int = 250
     hue_max: int = 500
     hue_min: int = 153
+    hue_bias: int = 300
 
     @staticmethod
-    def ikea_scaled(scale: float) -> int:
+    def ikea_scaled(scale: float) -> float:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
         return (ColorTemp.ikea_max - ColorTemp.ikea_min)*scale
 
     @staticmethod
-    def hue_scaled(scale: float) -> int:
+    def hue_scaled(scale: float) -> float:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return (ColorTemp.hue_max - ColorTemp.hue_min)*scale
+        offset = ColorTemp.hue_min + ColorTemp.hue_bias
+        return (ColorTemp.hue_max - (offset))*(1-scale) + offset

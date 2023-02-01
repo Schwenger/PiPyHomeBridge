@@ -26,8 +26,6 @@ home = Home()
 
 for room in home.rooms:
     room.lights_off(client)
-    room.lights_on(client)
-    room.refresh_lights(client)
 
 remote_lookup: Dict[str, Remote] = {}
 

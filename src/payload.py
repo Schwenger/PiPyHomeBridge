@@ -44,7 +44,6 @@ def hue_color_temp(value: float) -> str:
     "Returns a payload to set the scaled in [0,1]."
     return _json(with_transition({"color_temp": ColorTemp.hue_scaled(value)}))
 
-@staticmethod
 def color(col: Color) -> str:
     "Returns a payload to set the given hex color."
     payload = { "color": { "hex": col.get_hex_l() } }

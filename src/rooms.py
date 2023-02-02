@@ -6,7 +6,7 @@ from paho.mqtt import client as mqtt
 import lights
 from lights import Light
 from remote import Remote
-from light_config import LightConfig, DimLevel
+from light_config import LightConfig, Brightness
 from log import trace
 
 class Room(ABC):
@@ -18,7 +18,7 @@ class Room(ABC):
         self.remotes: List[Remote] = self._create_remotes()
         self.adaptive_dimming: bool = adaptive_dimming
         self.colorful: bool = colorful
-        self.dim_level: DimLevel = DimLevel.NEUTRAL
+        self.dim_level: Brightness = Brightness.NEUTRAL
         self.hue_offset: int = 0
         self.is_on: bool = True
 
@@ -71,13 +71,13 @@ class Room(ABC):
     def dim(self, client: mqtt.Client):
         "Dim the lights in the room"
         trace(name = self.name, fun = "dim")
-        self.dim_level = self.dim_level.inc()
+        self.dim_level = self.dim_level.dec()
         self.refresh_lights(client)
 
     def brighten(self, client: mqtt.Client):
         "Brighten the lights in the room"
         trace(name = self.name, fun = "brighten")
-        self.dim_level = self.dim_level.dec()
+        self.dim_level = self.dim_level.inc()
         self.refresh_lights(client)
 
     def enable_adaptive_dimming(self, client: mqtt.Client):
@@ -112,11 +112,11 @@ class Room(ABC):
         ):
         trace(name = self.name, fun = "_apply config")
         for light in self.lights:
-            cfg = cfg or self._get_current_config(light)
-            changes_on_off_status = light.is_on() != cfg.is_on
+            target_cfg = cfg or self._get_current_config(light)
+            changes_on_off_status = light.is_on() != target_cfg.is_on
             if changes_on_off_status and not override_on_off:
                 continue
-            light.apply_config(client, cfg)
+            light.apply_config(client, target_cfg)
 
     def _get_current_config(self, light: Light) -> LightConfig:
         "Returns the appropriate LightConfig for the given light, time of day, and LightFlow state."
@@ -152,9 +152,9 @@ class LivingRoom(Room):
 
     def _bias_for(self, light: Light) -> int:
         if "Orb" in light.name:
-            return -1
-        if "Comfort Light" in light.name:
             return +1
+        if "Comfort Light" in light.name:
+            return -1
         return 0
 
 class Office(Room):

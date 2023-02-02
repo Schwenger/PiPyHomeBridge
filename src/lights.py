@@ -125,8 +125,8 @@ class WhiteSpectrumLight(DimmableLight):
 
     def update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        client.publish(self.set_topic(), payload.hue_color_temp(self.white_temp))
         super().update_state(client)
+        client.publish(self.set_topic(), payload.hue_color_temp(self.white_temp))
 
 class ColorLight(DimmableLight):
     "A light of varying color"
@@ -140,9 +140,8 @@ class ColorLight(DimmableLight):
 
     def update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        client.publish(self.set_topic(), payload.color(self.color))
         super().update_state(client)
-
+        client.publish(self.set_topic(), payload.color(self.color))
 
 class SimpleLight(Light):
     "A simple on-off light"

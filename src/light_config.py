@@ -6,7 +6,7 @@ from typing import Tuple
 from datetime import datetime
 from colour import Color
 
-class DimLevel(Enum):
+class Brightness(Enum):
     "The level of dimming for any quasi-light"
     OFF = -3
     SUB_TWO_THIRDS = -2
@@ -18,21 +18,21 @@ class DimLevel(Enum):
 
     def apply_to(self, brightness: float) -> float:
         "Reduces or increases the given brightness based on the dimming level."
-        if self.value < 0:
-            return brightness + brightness * 1/3 * self.value
-        return brightness + (1-brightness) * 1/3 * self.value
+        factor = 1/3 * self.value
+        leeway = brightness if self.value < 0 else (1-brightness)
+        return brightness + leeway * factor
 
-    def inc(self) -> 'DimLevel':
-        "Increases dim level, i.e., decreases the light emission."
-        return self.with_bias(-1)
-
-    def dec(self) -> 'DimLevel':
-        "Decreases dim level, i.e., increases the light emission."
+    def inc(self) -> 'Brightness':
+        "Increases brightness."
         return self.with_bias(+1)
 
-    def with_bias(self, bias: int) -> 'DimLevel':
-        "In- or decreases the light emission by the specified bias."
-        return DimLevel(max(-3, min(3, self.value + bias)))
+    def dec(self) -> 'Brightness':
+        "Decreases brightness."
+        return self.with_bias(-1)
+
+    def with_bias(self, bias: int) -> 'Brightness':
+        "In- or decreases brightness by the specified bias."
+        return Brightness(max(-3, min(3, self.value + bias)))
 
 
 class LightConfig():
@@ -49,7 +49,7 @@ class LightConfig():
         self.color_temp = _offset_color_temp(self.color_temp, hue)
         return self
 
-    def with_dim_level(self, dim_level: DimLevel) -> 'LightConfig':
+    def with_dim_level(self, dim_level: Brightness) -> 'LightConfig':
         "Sets the brightness to the specified value"
         self.brightness = dim_level.apply_to(self.brightness)
         self.white_temp = self.brightness

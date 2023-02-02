@@ -33,7 +33,7 @@ def state(value: str) -> str:
 
 def brightness(value: float) -> str:
     "Returns a payload to set the scaled in [0,1]."
-    return _json(with_transition({"brightness": value}))
+    return _json(with_transition({"brightness": Bright.scaled(value)}))
 
 @staticmethod
 def ikea_color_temp(value: float) -> str:
@@ -50,7 +50,7 @@ def color(col: Color) -> str:
     payload = { "color": { "hex": col.get_hex_l() } }
     return _json(with_transition(payload))
 
-class Brightness:
+class Bright:
     "Deals with brightness values, translates relative brightnesses into absolute values."
     max: int = 254
     min: int = 0
@@ -58,7 +58,7 @@ class Brightness:
     @staticmethod
     def scaled(scale: float) -> float:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return Brightness.max*scale
+        return Bright.max*scale
 
 class ColorTemp:
     "Deals with white color temperature"

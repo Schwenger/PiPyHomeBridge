@@ -52,7 +52,7 @@ class Remote(Device):
             RemoteAction( DimmerButtons.ON, room.lights_on ),
             RemoteAction( DimmerButtons.OFF, room.lights_off ),
         ]
-        return Remote(name, room.topic, actions)
+        return Remote(name, room.name, actions)
 
     @staticmethod
     def default_ikea_remote(room, name: str = "Remote"):
@@ -85,14 +85,6 @@ class Remote(Device):
             RemoteAction(
                 IkeaMultiRemoteButtons.BRIGHTNESS_DOWN_HOLD,
                 room.enable_adaptive_dimming
-            ),
-            RemoteAction(
-                IkeaMultiRemoteButtons.BRIGHTNESS_UP_RELEASE,
-                room.random_effect1
-            ),
-            RemoteAction(
-                IkeaMultiRemoteButtons.BRIGHTNESS_DOWN_RELEASE,
-                room.random_effect2
             ),
             RemoteAction(
                 IkeaMultiRemoteButtons.ARROW_LEFT_HOLD,

@@ -47,7 +47,11 @@ def hue_color_temp(value: float) -> str:
 @staticmethod
 def color(col: Color) -> str:
     "Returns a payload to set the given hex color."
+<<<<<<< HEAD
     payload = { "color": { "hex": col.get_hex_l } }
+=======
+    payload = { "color": { "hex": col.get_hex_l() } }
+>>>>>>> fa4fefd (Better payload and include bias in rooms.)
     return _json(with_transition(payload))
 
 class Brightness:

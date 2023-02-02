@@ -1,6 +1,6 @@
 "Rooms"
 
-from typing import List, Optional, Dict
+from typing import List, Optional
 from abc import ABC, abstractmethod
 from paho.mqtt import client as mqtt
 import lights
@@ -21,9 +21,6 @@ class Room(ABC):
         self.dim_level: DimLevel = DimLevel.NEUTRAL
         self.hue_offset: int = 0
         self.is_on: bool = True
-        self.bias: Dict[str, int] = {}
-        for light in self.lights:
-            self.bias[light.topic()] = 0
 
     @abstractmethod
     def _create_remotes(self) -> List[Remote]:
@@ -32,6 +29,10 @@ class Room(ABC):
     @abstractmethod
     def _create_lights(self) -> List[Light]:
         pass
+
+    @abstractmethod
+    def _bias_for(self, light: Light) -> int:
+        "Defines the bias for a given light."
 
     def refresh_lights(self, client):
         "Adapts the lights to the current time of day.  Should be called periodically."
@@ -103,20 +104,6 @@ class Room(ABC):
         self.colorful = False
         self.refresh_lights(client)
 
-    def random_effect1(self, client: mqtt.Client):
-        "Triggers an effect, yay"
-        # {"effect": NEW_VALUE}.
-        # The possible values are:
-        # blink, breathe, okay, channel_change, candle,
-        # fireplace, colorloop, finish_effect,
-        # stop_effect, stop_hue_effect.
-        # {"effect": NEW_VALUE}.
-        # The possible values are: blink, breathe,
-        # okay, channel_change, finish_effect, stop_effect
-
-    def random_effect2(self, client: mqtt.Client):
-        "Triggers an effect, yay"
-
     def _apply_config(
             self,
             client: mqtt.Client,
@@ -125,8 +112,7 @@ class Room(ABC):
         ):
         trace(name = self.name, fun = "_apply config")
         for light in self.lights:
-            if cfg is None:
-                cfg = self._get_current_config(light)
+            cfg = cfg or self._get_current_config(light)
             changes_on_off_status = light.is_on() != cfg.is_on
             if changes_on_off_status and not override_on_off:
                 continue
@@ -136,7 +122,7 @@ class Room(ABC):
         "Returns the appropriate LightConfig for the given light, time of day, and LightFlow state."
         trace(name = self.name, fun = "get config")
         cfg  = LightConfig.recommended()
-        bias = self.bias[light.topic()]
+        bias = self._bias_for(light)
         dim  = self.dim_level.with_bias(bias)
 
         cfg  = cfg.with_dim_level(dim)
@@ -164,6 +150,13 @@ class LivingRoom(Room):
             lights.create_color(     "Orb",               self.name),
         ]
 
+    def _bias_for(self, light: Light) -> int:
+        if "Orb" in light.name:
+            return +1
+        if "Comfort Light" in light.name:
+            return -1
+        return 0
+
 class Office(Room):
     "Everything concerning the Office"
 
@@ -176,13 +169,16 @@ class Office(Room):
     def _create_lights(self) -> List[Light]:
         return [ lights.create_simple("Comfort Light", self.name, kind="Outlet") ]
 
+    def _bias_for(self, light: Light) -> int:
+        return 0
+
 class Home():
     "Collection of rooms"
 
     def __init__(self):
         self.rooms = [
             LivingRoom(),
-            # Office()
+            Office()
         ]
 
     def refresh_lights(self, client):

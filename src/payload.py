@@ -1,6 +1,8 @@
 "Everything regarding payloads"
 
 from enum import Enum
+from typing import Optional
+import json
 from colour import Color
 
 class QoS(Enum):
@@ -9,44 +11,44 @@ class QoS(Enum):
     AT_LEAST_ONCE = 1
     ONCE = 0
 
-class Payload:
-    "Constant payloads and functions to create payloads"
+DEFAULT_TRANS = 1
 
-    default_transition = 1
+on: str = '{ "state": "ON" }'
+off: str = '{ "state": "OFF" }'
+toggle: str = '{ "state": "TOGGLE" }'
 
-    on: str = '{ "state": "ON" }'
-    off: str = '{ "state": "OFF" }'
-    toggle: str = '{ "state": "TOGGLE" }'
+def _json(payload) -> str:
+    "Creates a payload."
+    return json.dumps(payload)
 
-    @staticmethod
-    def create(key: str, value: str) -> str:
-        "Creates a payload."
-        return '{ "' + key + '": "' + value + '", "transition": ' + str(Payload.default_transition) + '}'
+def with_transition(payload, transition_time: Optional[int] = None):
+    "Adds a transition specification to the payload"
+    transition_time = transition_time or DEFAULT_TRANS
+    payload["transition"] = transition_time
+    return payload
 
-    @staticmethod
-    def state(value: str) -> str:
-        "Creates a payload."
-        return '{ "state": "' + value + '" }'
+def state(value: str) -> str:
+    "Creates a payload for a state change."
+    return _json(with_transition({"state" : value}))
 
-    @staticmethod
-    def brightness(value: float) -> str:
-        "Returns a payload to set the scaled in [0,1]."
-        return Payload.create("brightness", str(Brightness.scaled(value)))
+def brightness(value: float) -> str:
+    "Returns a payload to set the scaled in [0,1]."
+    return _json(with_transition({"brightness": value}))
 
-    @staticmethod
-    def ikea_color_temp(value: float) -> str:
-        "Returns a payload to set the scaled in [0,1]."
-        return Payload.create("color_temp", str(ColorTemp.ikea_scaled(value)))
+@staticmethod
+def ikea_color_temp(value: float) -> str:
+    "Returns a payload to set the scaled in [0,1]."
+    return _json(with_transition({"color_temp": ColorTemp.ikea_scaled(value)}))
 
-    @staticmethod
-    def hue_color_temp(value: float) -> str:
-        "Returns a payload to set the scaled in [0,1]."
-        return Payload.create("color_temp", str(ColorTemp.hue_scaled(value)))
+def hue_color_temp(value: float) -> str:
+    "Returns a payload to set the scaled in [0,1]."
+    return _json(with_transition({"color_temp": ColorTemp.hue_scaled(value)}))
 
-    @staticmethod
-    def color(color: Color) -> str:
-        "Returns a payload to set the given hex color."
-        return '{ "color": { "hex": "' + str(color.get_hex_l()) + '" }, "transition": ' + str(Payload.default_transition) + ' }'
+@staticmethod
+def color(col: Color) -> str:
+    "Returns a payload to set the given hex color."
+    payload = { "color": { "hex": col.get_hex_l } }
+    return _json(with_transition(payload))
 
 class Brightness:
     "Deals with brightness values, translates relative brightnesses into absolute values."

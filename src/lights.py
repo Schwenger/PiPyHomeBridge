@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from paho.mqtt import client as mqtt
 from colour import Color
 from device import Device
-from payload import Payload
+import payload
 from light_config import LightConfig
 from log import trace, info
 
@@ -102,11 +102,11 @@ class DimmableLight(Light):
 
     def update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        client.publish(self.set_topic(), Payload.brightness(self.brightness))
+        client.publish(self.set_topic(), payload.brightness(self.brightness))
         if self.toggled_on:
-            client.publish(self.set_topic(), Payload.on)
+            client.publish(self.set_topic(), payload.on)
         else:
-            client.publish(self.set_topic(), Payload.off)
+            client.publish(self.set_topic(), payload.off)
 
 
 class WhiteSpectrumLight(DimmableLight):
@@ -125,7 +125,7 @@ class WhiteSpectrumLight(DimmableLight):
 
     def update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        client.publish(self.set_topic(), Payload.hue_color_temp(self.white_temp))
+        client.publish(self.set_topic(), payload.hue_color_temp(self.white_temp))
         super().update_state(client)
 
 class ColorLight(DimmableLight):
@@ -140,7 +140,7 @@ class ColorLight(DimmableLight):
 
     def update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        client.publish(self.set_topic(), Payload.color(self.color))
+        client.publish(self.set_topic(), payload.color(self.color))
         super().update_state(client)
 
 
@@ -167,9 +167,9 @@ class SimpleLight(Light):
     def update_state(self, client: mqtt.Client):
         "Turns the light on or of depending on the virtual brightness and toggle state"
         if self.is_on() and self.over_threshold():
-            client.publish(self.set_topic(), Payload.on)
+            client.publish(self.set_topic(), payload.on)
         else:
-            client.publish(self.set_topic(), Payload.off)
+            client.publish(self.set_topic(), payload.off)
 
 
 def create_simple(name: str, room: str, kind: str = "Light") -> SimpleLight:

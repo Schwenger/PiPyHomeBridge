@@ -1,7 +1,7 @@
 "Logging logic."
 
-INFO = True
-WARN = True
+INFO = False
+ALERT = True
 TRACE = False
 
 def trace(name: str, fun: str, cls: str = ""):
@@ -18,9 +18,9 @@ def info(msg: str):
         return
     print(msg)
 
-def warn(msg: str):
+def alert(msg: str):
     "Prints a warning"
-    if not WARN:
+    if not ALERT:
         return
     print("****WARNING****")
     print(msg)

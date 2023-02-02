@@ -152,9 +152,9 @@ class LivingRoom(Room):
 
     def _bias_for(self, light: Light) -> int:
         if "Orb" in light.name:
-            return +1
-        if "Comfort Light" in light.name:
             return -1
+        if "Comfort Light" in light.name:
+            return +1
         return 0
 
 class Office(Room):

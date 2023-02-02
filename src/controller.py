@@ -10,6 +10,7 @@ from rooms import Home
 from remote import Remote
 from payload import QoS
 import queue_data as QData
+import log
 
 # config  = base.load_config()
 # ip      = config['mosquitto']['ip']
@@ -24,6 +25,7 @@ class Controller:
         self.queue = Queue()
         self.home = Home()
         self.remote_lookup: Dict[str, Remote] = self.init_remote_lookup()
+        self.subscribe_to_remotes()
         for room in self.home.rooms:
             room.lights_off(self.client)
         self.client.on_message = self.handle_message
@@ -50,11 +52,17 @@ class Controller:
         "Handles the reception of a message"
         topic = message.topic
         payload = json.loads(message.payload.decode("utf-8"))
+        if "action" not in payload:
+            log.alert("Message without action found!")
+            log.alert(payload)
+            return
         remote = self.remote_lookup[topic]
         if remote is not None:
             self.queue.put(QData.remote_message(remote, payload["action"]))
             return
-        raise ValueError(payload)
+        log.alert("Could not find remote for " + topic)
+        log.alert(payload)
+        # raise ValueError(payload)
 
     def refresh_periodically(self, msg_q):
         "Periodically issues a refresh command through the queue."

@@ -3,7 +3,7 @@
 import time
 import threading
 import json
-from typing import Dict, Optional
+from typing import Dict
 from queue import Queue
 from paho.mqtt import client as mqtt
 from rooms import Home
@@ -17,62 +17,71 @@ import queue_data as QData
 IP   = "192.168.178.34"
 PORT = 1883
 
-client = mqtt.Client("Mac")
-client.connect(IP, PORT, 60)
+class Controller:
+    "Controls a home"
+    def __init__(self):
+        self.client = self.init_client()
+        self.queue = Queue()
+        self.home = Home()
+        self.remote_lookup: Dict[str, Remote] = self.init_remote_lookup()
+        for room in self.home.rooms:
+            room.lights_off(self.client)
+        self.client.on_message = self.handle_message
 
-queue = Queue()
+    def init_remote_lookup(self) -> Dict[str, Remote]:
+        "Initializes the lookup for remotes based on topic."
+        remote_lookup: Dict[str, Remote] = {}
+        for remote in self.home.remotes():
+            remote_lookup[remote.topic()] = remote
+        return remote_lookup
 
-home = Home()
+    def subscribe_to_remotes(self):
+        "Subscribes to messages from all remotes"
+        for remote in self.home.remotes():
+            (_result, _mid) = self.client.subscribe(remote.topic(), QoS.AT_LEAST_ONCE.value)
 
-for room in home.rooms:
-    room.lights_off(client)
+    def init_client(self) -> mqtt.Client:
+        "Initializes a client."
+        res = mqtt.Client("Mac")
+        res.connect(IP, PORT, 60)
+        return res
 
-remote_lookup: Dict[str, Remote] = {}
+    def handle_message(self, _client, _userdata, message):
+        "Handles the reception of a message"
+        topic = message.topic
+        payload = json.loads(message.payload.decode("utf-8"))
+        remote = self.remote_lookup[topic]
+        if remote is not None:
+            self.queue.put(QData.remote_message(remote, payload["action"]))
+            return
+        raise ValueError(payload)
 
-for remote in home.remotes():
-    (result, mid) = client.subscribe(remote.topic(), QoS.AT_LEAST_ONCE.value)
-    remote_lookup[remote.topic()] = remote
+    def refresh_periodically(self, msg_q):
+        "Periodically issues a refresh command through the queue."
+        msg_q.put(QData.REFRESH)
+        time.sleep(15*60)
 
-def find_remote(topic) -> Optional[Remote]:
-    "Returns the remote for the given topic if any."
-    return remote_lookup[topic]
+    def process(self, qdata):
+        "Processes data found in the queue"
+        if qdata["kind"] == QData.KIND_REFRESH:
+            for room in self.home.rooms:
+                room.refresh_lights(self.client)
+        elif qdata["kind"] == QData.KIND_REMOTE_MESSAGE:
+            remote = qdata["remote"]
+            action = qdata["action"]
+            remote.execute_command(self.client, action)
+        else:
+            raise ValueError(qdata["kind"])
 
-def handle_message(_client, _userdata, message):
-    "Handles the reception of a message"
-    topic = message.topic
-    payload = json.loads(message.payload.decode("utf-8"))
-    remote = find_remote(topic)
-    if remote is not None:
-        queue.put(QData.remote_message(remote, payload["action"]))
-        return
-    raise ValueError(payload)
+    def loop(self):
+        "Retrieves message from the queue and processes it."
+        self.process(self.queue.get(block=True))
 
-client.on_message = handle_message
+if __name__ == "__main__":
+    controller = Controller()
+    thread = threading.Thread(target=controller.refresh_periodically, args=(controller.queue,))
+    thread.start()
 
-# orb = home.rooms[0].lights[3]
-# client.loop_start()
-
-def refresh_periodically(msg_q):
-    "Periodically issues a refresh command through the queue."
-    msg_q.put(QData.REFRESH)
-    time.sleep(15*60)
-
-thread = threading.Thread(target=refresh_periodically, args=(queue,))
-thread.start()
-
-def process(qdata):
-    "Processes data found in the queue"
-    if qdata["kind"] == QData.KIND_REFRESH:
-        for room in home.rooms:
-            room.refresh_lights(client)
-    elif qdata["kind"] == QData.KIND_REMOTE_MESSAGE:
-        remote = qdata["remote"]
-        action = qdata["action"]
-        remote.execute_command(client, action)
-    else:
-        raise ValueError(qdata["kind"])
-
-client.loop_start()
-while True:
-    process(queue.get(block=True))
-client.loop_stop()
+    controller.client.loop_start()
+    while True:
+        controller.loop()

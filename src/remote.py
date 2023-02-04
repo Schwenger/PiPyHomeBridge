@@ -49,8 +49,8 @@ class Remote(Device):
     def default_dimmer(room, name: str = "Dimmer"):
         "Creates a default dimmer remote for a room."
         actions = [
-            RemoteAction( DimmerButtons.ON, room.lights_on ),
-            RemoteAction( DimmerButtons.OFF, room.lights_off ),
+            RemoteAction( DimmerButtons.ON,  room.toggle_lights ),
+            RemoteAction( DimmerButtons.OFF, room.toggle_lights ),
         ]
         return Remote(name, room.name, actions)
 

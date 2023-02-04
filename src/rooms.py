@@ -140,7 +140,10 @@ class LivingRoom(Room):
         super().__init__("Living Room", adaptive_dimming=True, colorful=True)
 
     def _create_remotes(self):
-        return [ Remote.default_ikea_remote(self) ]
+        return [
+            Remote.default_ikea_remote(self),
+            Remote.default_dimmer(self)
+        ]
 
     def _create_lights(self):
         return [

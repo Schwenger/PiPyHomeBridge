@@ -54,7 +54,9 @@ class Controller:
         payload = json.loads(message.payload.decode("utf-8"))
         if "action" not in payload:
             log.alert("Message without action found!")
-            log.alert(payload)
+            log.alert("Topic: " + topic)
+            log.alert("Payload: " + payload)
+            log.alert("Message: " + message)
             return
         remote = self.remote_lookup[topic]
         if remote is not None:

@@ -32,6 +32,6 @@ def alert(msg: str):
 def _put(msg: str):
     if WRITE_TO_FILE:
         with open(PATH, "a", encoding="utf-8") as file:
-            file.write(msg)
+            file.write(msg + "\n")
     else:
         print(msg)

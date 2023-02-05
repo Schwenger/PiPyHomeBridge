@@ -1,15 +1,34 @@
 "Data to be put into the queue."
 
-from remote import Remote
+from enum import Enum
+from typing import Optional
+from payload import Topic
 
-KIND_REFRESH = "Refresh"
-KIND_REMOTE_MESSAGE = "Remote Message"
+class Kind(Enum):
+    "The kind of data in the queue."
+    REFRESH = "Refresh"
+    ADDRESSED = "Addressed"
+    API = "API"
 
-REFRESH = { "kind" : KIND_REFRESH }
-def remote_message(remote: Remote, action: str):
+class Cmd(Enum):
+    "A command to be executed."
+    QUERY = "Query"
+
+REFRESH = { "kind" : Kind }
+def addressed(topic: Topic, data):
     "A message from a remote was received"
     return {
-        "kind": KIND_REMOTE_MESSAGE,
-        "remote": remote,
-        "action": action,
+        "kind": Kind.ADDRESSED,
+        "topic": topic,
+        "data": data,
     }
+
+def api(cmd: Cmd, target: Optional[Topic]):
+    "A message from a remote was received"
+    res = {
+        "kind": Kind.API,
+        "cmd": cmd,
+    }
+    if target is not None:
+        res["target"] = target
+    return res

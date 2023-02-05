@@ -12,6 +12,7 @@ class QoS(Enum):
     ONCE = 0
 
 DEFAULT_TRANS = 1
+DEFAULT_DIMMING_SPEED = 40
 
 on: str = '{ "state": "ON" }'
 off: str = '{ "state": "OFF" }'
@@ -37,7 +38,6 @@ def brightness(value: Optional[float]) -> str:
         return _json(with_transition({"brightness": ""}))
     return _json(with_transition({"brightness": Bright.scaled(value)}))
 
-@staticmethod
 def ikea_color_temp(value: float) -> str:
     "Returns a payload to set the scaled in [0,1]."
     return _json(with_transition({"color_temp": ColorTemp.ikea_scaled(value)}))
@@ -50,6 +50,18 @@ def color(col: Color) -> str:
     "Returns a payload to set the given hex color."
     payload = { "color": { "hex": col.get_hex_l() } }
     return _json(with_transition(payload))
+
+def start_dim_down(speed: int = DEFAULT_DIMMING_SPEED) -> str:
+    payload = { "brightness_move": -speed }
+    return _json(payload)
+
+def start_dim_up(speed: int = DEFAULT_DIMMING_SPEED) -> str:
+    payload = { "brightness_move": +speed }
+    return _json(payload)
+
+def stop_dim() -> str:
+    payload = { "brightness_move": 0 }
+    return _json(payload)
 
 def transform_brightness(val: str) -> float:
     "Returns the white temperature as scale based on the value retrieved from the device."

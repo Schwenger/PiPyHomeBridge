@@ -31,6 +31,14 @@ class Room(ABC):
         "Finds the light with the given name in the room."
         return next((remote for remote in self.remotes if remote.name == name), None)
 
+    def find_light(self, topic: Topic) -> Optional[Light]:
+        "Find the device with the given topic."
+        return next((item for item in self.lights if item.name == topic.name), None)
+
+    def find_remote(self, topic: Topic) -> Optional[Remote]:
+        "Find the device with the given topic."
+        return next((item for item in self.remotes if item.name == topic.name), None)
+
     def route_message(self, client: mqtt.Client, topic: Topic, payload) -> RoutingResult:
         "Routes the message to the device based on the topic."
         light = self.light_by_name(topic.name)
@@ -100,6 +108,24 @@ class Room(ABC):
         trace(name = self.name, fun = "brighten")
         self.dim_level = self.dim_level.inc()
         self.refresh_lights(client)
+
+    def start_dim_down(self, client: mqtt.Client):
+        "Starts dimming the lights"
+        trace(name = self.name, fun="start_dim_down")
+        for light in self.lights:
+            light.start_dim_down(client)
+
+    def start_dim_up(self, client: mqtt.Client):
+        "Starts dimming the lights"
+        trace(name = self.name, fun="start_dim_up")
+        for light in self.lights:
+            light.start_dim_up(client)
+
+    def stop_dim(self, client: mqtt.Client):
+        "Stops dimming the lights"
+        trace(name = self.name, fun="stop_dim")
+        for light in self.lights:
+            light.stop_dim(client)
 
     def enable_adaptive_dimming(self, client: mqtt.Client):
         "Enables AdaptiveDimming"
@@ -233,3 +259,17 @@ class Home():
                     return res
                 ValueError(res)
         return RoutingResult.NOT_FOUND
+
+    def find_light(self, topic: Topic) -> Optional[Light]:
+        "Find the device with the given topic."
+        for room in self.rooms:
+            if room.name == topic.room:
+                return room.find_light(topic)
+        return None
+
+    def find_remote(self, topic: Topic) -> Optional[Remote]:
+        "Find the device with the given topic."
+        for room in self.rooms:
+            if room.name == topic.room:
+                return room.find_remote(topic)
+        return None

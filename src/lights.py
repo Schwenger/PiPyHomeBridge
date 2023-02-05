@@ -111,6 +111,18 @@ class Light(Device, ABC):
         """
         client.publish(self.get_topic(), payload.brightness(None))
 
+    def start_dim_down(self, client: mqtt.Client):
+        if self.is_dimmable():
+            client.publish(self.set_topic(), payload.start_dim_down())
+
+    def start_dim_up(self, client: mqtt.Client):
+        if self.is_dimmable():
+            client.publish(self.set_topic(), payload.start_dim_up())
+
+    def stop_dim(self, client: mqtt.Client):
+        if self.is_dimmable():
+            client.publish(self.set_topic(), payload.stop_dim())
+
     @abstractmethod
     def is_dimmable(self) -> bool:
         "Can the light be dimmed in any way?"

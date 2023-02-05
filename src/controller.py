@@ -7,6 +7,7 @@ from typing import List, Optional
 from queue import Queue
 from paho.mqtt import client as mqtt
 from rooms import Home, Room
+from remote import Remote
 from lights import Light
 from payload import QoS, Topic, RoutingResult
 import queue_data as QData
@@ -67,25 +68,41 @@ class Controller:
         res = self.home.route_message(self.client, topic, payload)
         assert res == RoutingResult.ACCEPT
 
+    def find_light(self, topic: Topic) -> Optional[Light]:
+        "Finds the device with the given topic"
+        return self.home.find_light(topic)
+
+    def find_remote(self, topic: Topic) -> Optional[Remote]:
+        "Finds the device with the given topic"
+        return self.home.find_remote(topic)
+
     def handle_message(self, _client, _userdata, message: mqtt.MQTTMessage):
         "Handles the reception of a message"
         topic = Topic.from_str(message.topic)
         payload = json.loads(message.payload.decode("utf-8"))
-        self.queue.put((topic, payload))
+        self.queue.put(QData.addressed(topic, payload))
 
     def refresh_periodically(self, msg_q):
         "Periodically issues a refresh command through the queue."
         msg_q.put(QData.REFRESH)
         time.sleep(15*60)
 
-    def process(self, data):
+    def process(self, qdata):
         "Processes data found in the queue"
-        if data == QData.REFRESH:
+        if qdata["kind"] == QData.Kind.REFRESH:
             for room in self.home.rooms:
                 room.refresh_lights(self.client)
-            return
-        (topic, payload) = data
-        self.route_message(topic, payload)
+        elif qdata["kind"] == QData.Kind.ADDRESSED:
+            topic = qdata["topic"]
+            data  = qdata["data"]
+            self.route_message(topic, data)
+        elif qdata["kind"] == QData.Kind.API:
+            cmd = qdata["cmd"]
+            target = qdata["target"]
+            if cmd == QData.Cmd.QUERY:
+                light = self.find_light(target)
+                if light is not None:
+                    light.query_state(self.client)
 
     def loop(self):
         "Retrieves message from the queue and processes it."

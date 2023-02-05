@@ -16,7 +16,6 @@ cfg_path = os.path.join(base_path, '..', 'config.yml')
 with open(cfg_path, "r", encoding="utf-8") as stream:
     try:
         config = yaml.safe_load(stream)
-        print(config)
     except yaml.YAMLError as exc:
         print("Failed to load config file config.yml.")
         raise exc

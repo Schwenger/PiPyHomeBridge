@@ -1,7 +1,8 @@
 "Definition of devices."
 
 from enum import Enum
-from abc import ABC
+from abc import ABC, abstractmethod
+from paho.mqtt import client as mqtt
 
 class Command(Enum):
     "Different Commands"
@@ -17,10 +18,10 @@ class Device(ABC):
         self.room = room
         self.kind = kind
 
-    def topic(self, command: str = None) -> str:
+    def topic(self, command: str = "") -> str:
         "Creates a topic for the device"
         res = "/".join([TOPIC_BASE, self.room, self.kind, self.name])
-        if command is not None:
+        if command != "":
             res += "/" + command
         return res
 
@@ -32,3 +33,6 @@ class Device(ABC):
         "Creates a set-topic for the device"
         return self.topic(Command.GET.value)
 
+    @abstractmethod
+    def consume_message(self, _client: mqtt.Client, data):
+        "Consumes a message by e.g. updating its state or issuing a response"

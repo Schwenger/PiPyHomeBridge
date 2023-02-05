@@ -1,7 +1,9 @@
 "All things related to remotes"
 from enum import Enum
 from typing import Callable, List
+from paho.mqtt import client as mqtt
 from device import Device
+import log
 
 class Button(Enum):
     "Abstract button class"
@@ -44,6 +46,13 @@ class Remote(Device):
         if action in self.actions:
             action = self.actions[action]
             action(client)
+
+    def consume_message(self, client: mqtt.Client, data):
+        if "action" not in data:
+            log.alert("Message to remote without action found!")
+            log.alert("Addressed to " + str(self.topic()))
+            log.alert("Payload: " + str(data))
+        self.execute_command(client, data["action"])
 
     @staticmethod
     def default_dimmer(room, name: str = "Dimmer"):

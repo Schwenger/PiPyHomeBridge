@@ -8,6 +8,7 @@ from lights import Light
 from remote import Remote
 from light_config import LightConfig, Brightness
 from log import trace
+from payload import RoutingResult, Topic
 
 class Room(ABC):
     "Abstract base class for rooms"
@@ -21,6 +22,26 @@ class Room(ABC):
         self.dim_level: Brightness = Brightness.NEUTRAL
         self.hue_offset: int = 0
         self.is_on: bool = True
+
+    def light_by_name(self, name: str) -> Optional[Light]:
+        "Finds the light with the given name in the room."
+        return next((light for light in self.lights if light.name == name), None)
+
+    def remote_by_name(self, name: str) -> Optional[Remote]:
+        "Finds the light with the given name in the room."
+        return next((remote for remote in self.remotes if remote.name == name), None)
+
+    def route_message(self, client: mqtt.Client, topic: Topic, payload) -> RoutingResult:
+        "Routes the message to the device based on the topic."
+        light = self.light_by_name(topic.name)
+        if light is not None:
+            light.consume_message(client, payload)
+            return RoutingResult.ACCEPT
+        remote = self.remote_by_name(topic.name)
+        if remote is not None:
+            remote.consume_message(client, payload)
+            return RoutingResult.ACCEPT
+        return RoutingResult.NOT_FOUND
 
     @abstractmethod
     def _create_remotes(self) -> List[Remote]:
@@ -202,3 +223,13 @@ class Home():
         for room in self.rooms:
             res += room.lights
         return res
+
+    def route_message(self, client: mqtt.Client, topic: Topic, data) -> RoutingResult:
+        "Routes the message to the room and device based on the topic."
+        for room in self.rooms:
+            if room.name == topic.room:
+                res = room.route_message(client, topic, data)
+                if res in { RoutingResult.ACCEPT,  RoutingResult.REJECT }:
+                    return res
+                ValueError(res)
+        return RoutingResult.NOT_FOUND

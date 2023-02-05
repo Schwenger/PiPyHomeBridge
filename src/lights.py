@@ -17,6 +17,25 @@ class Light(Device, ABC):
         self.white_temp: float = 0
         self.color: Color = Color("White")
 
+    def consume_message(self, client: mqtt.Client, data):
+        if "state" in data:
+            new_state = payload.transform_state(data["state"])
+            self.toggled_on = new_state
+        if "brightness" in data:
+            brightness = payload.transform_brightness(data["brightness"])
+            self.set_brightness(client, brightness, update=False)
+        if "color_temp" in data:
+            white = payload.transform_white_temp(data["color_temp"], "hue")
+            self.set_white_temp(client, white, update=False)
+        # if "color" in data:
+            # color = payload.transform_color(
+            #     x=data["color"]["x"],
+            #     y=data["color"]["y"],
+            #     Y=data["brightness"]
+            # )
+            # Checking if update is required is to exhausting.
+            # self.set_color_temp(client, color, update=False)
+
     def apply_config(self, client: mqtt.Client, cfg: LightConfig):
         "Applies the given LightConfig."
         trace(self.name, "apply_config")
@@ -77,6 +96,20 @@ class Light(Device, ABC):
         self.white_temp = temp
         if update:
             self.update_state(client)
+
+    def query_state(self, client: mqtt.Client):
+        """
+        Queries a message containing the current brightness of the light.
+        Does NOT update anything in the light.
+        """
+        client.publish(self.get_topic(), payload.state(None))
+
+    def query_brightness(self, client: mqtt.Client):
+        """
+        Queries a message containing the current brightness of the light.
+        Does NOT update anything in the light.
+        """
+        client.publish(self.get_topic(), payload.brightness(None))
 
     @abstractmethod
     def is_dimmable(self) -> bool:

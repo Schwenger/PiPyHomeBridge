@@ -1,0 +1,6 @@
+---
+mosquitto:
+  ip: <IP of mosquitto server>
+  port: <Port open for comm>
+
+log: <Path to log file, may be empty>

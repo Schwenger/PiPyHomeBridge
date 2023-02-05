@@ -11,12 +11,11 @@ from remote import Remote
 from payload import QoS
 import queue_data as QData
 import log
+import common
 
-# config  = base.load_config()
-# ip      = config['mosquitto']['ip']
-# port    = int(config['mosquitto']['port'])
-IP   = "192.168.178.34"
-PORT = 1883
+config = common.config
+IP   = common.config['mosquitto']['ip']
+PORT = common.config['mosquitto']['port']
 
 class Controller:
     "Controls a home"
@@ -44,7 +43,7 @@ class Controller:
 
     def init_client(self) -> mqtt.Client:
         "Initializes a client."
-        res = mqtt.Client("Mac")
+        res = mqtt.Client(common.CLIENT_NAME)
         res.connect(IP, PORT, 60)
         return res
 

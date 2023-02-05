@@ -1,12 +1,13 @@
 "Logging logic."
 
+import common
+
 INFO = False
 ALERT = True
 TRACE = False
 
-WRITE_TO_FILE = True
-
-PATH = '/home/pi/log'
+PATH = common.config['log']
+WRITE_TO_FILE = PATH != ''
 
 def trace(name: str, fun: str, cls: str = ""):
     "Traces function calls."

@@ -1,5 +1,8 @@
 "Handling lights in all shapes and forms."
 from abc import ABC, abstractmethod
+import threading
+import time
+from typing import Optional
 from paho.mqtt import client as mqtt
 from colour import Color
 from device import Device
@@ -12,90 +15,59 @@ class Light(Device, ABC):
 
     def __init__(self, name: str, room: str, kind: str = "Light"):
         super().__init__(name=name, room=room, kind=kind)
-        self.toggled_on: bool = False
-        self.brightness: float = 0
-        self.white_temp: float = 0
-        self.color: Color = Color("White")
+        self._toggled_on: bool = False
+        self._brightness: float = 0
+        self._white_temp: float = 0
+        self._last_cfg: Optional[LightConfig] = None
+        self._color: Color = Color("White")
+
+    @abstractmethod
+    def is_dimmable(self) -> bool:
+        "Can the light be dimmed in any way?"
+
+    @abstractmethod
+    def is_color(self) -> bool:
+        "Determines if the light can display different colors"
+
+    @abstractmethod
+    def start_dim_down(self, client: mqtt.Client):
+        "Starts gradually reducing the brightness."
+
+    @abstractmethod
+    def start_dim_up(self, client: mqtt.Client):
+        "Starts gradually increasing the brightness."
+
+    @abstractmethod
+    def stop_dim(self, client: mqtt.Client):
+        "Stops gradual change of brightness."
+
+    @abstractmethod
+    def _update_state(self, client: mqtt.Client):
+        "Updates the physical state of the light depending on its virtual state."
 
     def consume_message(self, client: mqtt.Client, data):
         if "state" in data:
             new_state = payload.transform_state(data["state"])
-            self.toggled_on = new_state
+            self._toggled_on = new_state
         if "brightness" in data:
             brightness = payload.transform_brightness(data["brightness"])
-            self.set_brightness(client, brightness, update=False)
+            self._set_brightness(client, brightness, update=False)
         if "color_temp" in data:
             white = payload.transform_white_temp(data["color_temp"], "hue")
-            self.set_white_temp(client, white, update=False)
+            self._set_white_temp(client, white, update=False)
         # if "color" in data:
             # color = payload.transform_color(
             #     x=data["color"]["x"],
             #     y=data["color"]["y"],
             #     Y=data["brightness"]
             # )
-            # Checking if update is required is to exhausting.
             # self.set_color_temp(client, color, update=False)
-
-    def apply_config(self, client: mqtt.Client, cfg: LightConfig):
-        "Applies the given LightConfig."
-        trace(self.name, "apply_config")
-        self.toggled_on = cfg.is_on
-        self.set_brightness(client, cfg.brightness, update=False)
-        self.set_white_temp(client, cfg.white_temp, update=False)
-        self.set_color_temp(client, cfg.color_temp, update=False)
-        self.update_state(client)
-
-    def turn_physically_on(self, client: mqtt.Client):
-        "Unconditionally turns the light on."
-        trace(self.name, "turn_physically_on")
-        self.toggled_on = True
-        self.set_brightness(client, 1)
-        self.update_state(client)
-
-    def turn_physically_off(self, client: mqtt.Client):
-        "Unconditionally turns the light off."
-        trace(self.name, "turn_physically_off")
-        self.toggled_on = False
-        self.set_brightness(client, 0)
-        self.update_state(client)
-
-    def toggle(self, client: mqtt.Client):
-        "Virtually toggles the light."
-        trace(self.name, "toggle")
-        self.toggled_on = not self.toggled_on
-        self.update_state(client)
 
     def is_on(self) -> bool:
         """Indicates whether the abstract entity considers itself to be on.
         This can be the case even if the entity physically does not emit any light."""
         trace(self.name, "is_on")
-        return self.toggled_on
-
-    @abstractmethod
-    def update_state(self, client: mqtt.Client):
-        "Updates the physical state of the light depending on its virtual state."
-
-    def set_brightness(self, client: mqtt.Client, brightness: float, update: bool = True):
-        "Sets the brightness of the light source to the specified value if possible"
-        trace(self.name, "set_brightness")
-        info("Setting brightness to " + str(brightness))
-        self.brightness = brightness
-        if update:
-            self.update_state(client)
-
-    def set_color_temp(self, client: mqtt.Client, color: Color, update: bool = True):
-        "Sets the color to the given color"
-        trace(self.name, "set_color_temp")
-        self.color = color
-        if update:
-            self.update_state(client)
-
-    def set_white_temp(self, client: mqtt.Client, temp: float, update: bool = True):
-        "Sets the color to the given white temperature"
-        trace(self.name, "set_white_temp")
-        self.white_temp = temp
-        if update:
-            self.update_state(client)
+        return self._toggled_on
 
     def query_state(self, client: mqtt.Client):
         """
@@ -111,25 +83,50 @@ class Light(Device, ABC):
         """
         client.publish(self.get_topic(), payload.brightness(None))
 
-    def start_dim_down(self, client: mqtt.Client):
-        if self.is_dimmable():
-            client.publish(self.set_topic(), payload.start_dim_down())
+    def apply_config(self, client: mqtt.Client, cfg: LightConfig):
+        "Applies the given LightConfig."
+        trace(self.name, "apply_config")
+        self._last_cfg = self._compile_cfg()
+        self._set_brightness(client, cfg.brightness, update=False)
+        self._set_white_temp(client, cfg.white_temp, update=False)
+        self._set_color_temp(client, cfg.color_temp, update=False)
+        self._update_state(client)
 
-    def start_dim_up(self, client: mqtt.Client):
-        if self.is_dimmable():
-            client.publish(self.set_topic(), payload.start_dim_up())
+    def _compile_cfg(self) -> LightConfig:
+        return LightConfig(self._brightness, self._white_temp, self._color)
 
-    def stop_dim(self, client: mqtt.Client):
-        if self.is_dimmable():
-            client.publish(self.set_topic(), payload.stop_dim())
+    def _turn_on_gently(self, client: mqtt.Client):
+        self._toggled_on = True
+        self._set_brightness(client, 0.01, update=False)
+        self._set_white_temp(client, 0.01, update=False)
+        self._update_state(client)
 
-    @abstractmethod
-    def is_dimmable(self) -> bool:
-        "Can the light be dimmed in any way?"
+    def _turn_off(self, client: mqtt.Client):
+        self._toggled_on = False
+        self._set_brightness(client, 0)
+        self._update_state(client)
 
-    @abstractmethod
-    def is_color(self) -> bool:
-        "Determines if the light can display different colors"
+    def _set_brightness(self, client: mqtt.Client, brightness: float, update: bool = True):
+        "Sets the brightness of the light source to the specified value if possible"
+        trace(self.name, "set_brightness")
+        info("Setting brightness to " + str(brightness))
+        self._brightness = brightness
+        if update:
+            self._update_state(client)
+
+    def _set_white_temp(self, client: mqtt.Client, temp: float, update: bool = True):
+        "Sets the color to the given white temperature"
+        trace(self.name, "set_white_temp")
+        self._white_temp = temp
+        if update:
+            self._update_state(client)
+
+    def _set_color_temp(self, client: mqtt.Client, color: Color, update: bool = True):
+        "Sets the color to the given color"
+        trace(self.name, "set_color_temp")
+        self._color = color
+        if update:
+            self._update_state(client)
 
 class DimmableLight(Light):
     "A light of varying brightness."
@@ -145,13 +142,25 @@ class DimmableLight(Light):
         "Determines if the light can display different colors"
         return False
 
-    def update_state(self, client: mqtt.Client):
+    def start_dim_down(self, client: mqtt.Client):
+        "Starts gradually reducing the brightness."
+        client.publish(self.set_topic(), payload.start_dim_down())
+
+    def start_dim_up(self, client: mqtt.Client):
+        "Starts gradually reducing the brightness."
+        client.publish(self.set_topic(), payload.start_dim_up())
+
+    def stop_dim(self, client: mqtt.Client):
+        "Starts gradually reducing the brightness."
+        client.publish(self.set_topic(), payload.stop_dim())
+
+    def _update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        client.publish(self.set_topic(), payload.brightness(self.brightness))
-        if self.toggled_on:
+        if self._toggled_on:
             client.publish(self.set_topic(), payload.on)
         else:
             client.publish(self.set_topic(), payload.off)
+        client.publish(self.set_topic(), payload.brightness(self._brightness))
 
 
 class WhiteSpectrumLight(DimmableLight):
@@ -168,10 +177,10 @@ class WhiteSpectrumLight(DimmableLight):
         "Determines if the light can display different colors"
         return False
 
-    def update_state(self, client: mqtt.Client):
+    def _update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        super().update_state(client)
-        client.publish(self.set_topic(), payload.hue_color_temp(self.white_temp))
+        super()._update_state(client)
+        client.publish(self.set_topic(), payload.hue_color_temp(self._white_temp))
 
 class ColorLight(DimmableLight):
     "A light of varying color"
@@ -183,10 +192,10 @@ class ColorLight(DimmableLight):
         "Determines if the light can display different colors"
         return True
 
-    def update_state(self, client: mqtt.Client):
+    def _update_state(self, client: mqtt.Client):
         trace(self.name, "update_state")
-        super().update_state(client)
-        client.publish(self.set_topic(), payload.color(self.color))
+        super()._update_state(client)
+        client.publish(self.set_topic(), payload.color(self._color))
 
 class SimpleLight(Light):
     "A simple on-off light"
@@ -195,6 +204,13 @@ class SimpleLight(Light):
 
     def __init__(self, name: str, room: str, kind="Light"):
         super().__init__(name=name, room=room, kind=kind)
+        self.__lock = threading.Lock()
+        self.__dimming = False
+
+    def _set_brightness(self, client: mqtt.Client, brightness: float, update: bool = True):
+        "Sets the brightness of the light source to the specified value if possible"
+        with self.__lock:
+            super()._set_brightness(client, brightness, update)
 
     def is_dimmable(self) -> bool:
         "Can the light be dimmed in any way?"
@@ -204,12 +220,34 @@ class SimpleLight(Light):
         "Determines if the light can display different colors"
         return False
 
+    def pseudo_dim(self, client: mqtt.Client, factor: int):
+        "Quasi-dims the light discretely."
+        return # Check back later.
+        # while self.__dimming:
+        #     with self.__lock:
+        #         new_brightness = self._brightness + factor*payload.DEFAULT_DIMMING_SPEED
+        #         super()._set_brightness(client, new_brightness, update=True)
+        #     time.sleep(1)
+
+    def start_dim_down(self, client: mqtt.Client):
+        "Starts gradually reducing the brightness."
+        threading.Thread(target=self.pseudo_dim, args=(client, -1)).start()
+        self.__dimming = True
+
+    def start_dim_up(self, client: mqtt.Client):
+        "Starts gradually reducing the brightness."
+        threading.Thread(target=self.pseudo_dim, args=(client, +1)).start()
+        self.__dimming = True
+
+    def stop_dim(self, client: mqtt.Client):
+        "Starts gradually reducing the brightness."
+        self.__dimming = False
+
     def over_threshold(self) -> bool:
         "Returns true if the virtual brightness suggests this light should be on."
-        return self.brightness > self.BRIGHTNESS_THRESHOLD
+        return self._brightness > self.BRIGHTNESS_THRESHOLD
 
-    def update_state(self, client: mqtt.Client):
-        "Turns the light on or of depending on the virtual brightness and toggle state"
+    def _update_state(self, client: mqtt.Client):
         if self.is_on() and self.over_threshold():
             client.publish(self.set_topic(), payload.on)
         else:

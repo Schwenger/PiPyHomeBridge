@@ -44,6 +44,11 @@ class LightConfig():
         self.color_temp: Color = color_temp
         self.is_on: bool = brightness > 0
 
+    @staticmethod
+    def off() -> 'LightConfig':
+        "Off config"
+        return LightConfig(0, 0, Color("White"))
+
     def with_hue_offset(self, hue: int) -> 'LightConfig':
         "Reduces or increases brightness  and turns color (counter-)clockwise."
         self.color_temp = _offset_color_temp(self.color_temp, hue)

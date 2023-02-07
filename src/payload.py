@@ -11,7 +11,7 @@ class QoS(Enum):
     AT_LEAST_ONCE = 1
     ONCE = 0
 
-DEFAULT_TRANS = 1
+DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
 
 on: str = '{ "state": "ON" }'
@@ -52,14 +52,17 @@ def color(col: Color) -> str:
     return _json(with_transition(payload))
 
 def start_dim_down(speed: int = DEFAULT_DIMMING_SPEED) -> str:
+    "Starts gradually reducing the brightness."
     payload = { "brightness_move": -speed }
     return _json(payload)
 
 def start_dim_up(speed: int = DEFAULT_DIMMING_SPEED) -> str:
+    "Starts gradually increasing the brightness."
     payload = { "brightness_move": +speed }
     return _json(payload)
 
 def stop_dim() -> str:
+    "Stops gradually changing the brightness."
     payload = { "brightness_move": 0 }
     return _json(payload)
 

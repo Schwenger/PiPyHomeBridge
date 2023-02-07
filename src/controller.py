@@ -80,6 +80,8 @@ class Controller:
         "Handles the reception of a message"
         topic = Topic.from_str(message.topic)
         payload = json.loads(message.payload.decode("utf-8"))
+        if topic.physical_kind == "Remote":
+            print(f"@{topic.str}: {payload}")
         self.queue.put(QData.addressed(topic, payload))
 
     def refresh_periodically(self, msg_q):

@@ -23,6 +23,18 @@ class Room(ABC):
         self.hue_offset: int = 0
         self.is_on: bool = True
 
+    @abstractmethod
+    def _create_remotes(self) -> List[Remote]:
+        pass
+
+    @abstractmethod
+    def _create_lights(self) -> List[Light]:
+        pass
+
+    @abstractmethod
+    def _bias_for(self, light: Light) -> int:
+        "Defines the bias for a given light."
+
     def light_by_name(self, name: str) -> Optional[Light]:
         "Finds the light with the given name in the room."
         return next((light for light in self.lights if light.name == name), None)
@@ -51,39 +63,34 @@ class Room(ABC):
             return RoutingResult.ACCEPT
         return RoutingResult.NOT_FOUND
 
-    @abstractmethod
-    def _create_remotes(self) -> List[Remote]:
-        pass
-
-    @abstractmethod
-    def _create_lights(self) -> List[Light]:
-        pass
-
-    @abstractmethod
-    def _bias_for(self, light: Light) -> int:
-        "Defines the bias for a given light."
-
-    def refresh_lights(self, client):
+    def refresh_lights(self, client, override_on_off: bool = False):
         "Adapts the lights to the current time of day.  Should be called periodically."
         trace(name = self.name, fun = "Refresh lights")
-        self._apply_config(client, override_on_off=False)
+        self._apply_config(client, override_on_off)
+
+    def any_on(self):
+        "Returns whether at least on light is on."
+        return any(map(Light.is_on, self.lights))
 
     def toggle_lights(self, client: mqtt.Client):
         "toggles all lights"
         trace(name = self.name, fun = "toggle lights")
-        for light in self.lights:
-            light.toggle(client)
+        if self.any_on():
+            self._apply_config(client, override_on_off=True, cfg=LightConfig.off())
+        else:
+            self.refresh_lights(client, override_on_off=True)
 
     def lights_on(self, client: mqtt.Client):
         "turn all lights on"
         trace(name = self.name, fun = "lights on")
-        self._apply_config(client, override_on_off=True)
+        if not self.any_on():
+            self.refresh_lights(client, override_on_off=True)
 
     def lights_off(self, client: mqtt.Client):
         "turn all lights off"
         trace(name = self.name, fun = "lights off")
-        for light in self.lights:
-            light.turn_physically_off(client)
+        if self.any_on():
+            self._apply_config(client, override_on_off=True, cfg=LightConfig.off())
 
     def shift_color_clockwise(self, client: mqtt.Client):
         "Shift color clockwise"

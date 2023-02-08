@@ -1,48 +1,37 @@
 "Allows for altering requests based on time"
 
 import math
-from enum import Enum
 from typing import Tuple
 from datetime import datetime
 from colour import Color
-
-class Brightness(Enum):
-    "The level of dimming for any quasi-light"
-    OFF = -3
-    SUB_TWO_THIRDS = -2
-    SUB_ONE_THIRD = -1
-    NEUTRAL = 0
-    ADD_ONE_THIRD = 1
-    ADD_TWO_THIRDS = 2
-    SPOTLIGHT = 3
-
-    def apply_to(self, brightness: float) -> float:
-        "Reduces or increases the given brightness based on the dimming level."
-        factor = 1/3 * self.value
-        leeway = brightness if self.value < 0 else (1-brightness)
-        return brightness + leeway * factor
-
-    def inc(self) -> 'Brightness':
-        "Increases brightness."
-        return self.with_bias(+1)
-
-    def dec(self) -> 'Brightness':
-        "Decreases brightness."
-        return self.with_bias(-1)
-
-    def with_bias(self, bias: int) -> 'Brightness':
-        "In- or decreases brightness by the specified bias."
-        return Brightness(max(-3, min(3, self.value + bias)))
-
 
 class LightConfig():
     "A configuration of any light source."
 
     def __init__(self, brightness: float, white_temp: float, color_temp: Color):
-        self.brightness: float = brightness
-        self.white_temp: float = white_temp
-        self.color_temp: Color = color_temp
-        self.is_on: bool = brightness > 0
+        self._brightness: float = brightness
+        self._white_temp: float = white_temp
+        self._color_temp: Color = color_temp
+
+    @property
+    def brightness(self) -> float:
+        "Returns the brightness."
+        return self._brightness
+
+    @property
+    def white_temp(self) -> float:
+        "Returns the white temperature."
+        return self._white_temp
+
+    @property
+    def color(self) -> Color:
+        "Returns the color."
+        return self._color_temp
+
+    @property
+    def is_on(self) -> bool:
+        "Is config on?"
+        return self.brightness > 0
 
     @staticmethod
     def off() -> 'LightConfig':
@@ -51,24 +40,24 @@ class LightConfig():
 
     def with_hue_offset(self, hue: int) -> 'LightConfig':
         "Reduces or increases brightness  and turns color (counter-)clockwise."
-        self.color_temp = _offset_color_temp(self.color_temp, hue)
+        self._color_temp = _offset_color_temp(self._color_temp, hue)
         return self
 
-    def with_dim_level(self, dim_level: Brightness) -> 'LightConfig':
+    def with_brightness(self, brightness: float) -> 'LightConfig':
         "Sets the brightness to the specified value"
-        self.brightness = dim_level.apply_to(self.brightness)
-        self.white_temp = self.brightness
+        self._brightness = brightness
+        self._white_temp = self.brightness
         return self
 
     def purge_color(self) -> 'LightConfig':
         "Returns an identical LightConfig just with a white color."
-        self.color_temp = Color("White")
+        self._color_temp = Color("White")
         return self
 
     def purge_dimming(self) -> 'LightConfig':
         "Returns an identical LightConfig just with a max brightness."
-        self.brightness = 1
-        self.white_temp = 1
+        self._brightness = 1
+        self._white_temp = 1
         return self
 
     @staticmethod

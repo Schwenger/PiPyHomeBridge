@@ -6,22 +6,24 @@ from paho.mqtt import client as mqtt
 import lights
 from lights import Light
 from remote import Remote
-from light_config import LightConfig, Brightness
+from light_config import LightConfig
+from room_config import RoomConfig
 from log import trace
 from payload import RoutingResult, Topic
 
 class Room(ABC):
     "Abstract base class for rooms"
 
-    def __init__(self, name: str, adaptive_dimming: bool = False, colorful: bool = False):
+    def __init__(self, name: str, adaptive: bool = False, colorful: bool = False):
         self.name: str = name
         self.lights: List[Light] = self._create_lights()
         self.remotes: List[Remote] = self._create_remotes()
-        self.adaptive_dimming: bool = adaptive_dimming
-        self.colorful: bool = colorful
-        self.dim_level: Brightness = Brightness.NEUTRAL
-        self.hue_offset: int = 0
-        self.is_on: bool = True
+        self.room_config: RoomConfig = RoomConfig(
+            self.lights,
+            self._bias_for,
+            adaptive=adaptive,
+            colorful=colorful
+        )
 
     @abstractmethod
     def _create_remotes(self) -> List[Remote]:
@@ -35,11 +37,11 @@ class Room(ABC):
     def _bias_for(self, light: Light) -> int:
         "Defines the bias for a given light."
 
-    def light_by_name(self, name: str) -> Optional[Light]:
+    def _light_by_name(self, name: str) -> Optional[Light]:
         "Finds the light with the given name in the room."
         return next((light for light in self.lights if light.name == name), None)
 
-    def remote_by_name(self, name: str) -> Optional[Remote]:
+    def _remote_by_name(self, name: str) -> Optional[Remote]:
         "Finds the light with the given name in the room."
         return next((remote for remote in self.remotes if remote.name == name), None)
 
@@ -53,11 +55,11 @@ class Room(ABC):
 
     def route_message(self, client: mqtt.Client, topic: Topic, payload) -> RoutingResult:
         "Routes the message to the device based on the topic."
-        light = self.light_by_name(topic.name)
+        light = self._light_by_name(topic.name)
         if light is not None:
             light.consume_message(client, payload)
             return RoutingResult.ACCEPT
-        remote = self.remote_by_name(topic.name)
+        remote = self._remote_by_name(topic.name)
         if remote is not None:
             remote.consume_message(client, payload)
             return RoutingResult.ACCEPT
@@ -68,14 +70,14 @@ class Room(ABC):
         trace(name = self.name, fun = "Refresh lights")
         self._apply_config(client, override_on_off)
 
-    def any_on(self):
+    def _any_on(self):
         "Returns whether at least on light is on."
         return any(map(Light.is_on, self.lights))
 
     def toggle_lights(self, client: mqtt.Client):
         "toggles all lights"
         trace(name = self.name, fun = "toggle lights")
-        if self.any_on():
+        if self._any_on():
             self._apply_config(client, override_on_off=True, cfg=LightConfig.off())
         else:
             self.refresh_lights(client, override_on_off=True)
@@ -83,37 +85,37 @@ class Room(ABC):
     def lights_on(self, client: mqtt.Client):
         "turn all lights on"
         trace(name = self.name, fun = "lights on")
-        if not self.any_on():
+        if not self._any_on():
             self.refresh_lights(client, override_on_off=True)
 
     def lights_off(self, client: mqtt.Client):
         "turn all lights off"
         trace(name = self.name, fun = "lights off")
-        if self.any_on():
+        if self._any_on():
             self._apply_config(client, override_on_off=True, cfg=LightConfig.off())
 
     def shift_color_clockwise(self, client: mqtt.Client):
         "Shift color clockwise"
         trace(name = self.name, fun = "shift color clockwise")
-        self.hue_offset += 1
+        self.room_config.shift_color_clockwise()
         self.refresh_lights(client)
 
     def shift_color_counter_clockwise(self, client: mqtt.Client):
         "Shift color counter clockwise"
         trace(name = self.name, fun = "shift color counter clockwise")
-        self.hue_offset -= 1
+        self.room_config.shift_color_counter_clockwise()
         self.refresh_lights(client)
 
     def dim(self, client: mqtt.Client):
         "Dim the lights in the room"
         trace(name = self.name, fun = "dim")
-        self.dim_level = self.dim_level.dec()
+        self.room_config.dim()
         self.refresh_lights(client)
 
     def brighten(self, client: mqtt.Client):
         "Brighten the lights in the room"
         trace(name = self.name, fun = "brighten")
-        self.dim_level = self.dim_level.inc()
+        self.room_config.brighten()
         self.refresh_lights(client)
 
     def start_dim_down(self, client: mqtt.Client):
@@ -137,25 +139,25 @@ class Room(ABC):
     def enable_adaptive_dimming(self, client: mqtt.Client):
         "Enables AdaptiveDimming"
         trace(name = self.name, fun = "enable adaptive dimming")
-        self.adaptive_dimming = True
+        self.room_config.adaptive = True
         self.refresh_lights(client)
 
     def disable_adaptive_dimming(self, client: mqtt.Client):
         "Disables AdaptiveDimming"
         trace(name = self.name, fun = "disable adaptive dimming")
-        self.adaptive_dimming = False
+        self.room_config.adaptive = False
         self.refresh_lights(client)
 
     def enable_colorful(self, client: mqtt.Client):
         "Enables Colorful"
         trace(name = self.name, fun = "enable colorful")
-        self.colorful = True
+        self.room_config.colorful = True
         self.refresh_lights(client)
 
     def disable_colorful(self, client: mqtt.Client):
         "Disables Colorful"
         trace(name = self.name, fun = "disable colorful")
-        self.colorful = False
+        self.room_config.colorful = False
         self.refresh_lights(client)
 
     def _apply_config(
@@ -176,22 +178,14 @@ class Room(ABC):
         "Returns the appropriate LightConfig for the given light, time of day, and LightFlow state."
         trace(name = self.name, fun = "get config")
         cfg  = LightConfig.recommended()
-        bias = self._bias_for(light)
-        dim  = self.dim_level.with_bias(bias)
-
-        cfg  = cfg.with_dim_level(dim)
-        cfg  = cfg.with_hue_offset(self.hue_offset)
-        if not self.colorful:
-            cfg = cfg.purge_color()
-        if not self.adaptive_dimming:
-            cfg = cfg.purge_dimming()
+        cfg = self.room_config.adapt_config(light, cfg)
         return cfg
 
 class LivingRoom(Room):
     "Everything concerning the Living Room"
 
     def __init__(self):
-        super().__init__("Living Room", adaptive_dimming=True, colorful=True)
+        super().__init__("Living Room", adaptive=True, colorful=True)
 
     def _create_remotes(self):
         return [

@@ -56,13 +56,6 @@ class Controller:
         "Finds the room with the given name in the home."
         return next((room for room in self.home.rooms if room.name == name), None)
 
-    def light_by_topic(self, topic: Topic) -> Optional[Light]:
-        "Finds a light for a given topic"
-        room = self.room_by_name(topic.room)
-        if room is None:
-            return None
-        return room.light_by_name(topic.name)
-
     def route_message(self, topic: Topic, payload):
         "Routes a message to the addressee identified by the topic."
         res = self.home.route_message(self.client, topic, payload)

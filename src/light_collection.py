@@ -54,8 +54,7 @@ class LightCollection:
 
     def lights_off(self, client: mqtt.Client):
         "turn all lights off"
-        if self._any_on():
-            self._apply_config(client, override_on_off=True, cfg=LightConfig.off())
+        self._apply_config(client, override_on_off=True, cfg=LightConfig.off())
 
     def shift_color_clockwise(self, client: mqtt.Client):
         "Shift color clockwise"

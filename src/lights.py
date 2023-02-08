@@ -90,6 +90,7 @@ class Light(Device, ABC):
         self._set_brightness(client, cfg.brightness, update=False)
         self._set_white_temp(client, cfg.white_temp, update=False)
         self._set_color_temp(client, cfg.color, update=False)
+        self._toggled_on = cfg.is_on
         self._update_state(client)
 
     def _compile_cfg(self) -> LightConfig:
@@ -206,6 +207,11 @@ class SimpleLight(Light):
         super().__init__(name=name, room=room, kind=kind)
         self.__lock = threading.Lock()
         self.__dimming = False
+
+    def consume_message(self, client: mqtt.Client, data):
+        # Physical state is kinda irrelevant for simple lights because it
+        # might contradict our virtual state and offers no additional information.
+        pass
 
     def _set_brightness(self, client: mqtt.Client, brightness: float, update: bool = True):
         "Sets the brightness of the light source to the specified value if possible"

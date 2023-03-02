@@ -2,20 +2,19 @@
 
 from typing import List, Optional
 from paho.mqtt import client as mqtt
-import light
-from light import Light
+from light import Light, AbstractLight
 from remote import Remote
-from lights import Lights
-from light import AbstractLight
+from light_group import LightGroup
 from payload import Topic
 from queue_data import ApiCommand
+import light_types
 
 class Room:
     "A room."
 
-    def __init__(self, name: str, lights: Lights, remotes: List[Remote]):
+    def __init__(self, name: str, lights: LightGroup, remotes: List[Remote]):
         self.name: str = name
-        self.lights: Lights = lights
+        self.lights: LightGroup = lights
         self.remotes: List[Remote] = remotes
 
     def find_remote(self, topic: Topic) -> Optional[Remote]:
@@ -30,12 +29,12 @@ def living_room() -> Room:
     "Creates an instance of the living room."
     name = "Living Room"
     abs_lights: List[AbstractLight] = [
-        light.create_simple(    "Comfort Light",   name, kind="Outlet"),
-        light.create_dimmable(  "Uplight/Reading", name),
-        light.create_white_spec("Uplight/Main",    name),
-        light.create_color(     "Orb",             name),
+        light_types.create_simple(    "Comfort Light",   name, kind="Outlet"),
+        light_types.create_dimmable(  "Uplight/Reading", name),
+        light_types.create_white_spec("Uplight/Main",    name),
+        light_types.create_color(     "Orb",             name),
     ]
-    lights = Lights(
+    lights = LightGroup(
         abs_lights,
         adaptive=True,
         colorful=True
@@ -50,9 +49,9 @@ def office() -> Room:
     "Creates an instance of the living room."
     name = "Office"
     abs_lights: List[AbstractLight] = [
-        light.create_simple("Comfort Light", name, kind="Outlet")
+        light_types.create_simple("Comfort Light", name, kind="Outlet")
     ]
-    lights = Lights(
+    lights = LightGroup(
         abs_lights,
         adaptive=True,
         colorful=True

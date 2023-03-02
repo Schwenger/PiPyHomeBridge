@@ -5,7 +5,7 @@ from paho.mqtt import client as mqtt
 from light import LightState, AbstractLight
 import dynamic_light
 
-class Lights(AbstractLight):
+class LightGroup(AbstractLight):
     """
         A collection of abstract lights.
         Has additional configurative options like colorful mode or adaptive dimming.

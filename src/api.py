@@ -6,7 +6,7 @@ from typing import Optional
 from paho.mqtt import client as mqtt
 from colour import Color
 from rooms import Home
-from lights import Lights
+from light_group import LightGroup
 from payload import Topic
 from queue_data import ApiCommand
 
@@ -54,7 +54,7 @@ class ApiExec:
                 assert payload is not None
                 self.__set_color(topic, payload)
 
-    def __get_target(self, _topic: Topic) -> Lights:
+    def __get_target(self, _topic: Topic) -> LightGroup:
         room = self.__home.room_by_name("Living Room")
         assert room is not None
         return room.lights

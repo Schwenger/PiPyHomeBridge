@@ -1,5 +1,6 @@
 "Different types of light sources."
 
+import time
 from typing import Optional
 import threading
 from paho.mqtt import client as mqtt
@@ -34,13 +35,10 @@ class DimmableLight(Light):
 
     def update_state(self, client: mqtt.Client):
         if self.state.toggled_on:
-            print("DimmableLight: Turn on")
             client.publish(self.set_topic(), payload.on)
         else:
-            print("DimmableLight: Turn off")
             client.publish(self.set_topic(), payload.off)
         new_brightness = int(self.state.toggled_on) * self.state.brightness
-        print("DimmableLight: Setting brightness to " + str(new_brightness))
         client.publish(self.set_topic(), payload.brightness(new_brightness))
 
 
@@ -59,9 +57,7 @@ class WhiteSpectrumLight(DimmableLight):
         return False
 
     def update_state(self, client: mqtt.Client):
-        print("WhiteLight: Update State")
         super().update_state(client)
-        print("WhiteLight: Setting white to " + str(self.state.white_temp))
         client.publish(self.set_topic(), payload.hue_color_temp(self.state.white_temp))
 
 class ColorLight(DimmableLight):
@@ -75,20 +71,18 @@ class ColorLight(DimmableLight):
         return True
 
     def update_state(self, client: mqtt.Client):
-        print("ColorLight: Update State")
         super().update_state(client)
-        print("ColorLight: Setting white to " + str(self.state.color))
         client.publish(self.set_topic(), payload.color(self.state.color))
 
 class SimpleLight(Light):
     "A simple on-off light"
 
     BRIGHTNESS_THRESHOLD = 0.33
+    DIMMING_SPEED = 0.2
 
     def __init__(self, name: str, room: str, kind="Light"):
         super().__init__(name=name, room=room, kind=kind)
-        self.__lock = threading.Lock()
-        # pylint: disable=unused-private-member
+        self.__lock = threading.Lock()  # protects virtual brightness
         self.__dimming = False
 
     def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
@@ -104,30 +98,27 @@ class SimpleLight(Light):
         "Determines if the light can display different colors"
         return False
 
-    def pseudo_dim(self, _client: mqtt.Client, _factor: int):
+    def pseudo_dim(self, client: mqtt.Client, factor: int):
         "Quasi-dims the light discretely."
-        return # Check back later.
-        # while self.__dimming:
-        #     with self.__lock:
-        #         new_brightness = self._brightness + factor*payload.DEFAULT_DIMMING_SPEED
-        #         super()._set_brightness(client, new_brightness, update=True)
-        #     time.sleep(1)
+        speed = 0.2
+        while self.__dimming:
+            with self.__lock:
+                new_brightness = self.state.brightness + factor*speed*self.DIMMING_SPEED
+                super().set_brightness(client, new_brightness)
+            time.sleep(speed)
 
     def start_dim_down(self, client: mqtt.Client):
         "Starts gradually reducing the brightness."
-        threading.Thread(target=self.pseudo_dim, args=(client, -1)).start()
-        # pylint: disable=unused-private-member
         self.__dimming = True
+        threading.Thread(target=self.pseudo_dim, args=(client, -1)).start()
 
     def start_dim_up(self, client: mqtt.Client):
         "Starts gradually reducing the brightness."
-        threading.Thread(target=self.pseudo_dim, args=(client, +1)).start()
-        # pylint: disable=unused-private-member
         self.__dimming = True
+        threading.Thread(target=self.pseudo_dim, args=(client, +1)).start()
 
     def stop_dim(self, client: mqtt.Client):
         "Starts gradually reducing the brightness."
-        # pylint: disable=unused-private-member
         self.__dimming = False
 
     def over_threshold(self) -> bool:
@@ -135,12 +126,9 @@ class SimpleLight(Light):
         return self.state.brightness > self.BRIGHTNESS_THRESHOLD
 
     def update_state(self, client: mqtt.Client):
-        print("SimpleLight: Update State")
         if self.state.toggled_on and self.over_threshold():
-            print("SimpleLight: turn on")
             client.publish(self.set_topic(), payload.on)
         else:
-            print("SimpleLight: turn off")
             client.publish(self.set_topic(), payload.off)
 
 #######################################

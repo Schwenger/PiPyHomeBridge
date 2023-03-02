@@ -78,13 +78,11 @@ class LightGroup(AbstractLight):
             light.stop_dim(client)
 
     def turn_on(self, client: mqtt.Client):
-        print("Lights: Turning on")
         for light in self.lights:
             light.turn_on(client)
             self._refresh(client, light)
 
     def turn_off(self, client: mqtt.Client):
-        print("Lights: Turning off")
         for light in self.lights:
             light.turn_off(client)
 

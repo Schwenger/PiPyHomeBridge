@@ -146,7 +146,6 @@ class ConcreteLight(Device, ABC):
             Updates internal state to claim the device is toggled on.
             Also physically realizes the state if a client is given.
         """
-        print(f"ConcreteLight: virtual on: {toggled_on}")
         self._state.toggled_on = toggled_on
         if client is not None:
             self.update_state(client)
@@ -222,11 +221,9 @@ class Light(AbstractLight, ConcreteLight, ABC):
         pass  # Nothing to virtualize
 
     def turn_on(self, client: mqtt.Client):
-        print("Light: Turning on")
         self.set_toggled_on(client, True)
 
     def turn_off(self, client: mqtt.Client):
-        print("Light: Turning off")
         self.set_toggled_on(client, False)
 
     def toggle(self, client: mqtt.Client):

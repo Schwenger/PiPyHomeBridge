@@ -155,11 +155,33 @@ class Topic:
     """
     BASE = "zigbee2mqtt"
     SEP = "/"
-    def __init__(self, room: str, physical_kind: str, name: str):
-        self.room = room
-        self.physical_kind = physical_kind
+    def __init__(self,
+        device: str,
+        room: str,
+        name: str,
+    ):
         self.name = name
-        self.str = self._join([Topic.BASE, room, physical_kind, name])
+        self.device = device
+        self.room = room
+        comps: List[str] = [Topic.BASE, room, device, name]
+        self.str = self._join(comps)
+
+    # @staticmethod
+    # def __init__new(
+    #     self
+    #     device: str,
+    #     room: str,
+    #     name: str,
+    #     floor: str = "Main",
+    #     groups: Optional[List[str]] = None
+    # ):
+    #     self.name = name
+    #     self.device = device
+    #     self.room = room
+    #     self.floor = floor
+    #     self.groups = groups or []
+    #     comps: List[str] = [Topic.BASE, device, floor, room] + self.groups + [name]
+    #     self.str = self._join(comps)
 
     @staticmethod
     def _join(parts: List[str]) -> str:
@@ -173,17 +195,31 @@ class Topic:
         "Returns this topic as a get-command."
         return self.str + Topic.SEP + "get"
 
+    # @staticmethod
+    # def from_str_new(string: str) -> 'Topic':
+    #     "Creates a topic from a string.  Asserts proper format. May not be a command."
+    #     split = string.split(Topic.SEP)
+    #     assert len(split) >= 5
+    #     assert split[0] == Topic.BASE
+    #     assert split[-1] not in ["set", "get"]
+    #     device = split[1]
+    #     floor = split[2]
+    #     room = split[3]
+    #     groups = split[4:-1]
+    #     name = split[-1]
+    #     return Topic(name=name, device=device, room=room, floor=floor, groups=groups)
+
     @staticmethod
     def from_str(string: str) -> 'Topic':
         "Creates a topic from a string.  Asserts proper format. May not be a command."
         split = string.split(Topic.SEP)
+        assert len(split) >= 3
         assert split[0] == Topic.BASE
         assert split[-1] not in ["set", "get"]
-        name = Topic._join(split[3:])
-        return Topic(room=split[1], physical_kind=split[2], name=name)
+        room = split[1]
+        device = split[2]
+        name = Topic.SEP.join(split[3:])
+        return Topic(device=device, room=room, name=name)
 
-class RoutingResult(Enum):
-    "The result of a routing attempt"
-    ACCEPT = 1
-    NOT_FOUND = 2
-    REJECT = 3
+    def __str__(self):
+        return self.str

@@ -1,24 +1,33 @@
 "All things related to remotes"
 from enum import Enum
-from typing import Callable, List
-from paho.mqtt import client as mqtt
+from typing import Dict, Optional, Callable
+from queue_data import ApiCommand
 from device import Device
-import log
 
-class Button(Enum):
+class RemoteButton(Enum):
     "Abstract button class"
+    @classmethod
+    def has_value(cls, value) -> bool:
+        "Indicates if the value is a member of the enum"
+        return value in cls._value2member_map_
 
-class DimmerButtons(Button):
+class DimmerButtons(RemoteButton):
     "Enumeration of all dimmer action kinds"
-    ON = "on"
+    ON  = "on"
     OFF = "off"
     BRIGHTNESS_MOVE_UP   = "brightness_move_up"
     BRIGHTNESS_MOVE_DOWN = "brightness_move_down"
     BRIGHTNESS_STOP      = "brightness_stop"
 
-class IkeaMultiButton(Button):
+    @staticmethod
+    def from_str(str_value: str) -> RemoteButton:
+        "Creates a remote button based on the string.  Crashes if impossible"
+        return DimmerButtons(str_value)
+
+
+class IkeaMultiButton(RemoteButton):
     "Enumeration of all ikea multi remote action kinds"
-    TOGGLE                  = "toggle"
+    TOGGLE           = "toggle"
     ARR_LEFT_CLICK   = "arrow_left_click"
     ARR_LEFT_HOLD    = "arrow_left_hold"
     ARR_LEFT_RELEASE = "arrow_left_release"
@@ -32,57 +41,55 @@ class IkeaMultiButton(Button):
     BRI_UP_HOLD      = "brightness_up_hold"
     BRI_UP_RELEASE   = "brightness_up_release"
 
-class RemoteAction:
-    "Contains the constituents to a button action"
-    def __init__(self, button: Button, action: Callable):
-        self.button = button
-        self.action = action
+    @staticmethod
+    def from_str(str_value: str) -> RemoteButton:
+        "Creates a remote button based on the string.  Crashes if impossible"
+        return IkeaMultiButton(str_value)
 
 class Remote(Device):
     "Represents a remote."
-    def __init__(self, name: str, room: str, actions: List[RemoteAction]):
-        super().__init__(name=name, room=room, kind="Remote")
-        self.actions = dict(map(lambda a: (a.button.value, a.action), actions))
+    def __init__(self,
+        name: str,
+        room: str,
+        button_from_str: Callable[[str], RemoteButton],
+        actions: Dict[RemoteButton, ApiCommand]
+    ):
+        super().__init__(name=name, room=room, kind="Remote", vendor="Ikea")
+        self._button_from_str = button_from_str
+        self._actions: Dict[RemoteButton, ApiCommand] = actions
 
-    def execute_command(self, client, action):
-        "Executes a command received from the remote."
-        if action in self.actions:
-            action = self.actions[action]
-            action(client)
-
-    def consume_message(self, client: mqtt.Client, data):
-        if "action" not in data:
-            log.alert("Message to remote without action found!")
-            log.alert("Addressed to " + str(self.topic()))
-            log.alert("Payload: " + str(data))
-        self.execute_command(client, data["action"])
+    def cmd_for_action(self, action: str) -> Optional[ApiCommand]:
+        "Returns the api command corresponding to the button press if defined."
+        button = self._button_from_str(action)
+        assert button is not None
+        return self._actions[button]
 
     @staticmethod
-    def default_dimmer(room, name: str = "Dimmer"):
+    def default_dimmer(room: str, name: str = "Dimmer"):
         "Creates a default dimmer remote for a room."
-        actions = [
-            RemoteAction( DimmerButtons.ON,  room.lights_on ),
-            RemoteAction( DimmerButtons.OFF, room.lights_off ),
-            RemoteAction( DimmerButtons.BRIGHTNESS_MOVE_DOWN, room.start_dim_down ),
-            RemoteAction( DimmerButtons.BRIGHTNESS_MOVE_UP,   room.start_dim_up ),
-            RemoteAction( DimmerButtons.BRIGHTNESS_STOP,      room.stop_dim ),
-        ]
-        return Remote(name, room.name, actions)
+        actions: Dict[RemoteButton, ApiCommand] = {
+            DimmerButtons.ON:   ApiCommand.TurnOn,
+            DimmerButtons.OFF:  ApiCommand.TurnOff,
+            DimmerButtons.BRIGHTNESS_MOVE_DOWN: ApiCommand.StartDimdown,
+            DimmerButtons.BRIGHTNESS_MOVE_UP:   ApiCommand.StartDimUp,
+            DimmerButtons.BRIGHTNESS_STOP:      ApiCommand.StopDimming,
+        }
+        return Remote(name, room, DimmerButtons.from_str, actions)
 
     @staticmethod
-    def default_ikea_remote(room, name: str = "Remote"):
+    def default_ikea_remote(room: str, name: str = "Remote"):
         "Creates a default ikea remote for a room."
-        actions = [
-            RemoteAction( IkeaMultiButton.TOGGLE, room.toggle_lights ),
-            RemoteAction( IkeaMultiButton.ARR_LEFT_CLICK, room.shift_color_counter_clockwise ),
-            RemoteAction( IkeaMultiButton.ARR_RIGHT_CLICK, room.shift_color_clockwise ),
-            RemoteAction( IkeaMultiButton.ARR_LEFT_HOLD, room.disable_colorful ),
-            RemoteAction( IkeaMultiButton.ARR_RIGHT_HOLD, room.enable_colorful ),
-            RemoteAction( IkeaMultiButton.BRI_DOWN_CLICK, room.dim ),
-            RemoteAction( IkeaMultiButton.BRI_UP_CLICK, room.brighten),
-            RemoteAction( IkeaMultiButton.BRI_UP_HOLD, room.start_dim_up ),
-            RemoteAction( IkeaMultiButton.BRI_DOWN_HOLD, room.start_dim_down ),
-            RemoteAction( IkeaMultiButton.BRI_UP_RELEASE, room.stop_dim ),
-            RemoteAction( IkeaMultiButton.BRI_DOWN_RELEASE, room.stop_dim ),
-        ]
-        return Remote(name, room.name, actions)
+        actions: Dict[RemoteButton, ApiCommand] = {
+            IkeaMultiButton.TOGGLE: ApiCommand.Toggle,
+            IkeaMultiButton.ARR_LEFT_CLICK: ApiCommand.DisableDynamicDimming,
+            IkeaMultiButton.ARR_RIGHT_CLICK: ApiCommand.EnableDynamicDimming,
+            IkeaMultiButton.ARR_LEFT_HOLD: ApiCommand.DisableDynamicColor,
+            IkeaMultiButton.ARR_RIGHT_HOLD: ApiCommand.EnableDynamicColor,
+            IkeaMultiButton.BRI_UP_CLICK: ApiCommand.DimUp,
+            IkeaMultiButton.BRI_UP_HOLD: ApiCommand.StartDimUp,
+            IkeaMultiButton.BRI_UP_RELEASE: ApiCommand.StopDimming,
+            IkeaMultiButton.BRI_DOWN_CLICK: ApiCommand.DimDown,
+            IkeaMultiButton.BRI_DOWN_HOLD: ApiCommand.StartDimdown,
+            IkeaMultiButton.BRI_DOWN_RELEASE: ApiCommand.StopDimming,
+        }
+        return Remote(name, room, IkeaMultiButton.from_str, actions)

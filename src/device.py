@@ -1,8 +1,7 @@
 "Definition of devices."
 
 from enum import Enum
-from abc import ABC, abstractmethod
-from paho.mqtt import client as mqtt
+from abc import ABC
 
 class Command(Enum):
     "Different Commands"
@@ -13,10 +12,11 @@ TOPIC_BASE = "zigbee2mqtt"
 
 class Device(ABC):
     "Represents a generic device"
-    def __init__(self, name: str, room: str, kind: str):
+    def __init__(self, name: str, room: str, kind: str, vendor: str):
         self.name = name
         self.room = room
         self.kind = kind
+        self.vendor = vendor
 
     def topic(self, command: str = "") -> str:
         "Creates a topic for the device"
@@ -32,7 +32,3 @@ class Device(ABC):
     def get_topic(self) -> str:
         "Creates a set-topic for the device"
         return self.topic(Command.GET.value)
-
-    @abstractmethod
-    def consume_message(self, _client: mqtt.Client, data):
-        "Consumes a message by e.g. updating its state or issuing a response"

@@ -1,28 +1,104 @@
 """
-An API to play around with commands manually or to code a more user-friendly, python-less interface.
+The logic for executing API commands
 """
 
-import threading
+from typing import Optional
+from paho.mqtt import client as mqtt
+from colour import Color
+from rooms import Home
+from lights import Lights
 from payload import Topic
-import queue_data as QData
-import controller
+from queue_data import ApiCommand
 
-ctrl = controller.Controller()
-ctrl.client.loop_start()
+# pylint: disable=too-few-public-methods
+class ApiExec:
+    "Executes API command."
+    def __init__(self, home: Home, client: mqtt.Client):
+        self.__home = home
+        self.__client = client
 
-def loop():
-    "Loops the controller"
-    while True:
-        ctrl.loop()
+    def exec(self, topic: Topic, cmd: ApiCommand, payload: Optional[str]):
+        "Executes the specifier API command."
+        match cmd:
+            case ApiCommand.Toggle:
+                self.__toggle(topic)
+            case ApiCommand.TurnOn:
+                self.__turn_on(topic)
+            case ApiCommand.TurnOff:
+                self.__turn_off(topic)
+            case ApiCommand.DimUp:
+                self.__dim_up(topic)
+            case ApiCommand.DimDown:
+                self.__dim_down(topic)
+            case ApiCommand.StartDimUp:
+                self.__start_dim_up(topic)
+            case ApiCommand.StartDimdown:
+                self.__start_dim_down(topic)
+            case ApiCommand.StopDimming:
+                self.__stop_dimming(topic)
+            case ApiCommand.EnableDynamicDimming:
+                raise ValueError
+            case ApiCommand.DisableDynamicDimming:
+                raise ValueError
+            case ApiCommand.EnableDynamicColor:
+                raise ValueError
+            case ApiCommand.DisableDynamicColor:
+                raise ValueError
+            case ApiCommand.SetBrightness:
+                assert payload is not None
+                self.__set_brightness(topic, payload)
+            case ApiCommand.SetWhiteTemp:
+                assert payload is not None
+                self.__set_white_temp(topic, payload)
+            case ApiCommand.SetColor:
+                assert payload is not None
+                self.__set_color(topic, payload)
 
-refresh_thread = threading.Thread(target=ctrl.refresh_periodically, args=(ctrl.queue,))
-refresh_thread.start()
-ctrl_thread = threading.Thread(target=loop, args=())
-ctrl_thread.start()
+    def __get_target(self, _topic: Topic) -> Lights:
+        room = self.__home.room_by_name("Living Room")
+        assert room is not None
+        return room.lights
 
+    def __toggle(self, topic: Topic):
+        self.__get_target(topic).toggle(self.__client)
 
-def query_state(topic: Topic):
-    "Queries the state of the device with the given topic"
-    ctrl.queue.put(QData.api(cmd=QData.Cmd.QUERY, target=topic))
+    def __turn_on(self, topic: Topic):
+        print("API: Turning on")
+        self.__get_target(topic).turn_on(self.__client)
 
-ORB = Topic(room="Living Room", physical_kind="Light", name="Orb")
+    def __turn_off(self, topic: Topic):
+        print("API: Turning off")
+        self.__get_target(topic).turn_off(self.__client)
+
+    def __dim_up(self, topic: Topic):
+        self.__get_target(topic).dim_up(self.__client)
+
+    def __dim_down(self, topic: Topic):
+        self.__get_target(topic).dim_down(self.__client)
+
+    def __start_dim_up(self, topic: Topic):
+        self.__get_target(topic).start_dim_up(self.__client)
+
+    def __start_dim_down(self, topic: Topic):
+        self.__get_target(topic).start_dim_down(self.__client)
+
+    def __stop_dimming(self, topic: Topic):
+        self.__get_target(topic).stop_dim(self.__client)
+
+    def __set_brightness(self, topic: Topic, payload: str):
+        lights = self.__get_target(topic)
+        state = lights.state
+        state.brightness = int(payload)
+        lights.realize_state(self.__client, state)
+
+    def __set_white_temp(self, topic: Topic, payload: str):
+        lights = self.__get_target(topic)
+        state = lights.state
+        state.white_temp = int(payload)
+        lights.realize_state(self.__client, state)
+
+    def __set_color(self, topic: Topic, payload: str):
+        lights = self.__get_target(topic)
+        state = lights.state
+        state.color = Color(payload)
+        lights.realize_state(self.__client, state)

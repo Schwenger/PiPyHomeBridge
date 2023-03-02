@@ -71,11 +71,14 @@ class Controller:
 
     def handle_message(self, _client, _userdata, message: mqtt.MQTTMessage):
         "Handles the reception of a message"
-        topic = Topic.from_str(message.topic)
-        payload = json.loads(message.payload.decode("utf-8"))
-        if topic.physical_kind == "Remote":
-            print(f"@{topic.str}: {payload}")
-        self.queue.put(QData.addressed(topic, payload))
+        try:
+            topic = Topic.from_str(message.topic)
+            payload = json.loads(message.payload.decode("utf-8"))
+            if topic.physical_kind == "Remote":
+                print(f"@{topic.str}: {payload}")
+            self.queue.put(QData.addressed(topic, payload))
+        except Exception:
+            return
 
     def refresh_periodically(self, msg_q):
         "Periodically issues a refresh command through the queue."
@@ -84,20 +87,23 @@ class Controller:
 
     def process(self, qdata):
         "Processes data found in the queue"
-        if qdata["kind"] == QData.Kind.REFRESH:
-            for room in self.home.rooms:
-                room.refresh_lights(self.client)
-        elif qdata["kind"] == QData.Kind.ADDRESSED:
-            topic = qdata["topic"]
-            data  = qdata["data"]
-            self.route_message(topic, data)
-        elif qdata["kind"] == QData.Kind.API:
-            cmd = qdata["cmd"]
-            target = qdata["target"]
-            if cmd == QData.Cmd.QUERY:
-                light = self.find_light(target)
-                if light is not None:
-                    light.query_state(self.client)
+        try:
+            if qdata["kind"] == QData.Kind.REFRESH:
+                for room in self.home.rooms:
+                    room.refresh_lights(self.client)
+            elif qdata["kind"] == QData.Kind.ADDRESSED:
+                topic = qdata["topic"]
+                data  = qdata["data"]
+                self.route_message(topic, data)
+            elif qdata["kind"] == QData.Kind.API:
+                cmd = qdata["cmd"]
+                target = qdata["target"]
+                if cmd == QData.Cmd.QUERY:
+                    light = self.find_light(target)
+                    if light is not None:
+                        light.query_state(self.client)
+        except Exception:
+            return
 
     def loop(self):
         "Retrieves message from the queue and processes it."

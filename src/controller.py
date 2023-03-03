@@ -61,7 +61,7 @@ class Controller:
         elif qdata.kind == QDataKind.ApiAction:
             self.__handle_api_action(qdata)
         elif qdata.kind == QDataKind.Status:
-            return ValueError("Status updates not supported, yet.")
+            raise ValueError("Status updates not supported, yet.")
 
     def __handle_api_action(self, qdata: QData):
         topic = qdata.topic

@@ -1,6 +1,7 @@
 "Collecting enums."
 
 from enum import Enum
+from typing import Optional
 
 # pylint: disable="invalid-name"
 class DeviceKind(Enum):
@@ -27,7 +28,6 @@ class QoS(Enum):
     AT_LEAST_ONCE = 1
     ONCE = 0
 
-
 # pylint: disable=invalid-name
 class ApiCommand(Enum):
     "An API Command."
@@ -37,7 +37,7 @@ class ApiCommand(Enum):
     DimUp                   = 3
     DimDown                 = 4
     StartDimUp              = 5
-    StartDimdown            = 6
+    StartDimDown            = 6
     StopDimming             = 7
     EnableDynamicDimming    = 8
     DisableDynamicDimming   = 9
@@ -47,6 +47,13 @@ class ApiCommand(Enum):
     SetWhiteTemp            = 13
     SetColor                = 14
     Rename                  = 15
+
+    @staticmethod
+    def from_str(val: str) -> Optional['ApiCommand']:
+        "Creates a command from a string if possible."
+        if val not in ApiCommand._member_names_:
+            return None
+        return ApiCommand[val]
 
 # pylint: disable=invalid-name
 class QDataKind(Enum):

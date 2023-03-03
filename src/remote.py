@@ -70,7 +70,7 @@ class Remote(Device):
         actions: Dict[RemoteButton, ApiCommand] = {
             DimmerButtons.ON:   ApiCommand.TurnOn,
             DimmerButtons.OFF:  ApiCommand.TurnOff,
-            DimmerButtons.BRIGHTNESS_MOVE_DOWN: ApiCommand.StartDimdown,
+            DimmerButtons.BRIGHTNESS_MOVE_DOWN: ApiCommand.StartDimDown,
             DimmerButtons.BRIGHTNESS_MOVE_UP:   ApiCommand.StartDimUp,
             DimmerButtons.BRIGHTNESS_STOP:      ApiCommand.StopDimming,
         }
@@ -89,7 +89,7 @@ class Remote(Device):
             IkeaMultiButton.BRI_UP_HOLD: ApiCommand.StartDimUp,
             IkeaMultiButton.BRI_UP_RELEASE: ApiCommand.StopDimming,
             IkeaMultiButton.BRI_DOWN_CLICK: ApiCommand.DimDown,
-            IkeaMultiButton.BRI_DOWN_HOLD: ApiCommand.StartDimdown,
+            IkeaMultiButton.BRI_DOWN_HOLD: ApiCommand.StartDimDown,
             IkeaMultiButton.BRI_DOWN_RELEASE: ApiCommand.StopDimming,
         }
         return Remote(name, room, IkeaMultiButton.from_str, actions)

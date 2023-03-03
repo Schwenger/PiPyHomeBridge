@@ -5,7 +5,7 @@ import time
 from queue import Queue
 from controller import Controller
 import common
-# from portlistener import WebAPI
+from web_api import WebAPI
 
 if __name__ == "__main__":
     ip = common.config["mosquitto"]["ip"]
@@ -14,6 +14,6 @@ if __name__ == "__main__":
     ctrl = Controller(ip, int(port), queue)
     threading.Thread(target=ctrl.run, args=()).start()
     threading.Thread(target=ctrl.refresh_periodically, args=()).start()
-    # threading.Thread(target=WebAPI, args=(queue,)).start()
+    threading.Thread(target=WebAPI, args=(queue,)).start()
     while True:
         time.sleep(600)

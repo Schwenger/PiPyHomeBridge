@@ -1,16 +1,9 @@
 "Everything regarding payloads"
 
-from enum import Enum
 from typing import Optional
 import json
 from colour import Color
 from device import Vendor
-
-class QoS(Enum):
-    "All quality of service specifications"
-    ONLY_ONCE = 2
-    AT_LEAST_ONCE = 1
-    ONCE = 0
 
 DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40

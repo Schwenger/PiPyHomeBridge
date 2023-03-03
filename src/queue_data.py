@@ -1,17 +1,9 @@
 "Data to be put into the queue."
 
-from enum import Enum
 from typing import Optional
 from topic import Topic
 from light import LightState
-from api import ApiCommand
-
-# pylint: disable=invalid-name
-class QDataKind(Enum):
-    "Kind of a queue data"
-    Status = 2
-    ApiAction = 3
-    Refresh = 4
+from enums import QDataKind, ApiCommand
 
 class QData:
     "Data to be stored in the queue."

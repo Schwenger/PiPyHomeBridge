@@ -1,27 +1,8 @@
 "Definition of devices."
 
-from enum import Enum
 from abc import ABC
 from topic import Topic
-
-# pylint: disable="invalid-name"
-class DeviceKind(Enum):
-    "Kind of device"
-    Light = "Light"
-    Remote = "Remote"
-    Outlet = "Outlet"
-
-# pylint: disable="invalid-name"
-class Vendor(Enum):
-    "List of known vendors"
-    Ikea = "Ikea"
-    Hue = "Hue"
-    Other = "Other"
-
-class Command(Enum):
-    "Different Commands"
-    GET = "get"
-    SET = "set"
+from enums import DeviceKind, Vendor
 
 TOPIC_BASE = "zigbee2mqtt"
 

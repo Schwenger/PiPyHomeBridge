@@ -2,34 +2,14 @@
 The logic for executing API commands
 """
 
-from enum import Enum
 from typing import Optional
 from paho.mqtt import client as mqtt
 from colour import Color
-from rooms import Home
+from home import Home
 from light_group import LightGroup
 from topic import Topic
 import payload as Payload
-
-# pylint: disable=invalid-name
-class ApiCommand(Enum):
-    "An API Command."
-    Toggle                  = 0
-    TurnOn                  = 1
-    TurnOff                 = 2
-    DimUp                   = 3
-    DimDown                 = 4
-    StartDimUp              = 5
-    StartDimdown            = 6
-    StopDimming             = 7
-    EnableDynamicDimming    = 8
-    DisableDynamicDimming   = 9
-    EnableDynamicColor      = 10
-    DisableDynamicColor     = 11
-    SetBrightness           = 12
-    SetWhiteTemp            = 13
-    SetColor                = 14
-    Rename                  = 15
+from queue_data import ApiCommand
 
 # pylint: disable=too-few-public-methods
 class ApiExec:

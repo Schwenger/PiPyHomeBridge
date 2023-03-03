@@ -21,7 +21,7 @@ class LightGroup(AbstractLight):
         return LightState.average(list(map(lambda l: l.state, self.lights)))
 
     ################################################
-    ############## CONFIGURATIVE API ###############
+    ##### CONFIGURATIVE API
     ################################################
     def enable_adaptive_dimming(self):
         "Enables AdaptiveDimming"
@@ -40,7 +40,7 @@ class LightGroup(AbstractLight):
         self.colorful = False
 
     ################################################
-    ############## INFORMATIONAL API ###############
+    ##### INFORMATIONAL API
     ################################################
     def is_dimmable(self) -> bool:
         return any(map(AbstractLight.is_dimmable, self.lights))
@@ -49,7 +49,7 @@ class LightGroup(AbstractLight):
         return any(map(AbstractLight.is_color, self.lights))
 
     ################################################
-    ################ COLLECTION API ################
+    ##### COLLECTION API
     ################################################
 
     def refresh(self, client):
@@ -58,7 +58,7 @@ class LightGroup(AbstractLight):
             self._refresh(client, light)
 
     ################################################
-    ################ FUNCTIONAL API ################
+    ##### FUNCTIONAL API
     ################################################
 
     def realize_state(self, client: mqtt.Client, state: LightState):
@@ -109,11 +109,10 @@ class LightGroup(AbstractLight):
             light.dim_down(client)
 
     ################################################
-    ################## PROTECTED ###################
+    ##### PROTECTED
     ################################################
 
     def _any_on(self) -> bool:
-        "Returns whether at least on light is a color light."
         return any(map(lambda l: l.state.toggled_on, self.lights))
 
     def _refresh(self, client, light: AbstractLight):

@@ -1,9 +1,11 @@
 "Handling lights in all shapes and forms."
+import math
 from abc import ABC, abstractmethod
 from typing import Optional, List
 from paho.mqtt import client as mqtt
 from colour import Color
-from device import Device
+from device import Device, DeviceKind, Vendor
+import payload
 
 class LightState:
     "Represents the state of a light."
@@ -40,7 +42,30 @@ class LightState:
     @staticmethod
     def average(states: List['LightState']) -> 'LightState':
         "Returns a light state that roughly resembles the average light state of the given ones."
-        return states[0]
+        ons = 0
+        brightness = 0.0
+        white_temp = 0.0
+        red = 0.0
+        green = 0.0
+        blue = 0.0
+        for state in states:
+            ons += int(state.toggled_on)
+            brightness += state.brightness
+            white_temp += state.white_temp
+            red += state.color.get_red()**2
+            green += state.color.get_green()**2
+            blue += state.color.get_blue()**2
+        # pylint: disable=invalid-name
+        n = len(states)
+        red = math.sqrt(red/n)
+        green = math.sqrt(green/n)
+        blue = math.sqrt(blue/n)
+        return LightState(
+            toggled_on = ons / n >= 0.5,
+            brightness=brightness/n,
+            white_temp=white_temp/n,
+            color=Color(rgb=(red, green, blue))
+        )
 
 class AbstractLight(ABC):
     """
@@ -64,7 +89,7 @@ class AbstractLight(ABC):
         "Determines if the light can display different colors"
 
     ################################################
-    ################ FUNCTIONAL API ################
+    ##### FUNCTIONAL API
     ################################################
 
     @abstractmethod
@@ -111,7 +136,6 @@ class AbstractLight(ABC):
     def dim_down(self, client: mqtt.Client):
         "Decreases brightness"
 
-
 class ConcreteLight(Device, ABC):
     """
         Represents a concrete, physical light source, e.g. a light source
@@ -120,7 +144,12 @@ class ConcreteLight(Device, ABC):
         physical commands sent over the mqtt bridge.
     """
 
-    def __init__(self, name: str, room: str, kind: str = "Light", vendor: str = "Ikea"):
+    def __init__(self,
+        name: str,
+        room: str,
+        kind: DeviceKind = DeviceKind.Light,
+        vendor: Vendor = Vendor.Ikea
+    ):
         super().__init__(name=name, room=room, kind=kind, vendor=vendor)
         self.__state = LightState()
 
@@ -132,14 +161,6 @@ class ConcreteLight(Device, ABC):
     @abstractmethod
     def update_state(self, client: mqtt.Client):
         "Updates the physical state of the light depending on its virtual state."
-
-    def _realize_state(self, client: mqtt.Client, state: LightState):
-        "Prompts the light to realize the given light state."
-        self.set_toggled_on(None, state.toggled_on)
-        self.set_brightness(None, state.brightness)
-        self.set_white_temp(None, state.white_temp)
-        self.set_color_temp(None, state.color)
-        self.update_state(client)
 
     def set_toggled_on(self, client: Optional[mqtt.Client], toggled_on: bool):
         """
@@ -177,22 +198,29 @@ class ConcreteLight(Device, ABC):
         if client is not None:
             self.update_state(client)
 
-    #######################################
-    ################ QUERY ################
-    #######################################
-    # def query_state(self, client: mqtt.Client):
-    #     """
-    #     Queries a message containing the current brightness of the light.
-    #     Does NOT update anything in the light.
-    #     """
-    #     client.publish(self.get_topic(), payload.state(None))
+    def _realize_state(self, client: mqtt.Client, state: LightState):
+        self.set_toggled_on(None, state.toggled_on)
+        self.set_brightness(None, state.brightness)
+        self.set_white_temp(None, state.white_temp)
+        self.set_color_temp(None, state.color)
+        self.update_state(client)
 
-    # def query_brightness(self, client: mqtt.Client):
-    #     """
-    #     Queries a message containing the current brightness of the light.
-    #     Does NOT update anything in the light.
-    #     """
-    #     client.publish(self.get_topic(), payload.brightness(None))
+    #######################################
+    ##### QUERY
+    #######################################
+    def query_state(self, client: mqtt.Client):
+        """
+        Queries a message containing the current brightness of the light.
+        Does NOT update anything in the light.
+        """
+        client.publish(self.get_topic(), payload.state(None))
+
+    def query_brightness(self, client: mqtt.Client):
+        """
+        Queries a message containing the current brightness of the light.
+        Does NOT update anything in the light.
+        """
+        client.publish(self.get_topic(), payload.brightness(None))
 
 class Light(AbstractLight, ConcreteLight, ABC):
     """
@@ -209,16 +237,8 @@ class Light(AbstractLight, ConcreteLight, ABC):
         self._realize_state(client, state)
 
     ################################################
-    ################ FUNCTIONAL API ################
+    ##### FUNCTIONAL API
     ################################################
-    def start_dim_down(self, client: mqtt.Client):
-        pass  # Nothing to virtualize
-
-    def start_dim_up(self, client: mqtt.Client):
-        pass  # Nothing to virtualize
-
-    def stop_dim(self, client: mqtt.Client):
-        pass  # Nothing to virtualize
 
     def turn_on(self, client: mqtt.Client):
         self.set_toggled_on(client, True)
@@ -230,10 +250,10 @@ class Light(AbstractLight, ConcreteLight, ABC):
         self.set_toggled_on(client, not self.state.toggled_on)
 
     def shift_color_clockwise(self, client: mqtt.Client):
-        pass
+        self.state.color.hue += 0.2
 
     def shift_color_counter_clockwise(self, client: mqtt.Client):
-        pass
+        self.state.color.hue -= 0.2
 
     def dim_up(self, client: mqtt.Client):
         self.set_brightness(client, self.state.brightness + 0.2)

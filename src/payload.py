@@ -1,9 +1,10 @@
 "Everything regarding payloads"
 
 from enum import Enum
-from typing import Optional, List
+from typing import Optional
 import json
 from colour import Color
+from device import Vendor
 
 class QoS(Enum):
     "All quality of service specifications"
@@ -14,51 +15,41 @@ class QoS(Enum):
 DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
 
-on: str = '{ "state": "ON" }'
-off: str = '{ "state": "OFF" }'
-toggle: str = '{ "state": "TOGGLE" }'
-
-def _json(payload) -> str:
-    "Creates a payload."
-    return json.dumps(payload)
-
-def with_transition(payload, transition_time: Optional[int] = None):
-    "Adds a transition specification to the payload"
-    transition_time = transition_time or DEFAULT_TRANS
-    payload["transition"] = transition_time
-    return payload
-
-def state(value: Optional[str]) -> str:
+################################################
+##### SENDING
+################################################
+def state(value: Optional[bool]) -> str:
     "Creates a payload for a state change."
-    return _json(with_transition({"state" : value or ""}))
+    match value:
+        case None:  val = ""
+        case True:  val = "ON"
+        case False: val = "OFF"
+    return _json(_with_transition({"state" : val}))
 
 def brightness(value: Optional[float]) -> str:
-    "Returns a payload to set the scaled in [0,1]."
+    "Returns a payload to set or retrieve the brightness."
     if value is None:
-        return _json(with_transition({"brightness": ""}))
-    return _json(with_transition({"brightness": Bright.scaled(value)}))
+        return _json(_with_transition({"brightness": ""}))
+    return _json(_with_transition({"brightness": _Bright.scaled(value)}))
 
-def ikea_color_temp(value: float) -> str:
-    "Returns a payload to set the scaled in [0,1]."
-    return _json(with_transition({"color_temp": ColorTemp.ikea_scaled(value)}))
+def white_temp(value: Optional[float], vendor: Vendor) -> str:
+    "Returns a payload to set or retrieve the color temp."
+    if value is None:
+        return _json(_with_transition({"color_temp": ""}))
+    payload = {"color_temp": _WhiteTemp.scaled(value, vendor)}
+    return _json(_with_transition(payload))
 
-def hue_color_temp(value: float) -> str:
-    "Returns a payload to set the scaled in [0,1]."
-    return _json(with_transition({"color_temp": ColorTemp.hue_scaled(value)}))
-
-def color(col: Color) -> str:
-    "Returns a payload to set the given hex color."
+def color(col: Optional[Color], _vendor: Vendor) -> str:
+    "Returns a payload to set or retrieve the given hex color."
+    if col is None:
+        return _json(_with_transition({"color": ""}))
     payload = { "color": { "hex": col.get_hex_l() } }
-    return _json(with_transition(payload))
+    return _json(_with_transition(payload))
 
-def start_dim_down(speed: int = DEFAULT_DIMMING_SPEED) -> str:
-    "Starts gradually reducing the brightness."
-    payload = { "brightness_move": -speed }
-    return _json(payload)
-
-def start_dim_up(speed: int = DEFAULT_DIMMING_SPEED) -> str:
-    "Starts gradually increasing the brightness."
-    payload = { "brightness_move": +speed }
+def start_dim(down: bool, speed: int = DEFAULT_DIMMING_SPEED) -> str:
+    "Starts gradually reducing or increasing the brightness."
+    factor = -1 if down else 1
+    payload = { "brightness_move": factor*speed }
     return _json(payload)
 
 def stop_dim() -> str:
@@ -66,23 +57,27 @@ def stop_dim() -> str:
     payload = { "brightness_move": 0 }
     return _json(payload)
 
-def transform_brightness(val: str) -> float:
-    "Returns the white temperature as scale based on the value retrieved from the device."
-    return Bright.from_device(int(val))
+def rename(old: str, new: str) -> str:
+    "Returns a payload to rename a device."
+    payload = { "from": old, "to": new }
+    return _json(payload)
 
-def transform_state(val: str) -> bool:
+################################################
+##### READING
+################################################
+def read_brightness(val: str) -> float:
+    "Returns the white temperature as scale based on the value retrieved from the device."
+    return _Bright.from_device(int(val))
+
+def read_state(val: str) -> bool:
     "Returns the white temperature as scale based on the value retrieved from the device."
     return val == "ON"
 
-def transform_white_temp(val: str, vendor: str) -> float:
+def read_white_temp(val: str, vendor: Vendor) -> float:
     "Returns the white temperature as scale based on the value retrieved from the device."
-    if vendor == "hue":
-        return ColorTemp.hue_from_device(int(val))
-    if vendor == "ikea":
-        return ColorTemp.ikea_from_device(int(val))
-    raise ValueError(vendor)
+    return _WhiteTemp.read(int(val), vendor)
 
-def transform_color(x: float, y: float, Y: float) -> Color:
+def read_color(x: float, y: float, Y: float) -> Color:
     "Returns the color temperature based on the value retrieved from the device."
      # pylint: disable=invalid-name
     # x/y to x/y/z
@@ -100,118 +95,54 @@ def transform_color(x: float, y: float, Y: float) -> Color:
     b = 12.92*b if b <= 0.0031308 else (1.0 + 0.055) * pow(b, (1.0 / 2.4)) - 0.055
     return Color(rgb=(r, g, b))
 
-def rename(old: str, new: str) -> str:
-    "Returns a payload to rename a device."
-    return _json({
-        "from": old,
-        "to": new
-    })
+def _json(payload) -> str:
+    "Creates a payload."
+    return json.dumps(payload)
 
-class Bright:
+def _with_transition(payload, transition_time: Optional[int] = None):
+    "Adds a transition specification to the payload"
+    transition_time = transition_time or DEFAULT_TRANS
+    payload["transition"] = transition_time
+    return payload
+
+class _Bright:
     "Deals with brightness values, translates relative brightnesses into absolute values."
     max: int = 254
     min: int = 0
 
     @staticmethod
-    def scaled(scale: float) -> float:
+    def scaled(scale: float) -> int:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return Bright.max*scale
+        return int(_Bright.max*scale)
 
     @staticmethod
     def from_device(val: int) -> float:
         "Returns the scalar based on the value retrieved from the device."
-        return float(val) / Bright.max
+        return float(val) / _Bright.max
 
-class ColorTemp:
+class _WhiteTemp:
     "Deals with white color temperature"
-    ikea_max: int = 454
-    ikea_min: int = 250
-    hue_max: int = 500
-    hue_min: int = 153
-    hue_bias: int = 300
+    cfg = {
+        Vendor.Ikea: {
+            "min":  250,
+            "max":  454,
+            "diff": 454-250,
+        },
+        Vendor.Hue: {
+            "min":  153,
+            "max":  500,
+            "diff": 500-153,
+        }
+    }
 
     @staticmethod
-    def ikea_scaled(scale: float) -> float:
+    def scaled(scale: float, vendor: Vendor) -> float:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return (ColorTemp.ikea_max - ColorTemp.ikea_min)*scale
+        return _WhiteTemp.cfg[vendor]["diff"]*(1-scale) + _WhiteTemp.cfg[vendor]["min"]
 
     @staticmethod
-    def hue_scaled(scale: float) -> float:
-        "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return (ColorTemp.hue_max - ColorTemp.hue_min)*(1-scale) + ColorTemp.hue_min
-
-    @staticmethod
-    def hue_from_device(val: int) -> float:
-        "Returns the scalar based on the value retrieved from the hue device."
-        upper = ColorTemp.hue_max - ColorTemp.hue_min
-        val = val - ColorTemp.hue_min
+    def read(val: int, vendor: Vendor) -> float:
+        "Returns the scalar based on the value retrieved from the device."
+        upper = _WhiteTemp.cfg[vendor]["diff"]
+        val = val - _WhiteTemp.cfg[vendor]["min"]
         return 1-(float(val) / upper)
-
-    @staticmethod
-    def ikea_from_device(val: int) -> float:
-        "Returns the scalar based on the value retrieved from the ikea device."
-        upper = ColorTemp.ikea_max - ColorTemp.ikea_min
-        val = val - ColorTemp.ikea_min
-        return float(val) / upper
-
-class Topic:
-    """
-    Represents topics in the zigbee protocol.
-    Starts with a base, followed by a room and the name of the object.
-    Might be extended in the future.
-    """
-    BASE = "zigbee2mqtt"
-    SEP = "/"
-    def __init__(
-        self,
-        device: str,
-        room: str,
-        name: str,
-        floor: str = "Main",
-        groups: Optional[List[str]] = None
-    ):
-        self.name = name
-        self.device = device
-        self.room = room
-        self.floor = floor
-        self.groups = groups or []
-        self._comps: List[str] = [Topic.BASE, device, floor, room] + self.groups + [name]
-
-    @property
-    def string(self) -> str:
-        "Returns a string representation of the topic."
-        return self._join(self._comps)
-
-    @property
-    def without_base(self) -> str:
-        "Returns the topic omitting the base."
-        return self._join(self._comps[1:])
-
-    @staticmethod
-    def _join(parts: List[str]) -> str:
-        return "/".join(parts)
-
-    def as_set(self) -> str:
-        "Returns this topic as a set-command."
-        return self.string + Topic.SEP + "set"
-
-    def as_get(self) -> str:
-        "Returns this topic as a get-command."
-        return self.string + Topic.SEP + "get"
-
-    @staticmethod
-    def from_str(string: str) -> 'Topic':
-        "Creates a topic from a string.  Asserts proper format. May not be a command."
-        split = string.split(Topic.SEP)
-        assert len(split) >= 5
-        assert split[0] == Topic.BASE
-        assert split[-1] not in ["set", "get"]
-        device = split[1]
-        floor = split[2]
-        room = split[3]
-        groups = split[4:-1]
-        name = split[-1]
-        return Topic(name=name, device=device, room=room, floor=floor, groups=groups)
-
-    def __str__(self):
-        return self.string

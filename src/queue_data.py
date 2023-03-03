@@ -2,28 +2,9 @@
 
 from enum import Enum
 from typing import Optional
-from payload import Topic
+from topic import Topic
 from light import LightState
-
-# pylint: disable=invalid-name
-class ApiCommand(Enum):
-    "An API Command."
-    Toggle                  = 0
-    TurnOn                  = 1
-    TurnOff                 = 2
-    DimUp                   = 3
-    DimDown                 = 4
-    StartDimUp              = 5
-    StartDimdown            = 6
-    StopDimming             = 7
-    EnableDynamicDimming    = 8
-    DisableDynamicDimming   = 9
-    EnableDynamicColor      = 10
-    DisableDynamicColor     = 11
-    SetBrightness           = 12
-    SetWhiteTemp            = 13
-    SetColor                = 14
-    Rename                  = 15
+from api import ApiCommand
 
 # pylint: disable=invalid-name
 class QDataKind(Enum):

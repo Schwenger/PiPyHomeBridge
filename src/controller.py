@@ -5,7 +5,8 @@ import json
 from queue import Queue
 from paho.mqtt import client as mqtt
 from rooms import Home
-from payload import QoS, Topic
+from payload import QoS
+from topic import Topic
 from queue_data import QData, QDataKind
 from api import ApiExec
 import common
@@ -60,7 +61,7 @@ class Controller:
         elif qdata.kind == QDataKind.ApiAction:
             self.__handle_api_action(qdata)
         elif qdata.kind == QDataKind.Status:
-            ValueError("Status updates not supported, yet.")
+            return ValueError("Status updates not supported, yet.")
 
     def __handle_api_action(self, qdata: QData):
         topic = qdata.topic
@@ -87,9 +88,12 @@ class Controller:
     def __subscribe_to_remotes(self):
         "Subscribes to messages from all remotes"
         for remote in self.home.remotes():
-            (_result, _mid) = self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
+            self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
 
     def __subscribe_to_lights(self):
         "Subscribes to messages from all lights"
         for light in self.home.lights():
-            (_result, _mid) = self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)
+            # This currently works because there are no light groups, yet.
+            # Fix by having a function return physical lights from a room/group/home
+            self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)
+

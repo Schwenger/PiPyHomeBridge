@@ -2,11 +2,12 @@
 
 from typing import List, Optional
 from paho.mqtt import client as mqtt
-from light import Light, AbstractLight
+from light import AbstractLight
 from remote import Remote
 from light_group import LightGroup
-from payload import Topic
+from topic import Topic
 from queue_data import ApiCommand
+from device import DeviceKind, Vendor
 import light_types
 
 class Room:
@@ -29,10 +30,15 @@ def living_room() -> Room:
     "Creates an instance of the living room."
     name = "Living Room"
     abs_lights: List[AbstractLight] = [
-        light_types.create_simple(    "Comfort Light",   name, kind="Outlet"),
-        light_types.create_dimmable(  "Uplight/Reading", name),
-        light_types.create_white_spec("Uplight/Main",    name),
-        light_types.create_color(     "Orb",             name),
+        light_types.simple(
+            name="Comfort Light",
+            room=name,
+            vendor=Vendor.Ikea,
+            kind=DeviceKind.Outlet
+        ),
+        light_types.dimmable(name="Uplight/Reading", room=name, vendor=Vendor.Ikea),
+        light_types.white(   name="Uplight/Main",    room=name, vendor=Vendor.Hue),
+        light_types.color(   name="Orb",             room=name, vendor=Vendor.Hue),
     ]
     lights = LightGroup(
         abs_lights,
@@ -49,7 +55,12 @@ def office() -> Room:
     "Creates an instance of the living room."
     name = "Office"
     abs_lights: List[AbstractLight] = [
-        light_types.create_simple("Comfort Light", name, kind="Outlet")
+        light_types.simple(
+            name="Comfort Light",
+            room=name,
+            kind=DeviceKind.Outlet,
+            vendor=Vendor.Ikea
+        )
     ]
     lights = LightGroup(
         abs_lights,
@@ -89,24 +100,11 @@ class Home():
 
     def remotes(self) -> List[Remote]:
         "Returns all remotes in the home"
-        res = []
-        for room in self.rooms:
-            res += room.remotes
-        return res
+        return sum(map(lambda r: r.remotes, self.rooms), [])
 
-    def lights(self) -> List[Light]:
+    def lights(self) -> List[AbstractLight]:
         "Returns all lights in the home"
-        res = []
-        for room in self.rooms:
-            res += room.lights.lights
-        return res
-
-    # def find_light(self, topic: Topic) -> Optional[Light]:
-    #     "Find the device with the given topic."
-    #     for room in self.rooms:
-    #         if room.name == topic.room:
-    #             return room.find_light(topic)
-    #     return None
+        return sum(map(lambda r: r.lights.lights, self.rooms), [])
 
     def find_remote(self, topic: Topic) -> Optional[Remote]:
         "Find the device with the given topic."

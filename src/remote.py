@@ -2,7 +2,7 @@
 from enum import Enum
 from typing import Dict, Optional, Callable
 from queue_data import ApiCommand
-from device import Device
+from device import Device, DeviceKind, Vendor
 
 class RemoteButton(Enum):
     "Abstract button class"
@@ -54,7 +54,7 @@ class Remote(Device):
         button_from_str: Callable[[str], RemoteButton],
         actions: Dict[RemoteButton, ApiCommand]
     ):
-        super().__init__(name=name, room=room, kind="Remote", vendor="Ikea")
+        super().__init__(name=name, room=room, kind=DeviceKind.Remote, vendor=Vendor.Ikea)
         self._button_from_str = button_from_str
         self._actions: Dict[RemoteButton, ApiCommand] = actions
 

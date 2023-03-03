@@ -6,73 +6,7 @@ import threading
 from paho.mqtt import client as mqtt
 from light import Light
 import payload
-
-class DimmableLight(Light):
-    "A light of varying brightness."
-
-    def __init__(self, name: str, room: str, kind: str = "Light"):
-        super().__init__(name=name, room=room, kind=kind)
-
-    def is_dimmable(self) -> bool:
-        "Can the light be dimmed in any way?"
-        return True
-
-    def is_color(self) -> bool:
-        "Determines if the light can display different colors"
-        return False
-
-    def start_dim_down(self, client: mqtt.Client):
-        "Starts gradually reducing the brightness."
-        client.publish(self.set_topic(), payload.start_dim_down())
-
-    def start_dim_up(self, client: mqtt.Client):
-        "Starts gradually reducing the brightness."
-        client.publish(self.set_topic(), payload.start_dim_up())
-
-    def stop_dim(self, client: mqtt.Client):
-        "Starts gradually reducing the brightness."
-        client.publish(self.set_topic(), payload.stop_dim())
-
-    def update_state(self, client: mqtt.Client):
-        if self.state.toggled_on:
-            client.publish(self.set_topic(), payload.on)
-        else:
-            client.publish(self.set_topic(), payload.off)
-        new_brightness = int(self.state.toggled_on) * self.state.brightness
-        client.publish(self.set_topic(), payload.brightness(new_brightness))
-
-
-class WhiteSpectrumLight(DimmableLight):
-    "A light of varying brightness."
-
-    def __init__(self, name: str, room: str, kind: str = "Light"):
-        super().__init__(name=name, room=room, kind=kind)
-
-    def is_dimmable(self) -> bool:
-        "Can the light be dimmed in any way?"
-        return True
-
-    def is_color(self) -> bool:
-        "Determines if the light can display different colors"
-        return False
-
-    def update_state(self, client: mqtt.Client):
-        super().update_state(client)
-        client.publish(self.set_topic(), payload.hue_color_temp(self.state.white_temp))
-
-class ColorLight(DimmableLight):
-    "A light of varying color"
-
-    def __init__(self, name: str, room: str, kind: str = "Light"):
-        super().__init__(name=name, room=room, kind=kind)
-
-    def is_color(self) -> bool:
-        "Determines if the light can display different colors"
-        return True
-
-    def update_state(self, client: mqtt.Client):
-        super().update_state(client)
-        client.publish(self.set_topic(), payload.color(self.state.color))
+from device import DeviceKind, Vendor
 
 class SimpleLight(Light):
     "A simple on-off light"
@@ -80,26 +14,42 @@ class SimpleLight(Light):
     BRIGHTNESS_THRESHOLD = 0.33
     DIMMING_SPEED = 0.2
 
-    def __init__(self, name: str, room: str, kind="Light"):
-        super().__init__(name=name, room=room, kind=kind)
+    def __init__(self, name: str, room: str, vendor: Vendor, kind: DeviceKind = DeviceKind.Light):
+        super().__init__(name=name, room=room, kind=kind, vendor=vendor)
         self.__lock = threading.Lock()  # protects virtual brightness
         self.__dimming = False
 
     def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
-        "Sets the brightness of the light source to the specified value if possible"
         with self.__lock:
             super().set_brightness(client, brightness)
 
     def is_dimmable(self) -> bool:
-        "Can the light be dimmed in any way?"
         return False
 
     def is_color(self) -> bool:
-        "Determines if the light can display different colors"
         return False
 
-    def pseudo_dim(self, client: mqtt.Client, factor: int):
-        "Quasi-dims the light discretely."
+    def start_dim_down(self, client: mqtt.Client):
+        self.__dimming = True
+        threading.Thread(target=self.__pseudo_dim, args=(client, -1)).start()
+
+    def start_dim_up(self, client: mqtt.Client):
+        self.__dimming = True
+        threading.Thread(target=self.__pseudo_dim, args=(client, +1)).start()
+
+    def stop_dim(self, client: mqtt.Client):
+        self.__dimming = False
+
+    def update_state(self, client: mqtt.Client):
+        if self.state.toggled_on and self.__over_threshold():
+            client.publish(self.set_topic(), payload.state(True))
+        else:
+            client.publish(self.set_topic(), payload.state(False))
+
+    def __over_threshold(self) -> bool:
+        return self.state.brightness > self.BRIGHTNESS_THRESHOLD
+
+    def __pseudo_dim(self, client: mqtt.Client, factor: int):
         speed = 0.2
         while self.__dimming:
             with self.__lock:
@@ -107,46 +57,82 @@ class SimpleLight(Light):
                 super().set_brightness(client, new_brightness)
             time.sleep(speed)
 
+class DimmableLight(Light):
+    "A light of varying brightness."
+
+    def __init__(self, name: str, room: str, vendor: Vendor, kind: DeviceKind = DeviceKind.Light):
+        super().__init__(name=name, room=room, kind=kind, vendor=vendor)
+
+    def is_dimmable(self) -> bool:
+        return True
+
+    def is_color(self) -> bool:
+        return False
+
     def start_dim_down(self, client: mqtt.Client):
-        "Starts gradually reducing the brightness."
-        self.__dimming = True
-        threading.Thread(target=self.pseudo_dim, args=(client, -1)).start()
+        client.publish(self.set_topic(), payload.start_dim(down=True))
 
     def start_dim_up(self, client: mqtt.Client):
-        "Starts gradually reducing the brightness."
-        self.__dimming = True
-        threading.Thread(target=self.pseudo_dim, args=(client, +1)).start()
+        client.publish(self.set_topic(), payload.start_dim(down=False))
 
     def stop_dim(self, client: mqtt.Client):
-        "Starts gradually reducing the brightness."
-        self.__dimming = False
-
-    def over_threshold(self) -> bool:
-        "Returns true if the virtual brightness suggests this light should be on."
-        return self.state.brightness > self.BRIGHTNESS_THRESHOLD
+        client.publish(self.set_topic(), payload.stop_dim())
 
     def update_state(self, client: mqtt.Client):
-        if self.state.toggled_on and self.over_threshold():
-            client.publish(self.set_topic(), payload.on)
+        if self.state.toggled_on:
+            client.publish(self.set_topic(), payload.state(True))
         else:
-            client.publish(self.set_topic(), payload.off)
+            client.publish(self.set_topic(), payload.state(False))
+        new_brightness = int(self.state.toggled_on) * self.state.brightness
+        client.publish(self.set_topic(), payload.brightness(new_brightness))
+
+class WhiteSpectrumLight(DimmableLight):
+    "A light of varying brightness."
+
+    def __init__(self, name: str, room: str, vendor: Vendor, kind: DeviceKind = DeviceKind.Light):
+        super().__init__(name=name, room=room, kind=kind, vendor=vendor)
+
+    def is_dimmable(self) -> bool:
+        return True
+
+    def is_color(self) -> bool:
+        return False
+
+    def update_state(self, client: mqtt.Client):
+        super().update_state(client)
+        load = payload.white_temp(self.state.white_temp, vendor=self.vendor)
+        client.publish(self.set_topic(), load)
+
+class ColorLight(DimmableLight):
+    "A light of varying color"
+
+    def __init__(self, name: str, room: str, vendor: Vendor, kind: DeviceKind = DeviceKind.Light):
+        super().__init__(name=name, room=room, kind=kind, vendor=vendor)
+
+    def is_color(self) -> bool:
+        return True
+
+    def update_state(self, client: mqtt.Client):
+        super().update_state(client)
+        load = payload.color(self.state.color, self.vendor)
+        client.publish(self.set_topic(), load)
 
 #######################################
-### LIGHT CREATION
+##### LIGHT CREATION
 #######################################
 
-def create_simple(name: str, room: str, kind: str = "Light") -> SimpleLight:
+def simple(name: str, room: str, vendor: Vendor, kind: DeviceKind) -> SimpleLight:
     "Creates a simple on-off light"
-    return SimpleLight(name=name, room=room, kind=kind)
+    return SimpleLight(name=name, room=room, vendor=vendor, kind=kind)
 
-def create_dimmable(name: str, room: str) -> DimmableLight:
+def dimmable(name: str, room: str, vendor: Vendor) -> DimmableLight:
     "Creates a dimmable light"
-    return DimmableLight(name=name, room=room)
+    return DimmableLight(name=name, room=room, vendor=vendor)
 
-def create_white_spec(name: str, room: str) -> DimmableLight:
+def white(name: str, room: str, vendor: Vendor) -> DimmableLight:
     "Creates a white spectrum light"
-    return WhiteSpectrumLight(name=name, room=room)
+    return WhiteSpectrumLight(name=name, room=room, vendor=vendor)
 
-def create_color(name: str, room: str) -> ColorLight:
+def color(name: str, room: str, vendor: Vendor) -> ColorLight:
     "Creates a color light"
-    return ColorLight(name=name, room=room)
+    return ColorLight(name=name, room=room, vendor=vendor)

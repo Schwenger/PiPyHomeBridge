@@ -100,6 +100,13 @@ def transform_color(x: float, y: float, Y: float) -> Color:
     b = 12.92*b if b <= 0.0031308 else (1.0 + 0.055) * pow(b, (1.0 / 2.4)) - 0.055
     return Color(rgb=(r, g, b))
 
+def rename(old: str, new: str) -> str:
+    "Returns a payload to rename a device."
+    return _json({
+        "from": old,
+        "to": new
+    })
+
 class Bright:
     "Deals with brightness values, translates relative brightnesses into absolute values."
     max: int = 254
@@ -155,33 +162,30 @@ class Topic:
     """
     BASE = "zigbee2mqtt"
     SEP = "/"
-    def __init__(self,
+    def __init__(
+        self,
         device: str,
         room: str,
         name: str,
+        floor: str = "Main",
+        groups: Optional[List[str]] = None
     ):
         self.name = name
         self.device = device
         self.room = room
-        comps: List[str] = [Topic.BASE, room, device, name]
-        self.str = self._join(comps)
+        self.floor = floor
+        self.groups = groups or []
+        self._comps: List[str] = [Topic.BASE, device, floor, room] + self.groups + [name]
 
-    # @staticmethod
-    # def __init__new(
-    #     self
-    #     device: str,
-    #     room: str,
-    #     name: str,
-    #     floor: str = "Main",
-    #     groups: Optional[List[str]] = None
-    # ):
-    #     self.name = name
-    #     self.device = device
-    #     self.room = room
-    #     self.floor = floor
-    #     self.groups = groups or []
-    #     comps: List[str] = [Topic.BASE, device, floor, room] + self.groups + [name]
-    #     self.str = self._join(comps)
+    @property
+    def string(self) -> str:
+        "Returns a string representation of the topic."
+        return self._join(self._comps)
+
+    @property
+    def without_base(self) -> str:
+        "Returns the topic omitting the base."
+        return self._join(self._comps[1:])
 
     @staticmethod
     def _join(parts: List[str]) -> str:
@@ -189,37 +193,25 @@ class Topic:
 
     def as_set(self) -> str:
         "Returns this topic as a set-command."
-        return self.str + Topic.SEP + "set"
+        return self.string + Topic.SEP + "set"
 
     def as_get(self) -> str:
         "Returns this topic as a get-command."
-        return self.str + Topic.SEP + "get"
-
-    # @staticmethod
-    # def from_str_new(string: str) -> 'Topic':
-    #     "Creates a topic from a string.  Asserts proper format. May not be a command."
-    #     split = string.split(Topic.SEP)
-    #     assert len(split) >= 5
-    #     assert split[0] == Topic.BASE
-    #     assert split[-1] not in ["set", "get"]
-    #     device = split[1]
-    #     floor = split[2]
-    #     room = split[3]
-    #     groups = split[4:-1]
-    #     name = split[-1]
-    #     return Topic(name=name, device=device, room=room, floor=floor, groups=groups)
+        return self.string + Topic.SEP + "get"
 
     @staticmethod
     def from_str(string: str) -> 'Topic':
         "Creates a topic from a string.  Asserts proper format. May not be a command."
         split = string.split(Topic.SEP)
-        assert len(split) >= 3
+        assert len(split) >= 5
         assert split[0] == Topic.BASE
         assert split[-1] not in ["set", "get"]
-        room = split[1]
-        device = split[2]
-        name = Topic.SEP.join(split[3:])
-        return Topic(device=device, room=room, name=name)
+        device = split[1]
+        floor = split[2]
+        room = split[3]
+        groups = split[4:-1]
+        name = split[-1]
+        return Topic(name=name, device=device, room=room, floor=floor, groups=groups)
 
     def __str__(self):
-        return self.str
+        return self.string

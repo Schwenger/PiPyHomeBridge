@@ -8,6 +8,7 @@ from colour import Color
 from rooms import Home
 from light_group import LightGroup
 from payload import Topic
+import payload as Payload
 from queue_data import ApiCommand
 
 # pylint: disable=too-few-public-methods
@@ -53,6 +54,9 @@ class ApiExec:
             case ApiCommand.SetColor:
                 assert payload is not None
                 self.__set_color(topic, payload)
+            case ApiCommand.Rename:
+                assert payload is not None
+                self.__rename_device(topic, payload)
 
     def __get_target(self, _topic: Topic) -> LightGroup:
         room = self.__home.room_by_name("Living Room")
@@ -102,3 +106,8 @@ class ApiExec:
         state = lights.state
         state.color = Color(payload)
         lights.realize_state(self.__client, state)
+
+    def __rename_device(self, topic: Topic, payload: str):
+        payload = Payload.rename(topic.without_base, payload)
+        target = "zigbee2mqtt/bridge/request/device/rename"
+        self.__client.publish(target, payload=payload)

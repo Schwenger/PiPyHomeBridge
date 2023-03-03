@@ -23,6 +23,7 @@ class ApiCommand(Enum):
     SetBrightness           = 12
     SetWhiteTemp            = 13
     SetColor                = 14
+    Rename                  = 15
 
 # pylint: disable=invalid-name
 class QDataKind(Enum):

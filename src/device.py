@@ -2,6 +2,7 @@
 
 from enum import Enum
 from abc import ABC
+from payload import Topic
 
 class Command(Enum):
     "Different Commands"
@@ -17,18 +18,12 @@ class Device(ABC):
         self.room = room
         self.kind = kind
         self.vendor = vendor
-
-    def topic(self, command: str = "") -> str:
-        "Creates a topic for the device"
-        res = "/".join([TOPIC_BASE, self.room, self.kind, self.name])
-        if command != "":
-            res += "/" + command
-        return res
+        self.topic = Topic(name=self.name, room=self.room, device=self.kind)
 
     def set_topic(self) -> str:
         "Creates a set-topic for the device"
-        return self.topic(Command.SET.value)
+        return self.topic.as_set()
 
     def get_topic(self) -> str:
         "Creates a set-topic for the device"
-        return self.topic(Command.GET.value)
+        return self.topic.as_get()

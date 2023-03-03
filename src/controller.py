@@ -43,7 +43,7 @@ class Controller:
         topic = Topic.from_str(message.topic)
         payload = json.loads(message.payload.decode("utf-8"))
         if topic.device == "Remote":
-            print(f"@{topic.str}: {payload}")
+            print(f"@{topic.string}: {payload}")
         if "action" not in payload:
             # Probably status update, can even come from a remote!
             return
@@ -52,7 +52,7 @@ class Controller:
         qdata = QData.api_command(topic, cmd, None)
         self.queue.put(qdata)
 
-    def __process(self, qdata):
+    def __process(self, qdata:QData):
         "Processes data found in the queue"
         assert qdata is not None
         if qdata.kind == QDataKind.Refresh:
@@ -79,13 +79,17 @@ class Controller:
     def __subscribe_to_all(self):
         self.__subscribe_to_lights()
         self.__subscribe_to_remotes()
+        self.__subscribe_to_bridge()
+
+    def __subscribe_to_bridge(self):
+        self.client.subscribe("zigbee2mqtt/bridge/event", QoS.AT_LEAST_ONCE.value)
 
     def __subscribe_to_remotes(self):
         "Subscribes to messages from all remotes"
         for remote in self.home.remotes():
-            (_result, _mid) = self.client.subscribe(remote.topic(), QoS.AT_LEAST_ONCE.value)
+            (_result, _mid) = self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
 
     def __subscribe_to_lights(self):
         "Subscribes to messages from all lights"
         for light in self.home.lights():
-            (_result, _mid) = self.client.subscribe(light.topic(), QoS.AT_LEAST_ONCE.value)
+            (_result, _mid) = self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)

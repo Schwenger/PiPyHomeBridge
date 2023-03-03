@@ -33,7 +33,7 @@ class ApiExec:
                 self.__dim_down(topic)
             case ApiCommand.StartDimUp:
                 self.__start_dim_up(topic)
-            case ApiCommand.StartDimdown:
+            case ApiCommand.StartDimDown:
                 self.__start_dim_down(topic)
             case ApiCommand.StopDimming:
                 self.__stop_dimming(topic)

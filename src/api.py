@@ -37,22 +37,25 @@ class ApiExec:
         elif cmd == ApiCommand.StopDimming:
             self.__stop_dimming(topic)
         elif cmd == ApiCommand.EnableDynamicDimming:
-            raise ValueError
+            pass
         elif cmd == ApiCommand.DisableDynamicDimming:
-            raise ValueError
+            pass
         elif cmd == ApiCommand.EnableDynamicColor:
-            raise ValueError
+            pass
         elif cmd == ApiCommand.DisableDynamicColor:
-            raise ValueError
+            pass
         elif cmd == ApiCommand.SetBrightness:
-            assert payload is not None
-            self.__set_brightness(topic, payload)
+            pass
+            # assert payload is not None
+            # self.__set_brightness(topic, payload)
         elif cmd == ApiCommand.SetWhiteTemp:
-            assert payload is not None
-            self.__set_white_temp(topic, payload)
+            pass
+            # assert payload is not None
+            # self.__set_white_temp(topic, payload)
         elif cmd == ApiCommand.SetColor:
-            assert payload is not None
-            self.__set_color(topic, payload)
+            pass
+            # assert payload is not None
+            # self.__set_color(topic, payload)
         elif cmd == ApiCommand.Rename:
             assert payload is not None
             self.__rename_device(topic, payload)

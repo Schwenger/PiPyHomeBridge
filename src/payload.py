@@ -8,6 +8,14 @@ from device import Vendor
 DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
 
+def as_json(data):
+    "Returns the given dict in json format."
+    return _json(data)
+
+def cleanse(value: str) -> str:
+    "Cleanses a string such that it's compatible with Swift."
+    return value.replace("\"[", "[").replace("]\"", "]").replace("'", "\"")
+
 ################################################
 ##### SENDING
 ################################################

@@ -32,18 +32,26 @@ class Handler(BaseHTTPRequestHandler):
                 topic=topic,
                 command=cmd
             ))
+            self.__reply_succ()
+            return
         elif split[1] == 'query':
             query = ApiQuery.from_str(split[2])
             if query is None:
                 self.__reply_err()
                 return
-            topic = Topic.for_home()
+            topic = Topic.for_room("Living Room")
+            response_queue = Queue()
             Handler.queue.put(QData.api_query(
                 topic=topic,
                 query=query,
-                callback=lambda s: self.__query_callback(topic, query, s)
+                response=response_queue
             ))
-        self.__reply_succ()
+            self.send_response(200)
+            self.end_headers()
+            resp = response_queue.get(block=True)
+            print(resp)
+            self.wfile.write(str.encode(resp))
+            return
 
     def __reply_err(self):
         self.send_response(401)
@@ -51,10 +59,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def __reply_succ(self):
         self.send_response(200)
-        self.end_headers()
-
-    def __query_callback(self, _topic: Topic, _query: ApiQuery, s: str):
-        self.send_response(200, message=s)
         self.end_headers()
 
 def _update_handler_queue(queue: Queue):

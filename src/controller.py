@@ -5,10 +5,11 @@ import json
 from queue import Queue
 from paho.mqtt import client as mqtt
 from home import Home
-from enums import QoS
+from enums import QoS, ApiQuery
 from topic import Topic
 from queue_data import QData, QDataKind
 from api import ApiExec
+import payload
 import common
 
 config = common.config
@@ -42,18 +43,18 @@ class Controller:
     def __handle_message(self, _client, _userdata, message: mqtt.MQTTMessage):
         "Handles the reception of a message"
         topic = Topic.from_str(message.topic)
-        payload = json.loads(message.payload.decode("utf-8"))
+        data = json.loads(message.payload.decode("utf-8"))
         if topic.device_kind == "Remote":
             print(f"@{topic.string}: {payload}")
-        if "action" not in payload:
+        if "action" not in data:
             # Probably status update, can even come from a remote!
             return
-        cmd = self.home.remote_action(topic, payload["action"])
+        cmd = self.home.remote_action(topic, data["action"])
         assert cmd is not None
         qdata = QData.api_command(topic, cmd, None)
         self.queue.put(qdata)
 
-    def __process(self, qdata:QData):
+    def __process(self, qdata: QData):
         "Processes data found in the queue"
         assert qdata is not None
         if qdata.kind == QDataKind.Refresh:
@@ -62,13 +63,28 @@ class Controller:
             self.__handle_api_action(qdata)
         elif qdata.kind == QDataKind.Status:
             raise ValueError("Status updates not supported, yet.")
+        elif qdata.kind == QDataKind.ApiQuery:
+            self.__handle_query(qdata)
+        else:
+            raise ValueError("Unknown QDataKind: " + qdata.kind)
 
     def __handle_api_action(self, qdata: QData):
+        assert qdata.kind == QDataKind.ApiAction
         topic = qdata.topic
         assert topic is not None
         cmd = qdata.command
         assert cmd is not None
         self.api.exec(topic, cmd, qdata.payload)
+
+    def __handle_query(self, qdata: QData):
+        assert qdata.kind == QDataKind.ApiQuery
+        assert qdata.response is not None
+        if qdata.query == ApiQuery.Structure:
+            structure = self.home.structure()
+            data = payload.cleanse(payload.as_json(structure))
+            qdata.response.put(data)
+        else:
+            raise ValueError("Unknown ApiQuery: " + str(qdata.query))
 
     # pylint: disable=invalid-name
     def __init_client(self, ip: str, port: int) -> mqtt.Client:

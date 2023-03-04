@@ -48,3 +48,18 @@ class Home():
                 if remote.topic == topic:
                     return remote
         return None
+
+    def structure(self):
+        "Returns the structure of the home as dict of strings."
+        rooms = []
+        for room in self.rooms:
+            lights = list(map(lambda l: l.name, room.lights.lights))
+            remotes = list(map(lambda r: r.name, room.remotes))
+            rooms.append({
+                "name":     room.name,
+                "lights":   lights,
+                "remotes":  remotes,
+            })
+        return {
+            "rooms": rooms,
+        }

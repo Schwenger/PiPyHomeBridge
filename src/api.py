@@ -20,43 +20,42 @@ class ApiExec:
 
     def exec(self, topic: Topic, cmd: ApiCommand, payload: Optional[str]):
         "Executes the specifier API command."
-        match cmd:
-            case ApiCommand.Toggle:
-                self.__toggle(topic)
-            case ApiCommand.TurnOn:
-                self.__turn_on(topic)
-            case ApiCommand.TurnOff:
-                self.__turn_off(topic)
-            case ApiCommand.DimUp:
-                self.__dim_up(topic)
-            case ApiCommand.DimDown:
-                self.__dim_down(topic)
-            case ApiCommand.StartDimUp:
-                self.__start_dim_up(topic)
-            case ApiCommand.StartDimDown:
-                self.__start_dim_down(topic)
-            case ApiCommand.StopDimming:
-                self.__stop_dimming(topic)
-            case ApiCommand.EnableDynamicDimming:
-                raise ValueError
-            case ApiCommand.DisableDynamicDimming:
-                raise ValueError
-            case ApiCommand.EnableDynamicColor:
-                raise ValueError
-            case ApiCommand.DisableDynamicColor:
-                raise ValueError
-            case ApiCommand.SetBrightness:
-                assert payload is not None
-                self.__set_brightness(topic, payload)
-            case ApiCommand.SetWhiteTemp:
-                assert payload is not None
-                self.__set_white_temp(topic, payload)
-            case ApiCommand.SetColor:
-                assert payload is not None
-                self.__set_color(topic, payload)
-            case ApiCommand.Rename:
-                assert payload is not None
-                self.__rename_device(topic, payload)
+        if   cmd == ApiCommand.Toggle:
+            self.__toggle(topic)
+        elif cmd == ApiCommand.TurnOn:
+            self.__turn_on(topic)
+        elif cmd == ApiCommand.TurnOff:
+            self.__turn_off(topic)
+        elif cmd == ApiCommand.DimUp:
+            self.__dim_up(topic)
+        elif cmd == ApiCommand.DimDown:
+            self.__dim_down(topic)
+        elif cmd == ApiCommand.StartDimUp:
+            self.__start_dim_up(topic)
+        elif cmd == ApiCommand.StartDimDown:
+            self.__start_dim_down(topic)
+        elif cmd == ApiCommand.StopDimming:
+            self.__stop_dimming(topic)
+        elif cmd == ApiCommand.EnableDynamicDimming:
+            raise ValueError
+        elif cmd == ApiCommand.DisableDynamicDimming:
+            raise ValueError
+        elif cmd == ApiCommand.EnableDynamicColor:
+            raise ValueError
+        elif cmd == ApiCommand.DisableDynamicColor:
+            raise ValueError
+        elif cmd == ApiCommand.SetBrightness:
+            assert payload is not None
+            self.__set_brightness(topic, payload)
+        elif cmd == ApiCommand.SetWhiteTemp:
+            assert payload is not None
+            self.__set_white_temp(topic, payload)
+        elif cmd == ApiCommand.SetColor:
+            assert payload is not None
+            self.__set_color(topic, payload)
+        elif cmd == ApiCommand.Rename:
+            assert payload is not None
+            self.__rename_device(topic, payload)
 
     def __get_target(self, _topic: Topic) -> LightGroup:
         room = self.__home.room_by_name("Living Room")

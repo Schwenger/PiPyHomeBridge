@@ -13,10 +13,12 @@ DEFAULT_DIMMING_SPEED = 40
 ################################################
 def state(value: Optional[bool]) -> str:
     "Creates a payload for a state change."
-    match value:
-        case None:  val = ""
-        case True:  val = "ON"
-        case False: val = "OFF"
+    if value is None:
+        val = ""
+    elif value:
+        val = "ON"
+    else:
+        val = "OFF"
     return _json(_with_transition({"state" : val}))
 
 def brightness(value: Optional[float]) -> str:

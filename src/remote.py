@@ -51,10 +51,17 @@ class Remote(Device):
     def __init__(self,
         name: str,
         room: str,
+        ident: str,
         button_from_str: Callable[[str], RemoteButton],
         actions: Dict[RemoteButton, ApiCommand]
     ):
-        super().__init__(name=name, room=room, kind=DeviceKind.Remote, vendor=Vendor.Ikea)
+        super().__init__(
+            name=name,
+            room=room,
+            ident=ident,
+            kind=DeviceKind.Remote,
+            vendor=Vendor.Ikea
+        )
         self._button_from_str = button_from_str
         self._actions: Dict[RemoteButton, ApiCommand] = actions
 
@@ -65,7 +72,7 @@ class Remote(Device):
         return self._actions[button]
 
     @staticmethod
-    def default_dimmer(room: str, name: str = "Dimmer", temp = ""):
+    def default_dimmer(room: str, ident: str, name: str = "Dimmer"):
         "Creates a default dimmer remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             DimmerButtons.ON:   ApiCommand.TurnOn,
@@ -74,10 +81,16 @@ class Remote(Device):
             DimmerButtons.BRIGHTNESS_MOVE_UP:   ApiCommand.StartDimUp,
             DimmerButtons.BRIGHTNESS_STOP:      ApiCommand.StopDimming,
         }
-        return Remote(name + " " + temp, room, DimmerButtons.from_str, actions)
+        return Remote(
+            name,
+            room=room,
+            button_from_str=DimmerButtons.from_str,
+            actions=actions,
+            ident=ident
+        )
 
     @staticmethod
-    def default_ikea_remote(room: str, name: str = "Remote"):
+    def default_ikea_remote(room: str, ident: str, name: str = "Remote"):
         "Creates a default ikea remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             IkeaMultiButton.TOGGLE: ApiCommand.Toggle,
@@ -92,4 +105,10 @@ class Remote(Device):
             IkeaMultiButton.BRI_DOWN_HOLD: ApiCommand.StartDimDown,
             IkeaMultiButton.BRI_DOWN_RELEASE: ApiCommand.StopDimming,
         }
-        return Remote(name, room, IkeaMultiButton.from_str, actions)
+        return Remote(
+            name,
+            room=room,
+            button_from_str=IkeaMultiButton.from_str,
+            actions=actions,
+            ident=ident
+        )

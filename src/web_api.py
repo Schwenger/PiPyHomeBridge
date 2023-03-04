@@ -49,7 +49,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             resp = response_queue.get(block=True)
-            print(resp)
             self.wfile.write(str.encode(resp))
             return
 

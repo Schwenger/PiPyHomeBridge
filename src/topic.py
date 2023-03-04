@@ -1,6 +1,6 @@
 "Anything related to zigbee topics."
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from enums import TopicTarget, TopicCommand, DeviceKind
 
 class Topic:
@@ -16,16 +16,17 @@ class Topic:
         target: TopicTarget,
         name:   str,
         sub_names: List[str],
-        device_kind: Optional[DeviceKind] = None,
+        device_id: Optional[Tuple[DeviceKind, str]] = None,
     ):
-        assert (device_kind is not None) == (target is TopicTarget.Device)
+        assert (device_id is not None) == (target is TopicTarget.Device)
         self.target = target
         self.name = name
-        self.device_kind = device_kind
+        self.device_id = device_id
         self.sub_names = sub_names
         self._comps = [Topic.BASE, target.value] + sub_names + [name]
-        if device_kind is not None:
-            self._comps.insert(2, device_kind.value)
+        if device_id is not None:
+            self._comps.insert(2, device_id[0].value)
+            self._comps.append(device_id[1])
 
     @property
     def string(self) -> str:
@@ -55,17 +56,20 @@ class Topic:
         assert target is not None
         name = split[-1]
         groups = split[2:-1]
-        device_kind = None
+        device_id: Optional[Tuple[DeviceKind, str]] = None
         if target is TopicTarget.Device:
-            assert len(groups) >= 1
+            assert len(groups) >= 2
             device_kind = DeviceKind.from_str(groups[0])
+            ident = name
+            name = groups[-1]
             assert device_kind is not None
-            groups = groups[1:]
+            groups = groups[1:-1]
+            device_id = (device_kind, ident)
         return Topic(
             target=target,
             name=name,
             sub_names=groups,
-            device_kind=device_kind
+            device_id=device_id
         )
 
     @staticmethod
@@ -97,13 +101,18 @@ class Topic:
         )
 
     @staticmethod
-    def for_device(name: str, kind: DeviceKind, groups: List[str]) -> 'Topic':
+    def for_device(
+        name: str,
+        kind: DeviceKind,
+        ident: str,
+        groups: List[str]
+    ) -> 'Topic':
         'Creates a topic for refering to a device.'
         return Topic(
             target=TopicTarget.Device,
-            device_kind=kind,
+            device_id=(kind, ident),
             name=name,
-            sub_names=groups
+            sub_names=groups,
         )
 
     @staticmethod

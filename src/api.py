@@ -69,11 +69,9 @@ class ApiExec:
         self.__get_target(topic).toggle(self.__client)
 
     def __turn_on(self, topic: Topic):
-        print("API: Turning on")
         self.__get_target(topic).turn_on(self.__client)
 
     def __turn_off(self, topic: Topic):
-        print("API: Turning off")
         self.__get_target(topic).turn_off(self.__client)
 
     def __dim_up(self, topic: Topic):

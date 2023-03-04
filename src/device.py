@@ -8,12 +8,24 @@ TOPIC_BASE = "zigbee2mqtt"
 
 class Device(ABC):
     "Represents a generic device"
-    def __init__(self, name: str, room: str, kind: DeviceKind, vendor: Vendor):
+    def __init__(self,
+        name: str,
+        room: str,
+        kind: DeviceKind,
+        vendor: Vendor,
+        ident: str,
+    ):
         self.name = name
         self.room = room
         self.kind = kind
         self.vendor = vendor
-        self.topic = Topic.for_device(name=self.name, kind=self.kind, groups=[])
+        self.ident = ident
+        self.topic = Topic.for_device(
+            name=self.name,
+            kind=self.kind,
+            ident=self.ident,
+            groups=[]
+        )
 
     def set_topic(self) -> str:
         "Creates a set-topic for the device"

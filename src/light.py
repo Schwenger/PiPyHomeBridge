@@ -147,10 +147,11 @@ class ConcreteLight(Device, ABC):
     def __init__(self,
         name: str,
         room: str,
+        ident: str,
         kind: DeviceKind = DeviceKind.Light,
-        vendor: Vendor = Vendor.Ikea
+        vendor: Vendor = Vendor.Ikea,
     ):
-        super().__init__(name=name, room=room, kind=kind, vendor=vendor)
+        super().__init__(name=name, room=room, kind=kind, vendor=vendor, ident=ident)
         self.__state = LightState()
 
     @property

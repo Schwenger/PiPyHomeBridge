@@ -44,8 +44,6 @@ class Controller:
         "Handles the reception of a message"
         topic = Topic.from_str(message.topic)
         data = json.loads(message.payload.decode("utf-8"))
-        if topic.device_kind == "Remote":
-            print(f"@{topic.string}: {payload}")
         if "action" not in data:
             # Probably status update, can even come from a remote!
             return
@@ -104,6 +102,7 @@ class Controller:
     def __subscribe_to_remotes(self):
         "Subscribes to messages from all remotes"
         for remote in self.home.remotes():
+            print(f"Subscribing to {remote.topic.string}")
             self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
 
     def __subscribe_to_lights(self):

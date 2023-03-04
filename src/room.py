@@ -29,14 +29,30 @@ def living_room() -> Room:
     name = "Living Room"
     abs_lights: List[AbstractLight] = [
         light_types.simple(
-            name="Comfort Light LR",
+            name="Comfort Light",
             room=name,
             vendor=Vendor.Ikea,
-            kind=DeviceKind.Outlet
+            kind=DeviceKind.Outlet,
+            ident="aaaa",
         ),
-        light_types.dimmable(name="Uplight/Reading", room=name, vendor=Vendor.Ikea),
-        light_types.white(   name="Uplight/Main",    room=name, vendor=Vendor.Hue),
-        light_types.color(   name="Orb",             room=name, vendor=Vendor.Hue),
+        light_types.dimmable(
+            name="Uplight/Reading",
+            room=name,
+            vendor=Vendor.Ikea,
+            ident="aaab",
+        ),
+        light_types.white(
+            name="Uplight/Main",
+            room=name,
+            vendor=Vendor.Hue,
+            ident="aaac",
+        ),
+        light_types.color(
+            name="Orb",
+            room=name,
+            vendor=Vendor.Hue,
+            ident="aaad"
+        ),
     ]
     lights = LightGroup(
         abs_lights,
@@ -44,8 +60,8 @@ def living_room() -> Room:
         colorful=True
     )
     remotes = [
-        Remote.default_ikea_remote(name),
-        Remote.default_dimmer(name, name="Dimmer", temp= "LR")
+        Remote.default_ikea_remote(name, ident="bbbc"),
+        Remote.default_dimmer(name, name="Dimmer", ident="bbbb")
     ]
     return Room(name, lights, remotes)
 
@@ -54,10 +70,11 @@ def office() -> Room:
     name = "Office"
     abs_lights: List[AbstractLight] = [
         light_types.simple(
-            name="Comfort Light O",
+            name="Comfort Light",
             room=name,
             kind=DeviceKind.Outlet,
-            vendor=Vendor.Ikea
+            vendor=Vendor.Ikea,
+            ident="aaad",
         )
     ]
     lights = LightGroup(
@@ -66,6 +83,6 @@ def office() -> Room:
         colorful=True
     )
     remotes = [
-        Remote.default_dimmer(name, name="Dimmer", temp= "O")
+        Remote.default_dimmer(name, name="Dimmer", ident="bbbd")
     ]
     return Room(name, lights, remotes)

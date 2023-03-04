@@ -53,8 +53,14 @@ class Home():
         "Returns the structure of the home as dict of strings."
         rooms = []
         for room in self.rooms:
-            lights = list(map(lambda l: l.name, room.lights.lights))
-            remotes = list(map(lambda r: r.name, room.remotes))
+            lights = list(map(
+                lambda l: { "name": l.name, "id": l.ident },
+                room.lights.lights
+            ))
+            remotes = list(map(
+                lambda r: { "name": r.name, "id": r.ident },
+                room.remotes
+            ))
             rooms.append({
                 "name":     room.name,
                 "lights":   lights,

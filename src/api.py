@@ -89,23 +89,23 @@ class ApiExec:
     def __stop_dimming(self, topic: Topic):
         self.__get_target(topic).stop_dim(self.__client)
 
-    def __set_brightness(self, topic: Topic, payload: str):
-        lights = self.__get_target(topic)
-        state = lights.state
-        state.brightness = int(payload)
-        lights.realize_state(self.__client, state)
+    # def __set_brightness(self, topic: Topic, payload: str):
+    #     lights = self.__get_target(topic)
+    #     state = lights.state
+    #     state.brightness = int(payload)
+    #     lights.realize_state(self.__client, state)
 
-    def __set_white_temp(self, topic: Topic, payload: str):
-        lights = self.__get_target(topic)
-        state = lights.state
-        state.white_temp = int(payload)
-        lights.realize_state(self.__client, state)
+    # def __set_white_temp(self, topic: Topic, payload: str):
+    #     lights = self.__get_target(topic)
+    #     state = lights.state
+    #     state.white_temp = int(payload)
+    #     lights.realize_state(self.__client, state)
 
-    def __set_color(self, topic: Topic, payload: str):
-        lights = self.__get_target(topic)
-        state = lights.state
-        state.color = Color(payload)
-        lights.realize_state(self.__client, state)
+    # def __set_color(self, topic: Topic, payload: str):
+    #     lights = self.__get_target(topic)
+    #     state = lights.state
+    #     state.color = Color(payload)
+    #     lights.realize_state(self.__client, state)
 
     def __rename_device(self, topic: Topic, payload: str):
         payload = Payload.rename(topic.without_base, payload)

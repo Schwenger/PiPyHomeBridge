@@ -10,6 +10,13 @@ class DeviceKind(Enum):
     Remote = "Remote"
     Outlet = "Outlet"
 
+    @staticmethod
+    def from_str(val: str) -> Optional['DeviceKind']:
+        "Creates a device kind from a string if possible."
+        if val not in DeviceKind._member_names_: # pylint: disable=no-member
+            return None
+        return DeviceKind[val]
+
 # pylint: disable="invalid-name"
 class Vendor(Enum):
     "List of known vendors"
@@ -21,6 +28,13 @@ class TopicCommand(Enum):
     "Different Commands"
     GET = "get"
     SET = "set"
+
+    @staticmethod
+    def from_str(val: str) -> Optional['TopicCommand']:
+        "Creates a topic command from a string if possible."
+        if val not in TopicCommand._member_names_: # pylint: disable=no-member
+            return None
+        return TopicCommand[val]
 
 class QoS(Enum):
     "All quality of service specifications"
@@ -51,9 +65,21 @@ class ApiCommand(Enum):
     @staticmethod
     def from_str(val: str) -> Optional['ApiCommand']:
         "Creates a command from a string if possible."
-        if val not in ApiCommand._member_names_:
+        if val not in ApiCommand._member_names_: # pylint: disable=no-member
             return None
         return ApiCommand[val]
+
+# pylint: disable=invalid-name
+class ApiQuery(Enum):
+    "A query retrieved over the Api"
+    Rooms = 1
+
+    @staticmethod
+    def from_str(val: str) -> Optional['ApiQuery']:
+        "Creates a command from a string if possible."
+        if val not in ApiQuery._member_names_: # pylint: disable=no-member
+            return None
+        return ApiQuery[val]
 
 # pylint: disable=invalid-name
 class QDataKind(Enum):
@@ -61,3 +87,20 @@ class QDataKind(Enum):
     Status = 2
     ApiAction = 3
     Refresh = 4
+    ApiQuery = 5
+
+# pylint: disable=invalid-name
+class TopicTarget(Enum):
+    "Entities addressable via a topic."
+    Device = "Device"
+    Remote = "Remote"
+    Home   = "Home"
+    Room   = "Room"
+    Group  = "Group"
+
+    @staticmethod
+    def from_str(val: str) -> Optional['TopicTarget']:
+        "Creates a topic target from a string if possible."
+        if val not in TopicTarget._member_names_: # pylint: disable=no-member
+            return None
+        return TopicTarget[val]

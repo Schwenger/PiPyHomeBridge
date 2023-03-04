@@ -43,7 +43,7 @@ class Controller:
         "Handles the reception of a message"
         topic = Topic.from_str(message.topic)
         payload = json.loads(message.payload.decode("utf-8"))
-        if topic.device == "Remote":
+        if topic.device_kind == "Remote":
             print(f"@{topic.string}: {payload}")
         if "action" not in payload:
             # Probably status update, can even come from a remote!

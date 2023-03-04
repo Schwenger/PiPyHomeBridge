@@ -1,6 +1,7 @@
 "Anything related to zigbee topics."
 
-from typing import Optional, List
+from typing import List, Optional
+from enums import TopicTarget, TopicCommand, DeviceKind
 
 class Topic:
     """
@@ -12,18 +13,19 @@ class Topic:
     SEP = "/"
     def __init__(
         self,
-        device: str,
-        room: str,
-        name: str,
-        floor: str = "Main",
-        groups: Optional[List[str]] = None
+        target: TopicTarget,
+        name:   str,
+        sub_names: List[str],
+        device_kind: Optional[DeviceKind] = None,
     ):
+        assert (device_kind is not None) == (target is TopicTarget.Device)
+        self.target = target
         self.name = name
-        self.device = device
-        self.room = room
-        self.floor = floor
-        self.groups = groups or []
-        self._comps: List[str] = [Topic.BASE, device, floor, room] + self.groups + [name]
+        self.device_kind = device_kind
+        self.sub_names = sub_names
+        self._comps = [Topic.BASE, target.value] + sub_names + [name]
+        if device_kind is not None:
+            self._comps.insert(2, device_kind.value)
 
     @property
     def string(self) -> str:
@@ -35,31 +37,83 @@ class Topic:
         "Returns the topic omitting the base."
         return self._join(self._comps[1:])
 
-    @staticmethod
-    def _join(parts: List[str]) -> str:
-        return "/".join(parts)
-
     def as_set(self) -> str:
         "Returns this topic as a set-command."
-        return self.string + Topic.SEP + "set"
+        return self._join(self._comps + [TopicCommand.SET.value])
 
     def as_get(self) -> str:
         "Returns this topic as a get-command."
-        return self.string + Topic.SEP + "get"
+        return self._join(self._comps + [TopicCommand.GET.value])
 
     @staticmethod
     def from_str(string: str) -> 'Topic':
         "Creates a topic from a string.  Asserts proper format. May not be a command."
         split = string.split(Topic.SEP)
-        assert len(split) >= 5
+        assert len(split) >= 3
         assert split[0] == Topic.BASE
-        assert split[-1] not in ["set", "get"]
-        device = split[1]
-        floor = split[2]
-        room = split[3]
-        groups = split[4:-1]
+        target = TopicTarget.from_str(split[1])
+        assert target is not None
         name = split[-1]
-        return Topic(name=name, device=device, room=room, floor=floor, groups=groups)
+        groups = split[2:-1]
+        device_kind = None
+        if target is TopicTarget.Device:
+            assert len(groups) >= 1
+            device_kind = DeviceKind.from_str(groups[0])
+            assert device_kind is not None
+            groups = groups[1:]
+        return Topic(
+            target=target,
+            name=name,
+            sub_names=groups,
+            device_kind=device_kind
+        )
+
+    @staticmethod
+    def for_home() -> 'Topic':
+        'Creates a topic for refering to the home.'
+        return Topic(
+            target=TopicTarget.Home,
+            name="Home",
+            sub_names=[]
+        )
+
+    @staticmethod
+    def for_room(name: str) -> 'Topic':
+        'Creates a topic for refering to a room.'
+        return Topic(
+            target=TopicTarget.Room,
+            name=name,
+            sub_names=[]
+        )
+
+    @staticmethod
+    def for_group(hierarchie: List[str]) -> 'Topic':
+        'Creates a topic for refering to a group.'
+        assert len(hierarchie) > 0
+        return Topic(
+            target=TopicTarget.Group,
+            name=hierarchie[-1],
+            sub_names=hierarchie[:-1]
+        )
+
+    @staticmethod
+    def for_device(name: str, kind: DeviceKind, groups: List[str]) -> 'Topic':
+        'Creates a topic for refering to a device.'
+        return Topic(
+            target=TopicTarget.Device,
+            device_kind=kind,
+            name=name,
+            sub_names=groups
+        )
+
+    @staticmethod
+    def _join(parts: List[str]) -> str:
+        return "/".join(parts)
 
     def __str__(self):
         return self.string
+
+    def __eq__(self, other):
+        if not isinstance(other, Topic):
+            return NotImplemented
+        return self.string == other.string

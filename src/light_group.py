@@ -117,4 +117,5 @@ class LightGroup(AbstractLight):
 
     def _refresh(self, client, light: AbstractLight):
         target_state = dynamic_light.recommended()
-        light.realize_state(client, target_state)
+        if light.state.toggled_on and target_state.toggled_on:
+            light.realize_state(client, target_state)

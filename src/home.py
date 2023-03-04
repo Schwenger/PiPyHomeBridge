@@ -22,7 +22,6 @@ class Home():
         device = self.find_remote(remote)
         assert device is not None
         cmd = device.cmd_for_action(action)
-        print(f"Button pressed: {action}, ApiCommand: {cmd}.")
         return cmd
 
     def room_by_name(self, name: str) -> Optional[Room]:
@@ -43,8 +42,9 @@ class Home():
         return sum(map(lambda r: r.lights.lights, self.rooms), [])
 
     def find_remote(self, topic: Topic) -> Optional[Remote]:
-        "Find the device with the given topic."
+        "Find the remote with the given topic."
         for room in self.rooms:
-            if room.name == topic.room:
-                return room.find_remote(topic)
+            for remote in room.remotes:
+                if remote.topic == topic:
+                    return remote
         return None

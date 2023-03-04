@@ -65,7 +65,7 @@ class Remote(Device):
         return self._actions[button]
 
     @staticmethod
-    def default_dimmer(room: str, name: str = "Dimmer"):
+    def default_dimmer(room: str, name: str = "Dimmer", temp = ""):
         "Creates a default dimmer remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             DimmerButtons.ON:   ApiCommand.TurnOn,
@@ -74,7 +74,7 @@ class Remote(Device):
             DimmerButtons.BRIGHTNESS_MOVE_UP:   ApiCommand.StartDimUp,
             DimmerButtons.BRIGHTNESS_STOP:      ApiCommand.StopDimming,
         }
-        return Remote(name, room, DimmerButtons.from_str, actions)
+        return Remote(name + " " + temp, room, DimmerButtons.from_str, actions)
 
     @staticmethod
     def default_ikea_remote(room: str, name: str = "Remote"):

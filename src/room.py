@@ -29,7 +29,7 @@ def living_room() -> Room:
     name = "Living Room"
     abs_lights: List[AbstractLight] = [
         light_types.simple(
-            name="Comfort Light",
+            name="Comfort Light LR",
             room=name,
             vendor=Vendor.Ikea,
             kind=DeviceKind.Outlet
@@ -45,7 +45,7 @@ def living_room() -> Room:
     )
     remotes = [
         Remote.default_ikea_remote(name),
-        Remote.default_dimmer(name)
+        Remote.default_dimmer(name, name="Dimmer", temp= "LR")
     ]
     return Room(name, lights, remotes)
 
@@ -54,7 +54,7 @@ def office() -> Room:
     name = "Office"
     abs_lights: List[AbstractLight] = [
         light_types.simple(
-            name="Comfort Light",
+            name="Comfort Light O",
             room=name,
             kind=DeviceKind.Outlet,
             vendor=Vendor.Ikea
@@ -66,6 +66,6 @@ def office() -> Room:
         colorful=True
     )
     remotes = [
-        Remote.default_dimmer(name)
+        Remote.default_dimmer(name, name="Dimmer", temp= "O")
     ]
     return Room(name, lights, remotes)

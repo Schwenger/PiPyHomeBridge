@@ -13,7 +13,7 @@ class Device(ABC):
         self.room = room
         self.kind = kind
         self.vendor = vendor
-        self.topic = Topic(name=self.name, room=self.room, device=self.kind.value)
+        self.topic = Topic.for_device(name=self.name, kind=self.kind, groups=[])
 
     def set_topic(self) -> str:
         "Creates a set-topic for the device"

@@ -49,6 +49,14 @@ class Home():
                     return remote
         return None
 
+    def find_light(self, topic: Topic) -> Optional[AbstractLight]:
+        "Find the remote with the given topic."
+        for room in self.rooms:
+            for light in room.lights.lights:
+                if light.topic == topic:
+                    return light
+        return None
+
     def structure(self):
         "Returns the structure of the home as dict of strings."
         rooms = []

@@ -42,14 +42,15 @@ class Controller:
 
     def __handle_message(self, _client, _userdata, message: mqtt.MQTTMessage):
         "Handles the reception of a message"
-        topic = Topic.from_str(message.topic)
+        remote_topic = Topic.from_str(message.topic)
         data = json.loads(message.payload.decode("utf-8"))
         if "action" not in data:
             # Probably status update, can even come from a remote!
             return
-        cmd = self.home.remote_action(topic, data["action"])
-        assert cmd is not None
-        qdata = QData.api_command(topic, cmd, None)
+        remote_target = self.home.remote_action(remote_topic, data["action"])
+        assert remote_target is not None
+        (cmd, target_topic) = remote_target
+        qdata = QData.api_command(target_topic, cmd, None)
         self.queue.put(qdata)
 
     def __process(self, qdata: QData):

@@ -66,9 +66,10 @@ def living_room() -> Room:
         hierarchie=[name],
         groups=[]
     )
+    room_topic = Topic.for_room(name)
     remotes = [
-        Remote.default_ikea_remote(name, ident="bbbc"),
-        Remote.default_dimmer(name, name="Dimmer", ident="bbbb")
+        Remote.default_ikea_remote(name, controls=room_topic, ident="bbbc"),
+        Remote.default_dimmer(name, controls=room_topic, name="Dimmer", ident="bbbb")
     ]
     return Room(name, lights, remotes)
 
@@ -92,7 +93,8 @@ def office() -> Room:
         hierarchie=[name],
         groups=[]
     )
+    room_topic = Topic.for_room(name)
     remotes = [
-        Remote.default_dimmer(name, name="Dimmer", ident="bbbd")
+        Remote.default_dimmer(name, controls=room_topic, name="Dimmer", ident="bbbd")
     ]
     return Room(name, lights, remotes)

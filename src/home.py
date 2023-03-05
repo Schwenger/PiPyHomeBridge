@@ -1,6 +1,6 @@
 "Represents a home."
 
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from paho.mqtt import client as mqtt
 from room import living_room, office, Room
 from topic import Topic
@@ -23,12 +23,14 @@ class Home(Addressable):
     def topic(self) -> Topic:
         return Topic.for_home()
 
-    def remote_action(self, remote: Topic, action: str) -> Optional[ApiCommand]:
+    def remote_action(self, remote: Topic, action: str) -> Optional[Tuple[ApiCommand, Topic]]:
         "Attempts to determine the api command represented by the action of the given remote."
         device = self.find_remote(remote)
         assert device is not None
         cmd = device.cmd_for_action(action)
-        return cmd
+        if cmd is None:
+            return None
+        return (cmd, device.controls_topic)
 
     def room_by_name(self, name: str) -> Optional[Room]:
         "Finds the room with the given name in the home."

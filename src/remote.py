@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Dict, Optional, Callable
 from queue_data import ApiCommand
 from device import Device, DeviceKind, Vendor
+from topic import Topic
 
 class RemoteButton(Enum):
     "Abstract button class"
@@ -48,10 +49,12 @@ class IkeaMultiButton(RemoteButton):
 
 class Remote(Device):
     "Represents a remote."
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         room: str,
         ident: str,
+        controls_topic: Topic,
         button_from_str: Callable[[str], RemoteButton],
         actions: Dict[RemoteButton, ApiCommand]
     ):
@@ -62,6 +65,7 @@ class Remote(Device):
             kind=DeviceKind.Remote,
             vendor=Vendor.Ikea
         )
+        self.controls_topic = controls_topic
         self._button_from_str = button_from_str
         self._actions: Dict[RemoteButton, ApiCommand] = actions
 
@@ -72,7 +76,7 @@ class Remote(Device):
         return self._actions[button]
 
     @staticmethod
-    def default_dimmer(room: str, ident: str, name: str = "Dimmer"):
+    def default_dimmer(room: str, ident: str, controls: Topic, name: str = "Dimmer"):
         "Creates a default dimmer remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             DimmerButtons.ON:   ApiCommand.TurnOn,
@@ -82,15 +86,16 @@ class Remote(Device):
             DimmerButtons.BRIGHTNESS_STOP:      ApiCommand.StopDimming,
         }
         return Remote(
-            name,
+            name=name,
             room=room,
+            controls_topic=controls,
             button_from_str=DimmerButtons.from_str,
             actions=actions,
             ident=ident
         )
 
     @staticmethod
-    def default_ikea_remote(room: str, ident: str, name: str = "Remote"):
+    def default_ikea_remote(room: str, ident: str, controls: Topic, name: str = "Remote"):
         "Creates a default ikea remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             IkeaMultiButton.TOGGLE: ApiCommand.Toggle,
@@ -106,8 +111,9 @@ class Remote(Device):
             IkeaMultiButton.BRI_DOWN_RELEASE: ApiCommand.StopDimming,
         }
         return Remote(
-            name,
+            name=name,
             room=room,
+            controls_topic=controls,
             button_from_str=IkeaMultiButton.from_str,
             actions=actions,
             ident=ident

@@ -2,9 +2,9 @@
 The logic for executing API commands
 """
 
-from typing import Optional
+from typing import Dict
 from paho.mqtt import client as mqtt
-# from colour import Color
+from colour import Color
 from light_group import AbstractLight #, LightGroup
 from home import Home
 from topic import Topic
@@ -18,7 +18,7 @@ class ApiExec:
         self.__home = home
         self.__client = client
 
-    def exec(self, topic: Topic, cmd: ApiCommand, payload: Optional[str]):
+    def exec(self, topic: Topic, cmd: ApiCommand, payload: Dict[str, str]):
         "Executes the specifier API command."
         if   cmd == ApiCommand.Toggle:
             self.__toggle(topic)
@@ -45,17 +45,14 @@ class ApiExec:
         elif cmd == ApiCommand.DisableDynamicColor:
             pass
         elif cmd == ApiCommand.SetBrightness:
-            pass
-            # assert payload is not None
-            # self.__set_brightness(topic, payload)
+            assert payload is not None
+            self.__set_brightness(topic, payload)
         elif cmd == ApiCommand.SetWhiteTemp:
-            pass
-            # assert payload is not None
-            # self.__set_white_temp(topic, payload)
+            assert payload is not None
+            self.__set_white_temp(topic, payload)
         elif cmd == ApiCommand.SetColor:
-            pass
-            # assert payload is not None
-            # self.__set_color(topic, payload)
+            assert payload is not None
+            self.__set_color(topic, payload)
         elif cmd == ApiCommand.Rename:
             assert payload is not None
             self.__rename_device(topic, payload)
@@ -92,25 +89,22 @@ class ApiExec:
     def __stop_dimming(self, topic: Topic):
         self.__get_target(topic).stop_dim(self.__client)
 
-    # def __set_brightness(self, topic: Topic, payload: str):
-    #     lights = self.__get_target(topic)
-    #     state = lights.state
-    #     state.brightness = int(payload)
-    #     lights.realize_state(self.__client, state)
+    def __set_brightness(self, topic: Topic, payload: Dict[str, str]):
+        light = self.__get_target(topic)
+        brightness = float(payload["brightness"])
+        light.set_brightness(self.__client, brightness)
 
-    # def __set_white_temp(self, topic: Topic, payload: str):
-    #     lights = self.__get_target(topic)
-    #     state = lights.state
-    #     state.white_temp = int(payload)
-    #     lights.realize_state(self.__client, state)
+    def __set_white_temp(self, topic: Topic, payload: Dict[str, str]):
+        light = self.__get_target(topic)
+        white_temp = float(payload["white"])
+        light.set_white_temp(self.__client, white_temp)
 
-    # def __set_color(self, topic: Topic, payload: str):
-    #     lights = self.__get_target(topic)
-    #     state = lights.state
-    #     state.color = Color(payload)
-    #     lights.realize_state(self.__client, state)
+    def __set_color(self, topic: Topic, payload: Dict[str, str]):
+        light = self.__get_target(topic)
+        color = Color(payload["color"])
+        light.set_color_temp(self.__client, color)
 
-    def __rename_device(self, topic: Topic, payload: str):
-        payload = Payload.rename(topic.without_base, payload)
+    def __rename_device(self, topic: Topic, payload: Dict[str, str]):
+        pay = Payload.rename(topic.without_base, payload["new_name"])
         target = "zigbee2mqtt/bridge/request/device/rename"
-        self.__client.publish(target, payload=payload)
+        self.__client.publish(target, payload=pay)

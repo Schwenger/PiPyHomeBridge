@@ -1,6 +1,7 @@
 "Represents a collection of light sources."
 
-from typing import List
+from typing import List, Optional
+from colour import Color
 from paho.mqtt import client as mqtt
 from light import Light, LightState, AbstractLight
 from topic import Topic
@@ -135,6 +136,18 @@ class LightGroup(AbstractLight):
     def dim_down(self, client: mqtt.Client):
         for light in self.all_lights:
             light.dim_down(client)
+
+    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
+        for light in self.all_lights:
+            light.set_brightness(client, brightness)
+
+    def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
+        for light in self.all_lights:
+            light.set_white_temp(client, temp)
+
+    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
+        for light in self.all_lights:
+            light.set_color_temp(client, color)
 
     ################################################
     ##### PROTECTED

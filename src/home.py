@@ -73,7 +73,11 @@ class Home(Addressable):
         "Returns the structure of the home as dict of strings."
         def group_structure(group: LightGroup):
             single = list(map(
-                lambda l: { "name": l.name, "id": l.ident },
+                lambda l: {
+                    "name": l.name,
+                    "id": l.ident,
+                    "topic": l.topic.string
+                },
                 room.lights.single_lights
             ))
             return {
@@ -84,7 +88,7 @@ class Home(Addressable):
         rooms = []
         for room in self.rooms:
             remotes = list(map(
-                lambda r: { "name": r.name, "id": r.ident },
+                lambda r: { "name": r.name, "id": r.ident, "topic": r.topic.string },
                 room.remotes
             ))
             rooms.append({

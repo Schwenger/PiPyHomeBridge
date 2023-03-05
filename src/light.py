@@ -136,6 +136,27 @@ class AbstractLight(Addressable, ABC):
     def dim_down(self, client: mqtt.Client):
         "Decreases brightness"
 
+    @abstractmethod
+    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
+        """
+            Updates internal state to claim the devices emits the given brightness.
+            Also physically realizes the state if a client is given.
+        """
+
+    @abstractmethod
+    def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
+        """
+            Updates internal state to claim the device emits the given white color temperature.
+            Also physically realizes the state if a client is given.
+        """
+
+    @abstractmethod
+    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
+        """
+            Updates internal state to claim the device emits the given color.
+            Also physically realizes the state if a client is given.
+        """
+
 class ConcreteLight(Device, ABC):
     """
         Represents a concrete, physical light source, e.g. a light source
@@ -196,6 +217,7 @@ class ConcreteLight(Device, ABC):
             Also physically realizes the state if a client is given.
         """
         self._state.color = color
+        print(f"Changing color to: {color}")
         if client is not None:
             self.update_state(client)
 

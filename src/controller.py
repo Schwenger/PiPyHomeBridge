@@ -50,7 +50,7 @@ class Controller:
         remote_target = self.home.remote_action(remote_topic, data["action"])
         assert remote_target is not None
         (cmd, target_topic) = remote_target
-        qdata = QData.api_command(target_topic, cmd, None)
+        qdata = QData.api_command(target_topic, cmd, payload={ })
         self.queue.put(qdata)
 
     def __process(self, qdata: QData):

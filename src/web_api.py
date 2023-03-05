@@ -1,7 +1,7 @@
 "Bla"
 import time
 import urllib.parse as url
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 from socketserver import TCPServer
 from http.server import BaseHTTPRequestHandler
 from queue import Queue
@@ -14,18 +14,22 @@ class Handler(BaseHTTPRequestHandler):
 
     queue: Optional[Queue] = None
 
-    def __parse_path(self) -> Optional[Tuple[str, str, Topic]]:
+    def __parse_path(self) -> Optional[Tuple[str, str, Dict[str, str]]]:
         parsed = url.urlparse(self.path)
         split = parsed.path.split('/')
         if len(split) != 3 or split[0] != '':
+            print("Length of path is not 3 or the first entry is not empty.")
             return None
         kind = split[1]
         command = split[2]
         query = url.parse_qs(parsed.query)
         if "topic" not in query or len(query["topic"]) == 0:
+            print(f"Query: {query}")
             return None
-        topic_str = query["topic"][0]
-        return (kind, command, Topic.from_str(topic_str))
+        payload: Dict[str, str] = { }
+        for key, values in query.items():
+            payload[key] = values[0]
+        return (kind, command, payload)
 
     # pylint: disable=invalid-name
     def do_GET(self):
@@ -36,9 +40,10 @@ class Handler(BaseHTTPRequestHandler):
             print("Parsing failed.")
             self.__reply_err()
             return
-        (kind, command, topic) = parsed
+        (kind, command, query) = parsed
+        topic = Topic.from_str(query["topic"])
         if kind == 'command':
-            self.__handle_command(command=command, topic=topic)
+            self.__handle_command(command=command, topic=topic, payload=query)
             return
         if kind == 'query':
             self.__handle_query(query_str=command, topic=topic)
@@ -72,7 +77,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(str.encode(resp))
         return
 
-    def __handle_command(self, command: str, topic: Optional[Topic]):
+    def __handle_command(self, command: str, topic: Optional[Topic], payload: Dict[str, str]):
         cmd = ApiCommand.from_str(command)
         if cmd is None:
             print("Cannot determine cmd")
@@ -83,7 +88,8 @@ class Handler(BaseHTTPRequestHandler):
         Handler.queue.put(QData(
             kind=QDataKind.ApiAction,
             topic=topic,
-            command=cmd
+            command=cmd,
+            payload=payload
         ))
         print("Success")
         self.__reply_succ()

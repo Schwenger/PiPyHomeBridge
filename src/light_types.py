@@ -3,8 +3,9 @@
 import time
 from typing import Optional
 import threading
+from colour import Color
 from paho.mqtt import client as mqtt
-from light import Light
+from light import Light, ConcreteLight
 import payload
 from device import DeviceKind, Vendor
 
@@ -28,6 +29,13 @@ class SimpleLight(Light):
     def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
         with self.__lock:
             super().set_brightness(client, brightness)
+
+    def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
+        ConcreteLight.set_white_temp(self, client, temp)
+
+    # pylint: disable=redefined-outer-name
+    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
+        ConcreteLight.set_color_temp(self, client, color)
 
     def is_dimmable(self) -> bool:
         return False
@@ -80,6 +88,16 @@ class DimmableLight(Light):
 
     def is_color(self) -> bool:
         return False
+
+    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
+        ConcreteLight.set_brightness(self, client, brightness)
+
+    def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
+        ConcreteLight.set_white_temp(self, client, temp)
+
+    # pylint: disable=redefined-outer-name
+    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
+        ConcreteLight.set_color_temp(self, client, color)
 
     def start_dim_down(self, client: mqtt.Client):
         client.publish(self.set_topic(), payload.start_dim(down=True))

@@ -1,4 +1,5 @@
 "Bla"
+import time
 import urllib.parse as url
 from typing import Optional, Tuple
 from socketserver import TCPServer
@@ -22,7 +23,6 @@ class Handler(BaseHTTPRequestHandler):
         command = split[2]
         query = url.parse_qs(parsed.query)
         if "topic" not in query or len(query["topic"]) == 0:
-            print("second crit")
             return None
         topic_str = query["topic"][0]
         return (kind, command, Topic.from_str(topic_str))
@@ -73,8 +73,6 @@ class Handler(BaseHTTPRequestHandler):
         return
 
     def __handle_command(self, command: str, topic: Optional[Topic]):
-        print("Handling a command")
-        print(command)
         cmd = ApiCommand.from_str(command)
         if cmd is None:
             print("Cannot determine cmd")
@@ -99,5 +97,12 @@ class WebAPI:
     "Represents the web api of the smart home"
     def __init__(self, queue: Queue):
         _update_handler_queue(queue)
-        httpd = TCPServer(("", 8088), Handler)
-        httpd.serve_forever()
+        for retry in range(10):
+            try:
+                httpd = TCPServer(("", 8088), Handler)
+                httpd.serve_forever()
+            except OSError as ose:
+                print(f"Failed attempt to bind socket. Retry: {retry}.")
+                if retry == 9:
+                    raise ose
+            time.sleep(1)

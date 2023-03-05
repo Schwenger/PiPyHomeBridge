@@ -6,9 +6,11 @@ from room import living_room, office, Room
 from topic import Topic
 from enums import ApiCommand
 from remote import Remote
-from light import AbstractLight
+from light import AbstractLight, Light
+from light_group import LightGroup
+from device import Addressable
 
-class Home():
+class Home(Addressable):
     "Collection of rooms"
 
     def __init__(self):
@@ -16,6 +18,10 @@ class Home():
             living_room(),
             office()
         ]
+
+    @property
+    def topic(self) -> Topic:
+        return Topic.for_home()
 
     def remote_action(self, remote: Topic, action: str) -> Optional[ApiCommand]:
         "Attempts to determine the api command represented by the action of the given remote."
@@ -37,9 +43,9 @@ class Home():
         "Returns all remotes in the home"
         return sum(map(lambda r: r.remotes, self.rooms), [])
 
-    def lights(self) -> List[AbstractLight]:
+    def flatten_lights(self) -> List[Light]:
         "Returns all lights in the home"
-        return sum(map(lambda r: r.lights.lights, self.rooms), [])
+        return sum(map(lambda r: r.lights.flatten_lights(), self.rooms), [])
 
     def find_remote(self, topic: Topic) -> Optional[Remote]:
         "Find the remote with the given topic."
@@ -49,29 +55,39 @@ class Home():
                     return remote
         return None
 
-    def find_light(self, topic: Topic) -> Optional[AbstractLight]:
-        "Find the remote with the given topic."
+    def find_light(self, topic: Topic) -> Optional[Light]:
+        "Find the light with the given topic."
         for room in self.rooms:
-            for light in room.lights.lights:
+            for light in room.lights.flatten_lights():
                 if light.topic == topic:
                     return light
         return None
 
+    def find_abstract_light(self, topic: Topic) -> Optional[AbstractLight]:
+        "Find the abstract light, so a light or a group for the topic."
+        raise NotImplementedError
+
     def structure(self):
         "Returns the structure of the home as dict of strings."
+        def group_structure(group: LightGroup):
+            single = list(map(
+                lambda l: { "name": l.name, "id": l.ident },
+                room.lights.single_lights
+            ))
+            return {
+                "name": group.name,
+                "singleLights": single,
+                "groups": list(map(group_structure, group.groups)),
+            }
         rooms = []
         for room in self.rooms:
-            lights = list(map(
-                lambda l: { "name": l.name, "id": l.ident },
-                room.lights.lights
-            ))
             remotes = list(map(
                 lambda r: { "name": r.name, "id": r.ident },
                 room.remotes
             ))
             rooms.append({
                 "name":     room.name,
-                "lights":   lights,
+                "lights":   group_structure(room.lights),
                 "remotes":  remotes,
             })
         return {

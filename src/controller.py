@@ -107,7 +107,7 @@ class Controller:
 
     def __subscribe_to_lights(self):
         "Subscribes to messages from all lights"
-        for light in self.home.lights():
+        for light in self.home.flatten_lights():
             # This currently works because there are no light groups, yet.
             # Fix by having a function return physical lights from a room/group/home
             self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)

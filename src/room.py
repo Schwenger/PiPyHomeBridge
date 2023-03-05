@@ -1,20 +1,24 @@
 "Rooms"
 
 from typing import List, Optional
-from light import AbstractLight
+from light import Light
 from remote import Remote
 from light_group import LightGroup
 from topic import Topic
-from device import DeviceKind, Vendor
+from device import DeviceKind, Vendor, Addressable
 import light_types
 
-class Room:
+class Room(Addressable):
     "A room."
 
     def __init__(self, name: str, lights: LightGroup, remotes: List[Remote]):
         self.name: str = name
         self.lights: LightGroup = lights
         self.remotes: List[Remote] = remotes
+
+    @property
+    def topic(self) -> Topic:
+        return Topic.for_room(self.name)
 
     def find_remote(self, topic: Topic) -> Optional[Remote]:
         "Find the device with the given topic."
@@ -27,7 +31,7 @@ class Room:
 def living_room() -> Room:
     "Creates an instance of the living room."
     name = "Living Room"
-    abs_lights: List[AbstractLight] = [
+    lights_list: List[Light] = [
         light_types.simple(
             name="Comfort Light",
             room=name,
@@ -55,9 +59,12 @@ def living_room() -> Room:
         ),
     ]
     lights = LightGroup(
-        abs_lights,
+        name="Main",
+        single_lights = lights_list,
         adaptive=True,
-        colorful=True
+        colorful=True,
+        hierarchie=[name],
+        groups=[]
     )
     remotes = [
         Remote.default_ikea_remote(name, ident="bbbc"),
@@ -68,7 +75,7 @@ def living_room() -> Room:
 def office() -> Room:
     "Creates an instance of the living room."
     name = "Office"
-    abs_lights: List[AbstractLight] = [
+    lights_list: List[Light] = [
         light_types.simple(
             name="Comfort Light",
             room=name,
@@ -78,9 +85,12 @@ def office() -> Room:
         )
     ]
     lights = LightGroup(
-        abs_lights,
+        name="Main",
+        single_lights=lights_list,
         adaptive=True,
-        colorful=True
+        colorful=True,
+        hierarchie=[name],
+        groups=[]
     )
     remotes = [
         Remote.default_dimmer(name, name="Dimmer", ident="bbbd")

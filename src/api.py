@@ -4,9 +4,9 @@ The logic for executing API commands
 
 from typing import Optional
 from paho.mqtt import client as mqtt
-from colour import Color
+# from colour import Color
+from light_group import AbstractLight #, LightGroup
 from home import Home
-from light_group import LightGroup, AbstractLight
 from topic import Topic
 import payload as Payload
 from queue_data import ApiCommand

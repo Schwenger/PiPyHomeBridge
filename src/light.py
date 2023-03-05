@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from paho.mqtt import client as mqtt
 from colour import Color
-from device import Device, DeviceKind, Vendor
+from device import Device, DeviceKind, Vendor, Addressable
 import payload
 
 class LightState:
@@ -67,7 +67,7 @@ class LightState:
             color=Color(rgb=(red, green, blue))
         )
 
-class AbstractLight(ABC):
+class AbstractLight(Addressable, ABC):
     """
         Carries the informational and function API of light sources.
     """

@@ -217,7 +217,6 @@ class ConcreteLight(Device, ABC):
             Also physically realizes the state if a client is given.
         """
         self._state.color = color
-        print(f"Changing color to: {color}")
         if client is not None:
             self.update_state(client)
 

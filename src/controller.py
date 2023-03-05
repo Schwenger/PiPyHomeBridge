@@ -31,6 +31,7 @@ class Controller:
     def run(self):
         "Retrieves message from the queue and processes it."
         self.client.loop_start()
+        self.queue.put(QData.refresh())
         while True:
             self.__process(self.queue.get(block=True))
 
@@ -81,6 +82,18 @@ class Controller:
         if qdata.query == ApiQuery.Structure:
             structure = self.home.structure()
             data = payload.cleanse(payload.as_json(structure))
+            qdata.response.put(data)
+        elif qdata.query == ApiQuery.LightState:
+            assert qdata.topic is not None
+            light = self.home.find_light(topic=qdata.topic)
+            assert light is not None
+            print(light.topic.string)
+            print(light)
+            state = {
+                "brightness": light.state.brightness,
+                "hexColor": str(light.state.color.get_hex_l())
+            }
+            data = payload.cleanse(payload.as_json(state))
             qdata.response.put(data)
         else:
             raise ValueError("Unknown ApiQuery: " + str(qdata.query))

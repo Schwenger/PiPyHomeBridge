@@ -72,7 +72,8 @@ class ApiCommand(Enum):
 # pylint: disable=invalid-name
 class ApiQuery(Enum):
     "A query retrieved over the Api"
-    Structure = 1
+    Structure  = 1
+    LightState = 2
 
     @staticmethod
     def from_str(val: str) -> Optional['ApiQuery']:

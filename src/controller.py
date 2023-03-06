@@ -11,6 +11,7 @@ from queue_data import QData, QDataKind
 from api import ApiExec
 import payload
 import common
+from log import alert
 
 config = common.config
 IP   = common.config['mosquitto']['ip']
@@ -33,7 +34,13 @@ class Controller:
         self.client.loop_start()
         self.queue.put(QData.refresh())
         while True:
-            self.__process(self.queue.get(block=True))
+            try:
+                qdata: QData = self.queue.get(block=True)
+                self.__process(qdata)
+            except HomeBaseError as e:
+                if common.config["crash_on_error"]:
+                    raise e
+                alert(str(e))
 
     def refresh_periodically(self):
         "Periodically issues a refresh command through the queue."
@@ -90,7 +97,8 @@ class Controller:
                 raise HomeBaseError.LightNotFound
             state = {
                 "brightness": light.state.brightness,
-                "hexColor": str(light.state.color.get_hex_l())
+                "hexColor": str(light.state.color.get_hex_l()),
+                "toggledOn": str(light.state.toggled_on)
             }
             data = payload.cleanse(payload.as_json(state))
             qdata.response.put(data)
@@ -115,7 +123,6 @@ class Controller:
     def __subscribe_to_remotes(self):
         "Subscribes to messages from all remotes"
         for remote in self.home.remotes():
-            print(f"Subscribing to {remote.topic.string}")
             self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
 
     def __subscribe_to_lights(self):

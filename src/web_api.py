@@ -8,6 +8,8 @@ from queue import Queue
 from enums import ApiCommand, ApiQuery, HomeBaseError
 from queue_data import QData, QDataKind
 from topic import Topic
+import common
+from log import alert
 
 class Handler(BaseHTTPRequestHandler):
     "Handles web requests and issues the required commands over the queue."
@@ -35,19 +37,25 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         "Handles GET requests."
         print("GET: " + self.path)
-        parsed = self.__parse_path()
-        if parsed is None:
-            print("Parsing failed.")
-            self.__reply_err()
-            return
-        (kind, command, query) = parsed
-        topic = Topic.from_str(query["topic"])
-        if kind == 'command':
-            self.__handle_command(command=command, topic=topic, payload=query)
-            return
-        if kind == 'query':
-            self.__handle_query(query_str=command, topic=topic)
-            return
+        try:
+            parsed = self.__parse_path()
+            if parsed is None:
+                print("Parsing failed.")
+                self.__reply_err()
+                return
+            (kind, command, query) = parsed
+            topic = Topic.from_str(query["topic"])
+            print("Command targets " + topic.string)
+            if kind == 'command':
+                self.__handle_command(command=command, topic=topic, payload=query)
+                return
+            if kind == 'query':
+                self.__handle_query(query_str=command, topic=topic)
+                return
+        except HomeBaseError as e:
+            if common.config["crash_on_error"]:
+                raise e
+            alert(str(e))
 
     def __reply_err(self):
         self.send_response(401)
@@ -57,14 +65,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
 
-    def __handle_query(self, query_str: str, topic: Optional[Topic]):
+    def __handle_query(self, query_str: str, topic: Topic):
         if Handler.queue is None:
             raise HomeBaseError.Unreachable
         query = ApiQuery.from_str(query_str)
         if query is None:
             self.__reply_err()
             return
-        topic = topic or Topic.for_room("Living Room")
         response_queue = Queue()
         Handler.queue.put(QData.api_query(
             topic=topic,
@@ -73,12 +80,12 @@ class Handler(BaseHTTPRequestHandler):
         ))
         self.send_response(200)
         self.end_headers()
-        resp = response_queue.get(block=True)
+        resp = response_queue.get(block=True, timeout=3)
         print(resp)
         self.wfile.write(str.encode(resp))
         return
 
-    def __handle_command(self, command: str, topic: Optional[Topic], payload: Dict[str, str]):
+    def __handle_command(self, command: str, topic: Topic, payload: Dict[str, str]):
         if Handler.queue is None:
             raise HomeBaseError.Unreachable
         cmd = ApiCommand.from_str(command)
@@ -86,7 +93,6 @@ class Handler(BaseHTTPRequestHandler):
             print("Cannot determine cmd")
             self.__reply_err()
             return
-        topic = topic or Topic.for_room("Living Room")
         Handler.queue.put(QData(
             kind=QDataKind.ApiAction,
             topic=topic,

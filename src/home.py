@@ -27,7 +27,7 @@ class Home(Addressable):
         "Attempts to determine the api command represented by the action of the given remote."
         device = self.find_remote(remote)
         if device is None:
-                raise HomeBaseError.RemoteNotFound
+            raise HomeBaseError.RemoteNotFound
         cmd = device.cmd_for_action(action)
         if cmd is None:
             return None
@@ -77,7 +77,8 @@ class Home(Addressable):
                 lambda l: {
                     "name": l.name,
                     "id": l.ident,
-                    "topic": l.topic.string
+                    "topic": l.topic.string,
+                    "kind": l.kind.value
                 },
                 room.lights.single_lights
             ))
@@ -89,7 +90,12 @@ class Home(Addressable):
         rooms = []
         for room in self.rooms:
             remotes = list(map(
-                lambda r: { "name": r.name, "id": r.ident, "topic": r.topic.string },
+                lambda r: {
+                    "name": r.name,
+                    "id": r.ident,
+                    "topic": r.topic.string,
+                    "kind": r.kind.value,
+                },
                 room.remotes
             ))
             rooms.append({

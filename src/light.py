@@ -235,7 +235,7 @@ class ConcreteLight(Device, ABC):
         Queries a message containing the current brightness of the light.
         Does NOT update anything in the light.
         """
-        client.publish(self.get_topic(), payload.state(None))
+        client.publish(self.get_topic(), payload.state(None, for_kind=None))
 
     def query_brightness(self, client: mqtt.Client):
         """

@@ -3,6 +3,7 @@
 from typing import Optional
 import json
 from colour import Color
+from enums import DeviceKind
 from device import Vendor
 
 DEFAULT_TRANS = 2
@@ -19,7 +20,7 @@ def cleanse(value: str) -> str:
 ################################################
 ##### SENDING
 ################################################
-def state(value: Optional[bool]) -> str:
+def state(value: Optional[bool], for_kind: Optional[DeviceKind]) -> str:
     "Creates a payload for a state change."
     if value is None:
         val = ""
@@ -27,7 +28,10 @@ def state(value: Optional[bool]) -> str:
         val = "ON"
     else:
         val = "OFF"
-    return _json(_with_transition({"state" : val}))
+    if for_kind == DeviceKind.Light:
+        return _json(_with_transition({"state" : val}))
+    else:
+        return _json({"state" : val})
 
 def brightness(value: Optional[float]) -> str:
     "Returns a payload to set or retrieve the brightness."
@@ -100,6 +104,7 @@ def read_color(x: float, y: float, Y: float) -> Color:
 
 def _json(payload) -> str:
     "Creates a payload."
+    print(payload)
     return json.dumps(payload)
 
 def _with_transition(payload, transition_time: Optional[int] = None):

@@ -28,7 +28,7 @@ class SimpleLight(Light):
 
     def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
         with self.__lock:
-            super().set_brightness(client, brightness)
+            ConcreteLight.set_brightness(self, client, brightness)
 
     def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
         ConcreteLight.set_white_temp(self, client, temp)
@@ -56,9 +56,9 @@ class SimpleLight(Light):
 
     def update_state(self, client: mqtt.Client):
         if self.state.toggled_on and self.__over_threshold():
-            client.publish(self.set_topic(), payload.state(True))
+            client.publish(self.set_topic(), payload.state(True, self.kind))
         else:
-            client.publish(self.set_topic(), payload.state(False))
+            client.publish(self.set_topic(), payload.state(False, self.kind))
 
     def __over_threshold(self) -> bool:
         return self.state.brightness > self.BRIGHTNESS_THRESHOLD
@@ -110,9 +110,9 @@ class DimmableLight(Light):
 
     def update_state(self, client: mqtt.Client):
         if self.state.toggled_on:
-            client.publish(self.set_topic(), payload.state(True))
+            client.publish(self.set_topic(), payload.state(True, self.kind))
         else:
-            client.publish(self.set_topic(), payload.state(False))
+            client.publish(self.set_topic(), payload.state(False, self.kind))
         new_brightness = int(self.state.toggled_on) * self.state.brightness
         client.publish(self.set_topic(), payload.brightness(new_brightness))
 

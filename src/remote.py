@@ -2,6 +2,7 @@
 from enum import Enum
 from typing import Dict, Optional, Callable
 from queue_data import ApiCommand
+from enums import HomeBaseError
 from device import Device, DeviceKind, Vendor
 from topic import Topic
 
@@ -72,7 +73,8 @@ class Remote(Device):
     def cmd_for_action(self, action: str) -> Optional[ApiCommand]:
         "Returns the api command corresponding to the button press if defined."
         button = self._button_from_str(action)
-        assert button is not None
+        if button is None:
+            raise HomeBaseError.InvalidRemoteAction
         return self._actions[button]
 
     @staticmethod

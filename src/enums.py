@@ -105,3 +105,13 @@ class TopicTarget(Enum):
         if val not in TopicTarget._member_names_: # pylint: disable=no-member
             return None
         return TopicTarget[val]
+
+class HomeBaseError(Exception, Enum):
+    "General error class"
+    PayloadNotFound = "Could not find a they required payload."
+    RoomNotFound = "Could not find room."
+    RemoteNotFound = "Could not find remote."
+    Unreachable = "Some programmer error occured."
+    LightNotFound = "Could not find light."
+    InvalidRemoteAction = "Cannot determine the action of a remote operation."
+    TopicParseError = "Failed to parse remote string."

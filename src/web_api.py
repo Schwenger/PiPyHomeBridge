@@ -5,7 +5,7 @@ from typing import Optional, Tuple, Dict
 from socketserver import TCPServer
 from http.server import BaseHTTPRequestHandler
 from queue import Queue
-from enums import ApiCommand, ApiQuery
+from enums import ApiCommand, ApiQuery, HomeBaseError
 from queue_data import QData, QDataKind
 from topic import Topic
 
@@ -58,13 +58,14 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def __handle_query(self, query_str: str, topic: Optional[Topic]):
+        if Handler.queue is None:
+            raise HomeBaseError.Unreachable
         query = ApiQuery.from_str(query_str)
         if query is None:
             self.__reply_err()
             return
         topic = topic or Topic.for_room("Living Room")
         response_queue = Queue()
-        assert Handler.queue is not None
         Handler.queue.put(QData.api_query(
             topic=topic,
             query=query,
@@ -78,13 +79,14 @@ class Handler(BaseHTTPRequestHandler):
         return
 
     def __handle_command(self, command: str, topic: Optional[Topic], payload: Dict[str, str]):
+        if Handler.queue is None:
+            raise HomeBaseError.Unreachable
         cmd = ApiCommand.from_str(command)
         if cmd is None:
             print("Cannot determine cmd")
             self.__reply_err()
             return
         topic = topic or Topic.for_room("Living Room")
-        assert Handler.queue is not None
         Handler.queue.put(QData(
             kind=QDataKind.ApiAction,
             topic=topic,

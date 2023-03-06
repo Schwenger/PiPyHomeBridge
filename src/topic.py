@@ -1,7 +1,7 @@
 "Anything related to zigbee topics."
 
 from typing import List, Optional, Tuple
-from enums import TopicTarget, TopicCommand, DeviceKind
+from enums import TopicTarget, TopicCommand, DeviceKind, HomeBaseError
 
 class Topic:
     """
@@ -18,7 +18,8 @@ class Topic:
         sub_names: List[str],
         device_id: Optional[Tuple[DeviceKind, str]] = None,
     ):
-        assert (device_id is not None) == (target is TopicTarget.Device)
+        if (device_id is not None) != (target is TopicTarget.Device):
+            raise HomeBaseError.Unreachable
         self.target = target
         self.name = name
         self.device_id = device_id
@@ -50,19 +51,22 @@ class Topic:
     def from_str(string: str) -> 'Topic':
         "Creates a topic from a string.  Asserts proper format. May not be a command."
         split = string.split(Topic.SEP)
-        assert len(split) >= 3
-        assert split[0] == Topic.BASE
+        if len(split) < 3 or split[0] != Topic.BASE:
+            raise HomeBaseError.TopicParseError
         target = TopicTarget.from_str(split[1])
-        assert target is not None
+        if target is None:
+            raise HomeBaseError.TopicParseError
         name = split[-1]
         groups = split[2:-1]
         device_id: Optional[Tuple[DeviceKind, str]] = None
         if target is TopicTarget.Device:
-            assert len(groups) >= 2
-            device_kind = DeviceKind.from_str(groups[0])
+            if len(groups) < 2:
+                raise HomeBaseError.TopicParseError
             ident = name
             name = groups[-1]
-            assert device_kind is not None
+            device_kind = DeviceKind.from_str(groups[0])
+            if device_kind is None:
+                raise HomeBaseError.TopicParseError
             groups = groups[1:-1]
             device_id = (device_kind, ident)
         return Topic(
@@ -93,7 +97,8 @@ class Topic:
     @staticmethod
     def for_group(hierarchie: List[str]) -> 'Topic':
         'Creates a topic for refering to a group.'
-        assert len(hierarchie) > 0
+        if len(hierarchie) == 0:
+            raise HomeBaseError.Unreachable
         return Topic(
             target=TopicTarget.Group,
             name=hierarchie[-1],

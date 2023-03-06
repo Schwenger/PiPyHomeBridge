@@ -5,7 +5,7 @@ import json
 from queue import Queue
 from paho.mqtt import client as mqtt
 from home import Home
-from enums import QoS, ApiQuery
+from enums import QoS, ApiQuery, HomeBaseError
 from topic import Topic
 from queue_data import QData, QDataKind
 from api import ApiExec
@@ -49,14 +49,14 @@ class Controller:
             # Probably status update, can even come from a remote!
             return
         remote_target = self.home.remote_action(remote_topic, data["action"])
-        assert remote_target is not None
+        if remote_target is None:
+            raise HomeBaseError.RemoteNotFound
         (cmd, target_topic) = remote_target
         qdata = QData.api_command(target_topic, cmd, payload={ })
         self.queue.put(qdata)
 
     def __process(self, qdata: QData):
         "Processes data found in the queue"
-        assert qdata is not None
         if qdata.kind == QDataKind.Refresh:
             self.home.refresh_lights(self.client)
         elif qdata.kind == QDataKind.ApiAction:
@@ -69,26 +69,25 @@ class Controller:
             raise ValueError("Unknown QDataKind: " + qdata.kind)
 
     def __handle_api_action(self, qdata: QData):
-        assert qdata.kind == QDataKind.ApiAction
         topic = qdata.topic
-        assert topic is not None
         cmd = qdata.command
-        assert cmd is not None
+        if qdata.kind != QDataKind.ApiAction or topic is None or cmd is None:
+            raise HomeBaseError.Unreachable
         self.api.exec(topic, cmd, qdata.payload)
 
     def __handle_query(self, qdata: QData):
-        assert qdata.kind == QDataKind.ApiQuery
-        assert qdata.response is not None
+        if qdata.kind != QDataKind.ApiQuery or qdata.response is None:
+            raise HomeBaseError.Unreachable
         if qdata.query == ApiQuery.Structure:
             structure = self.home.structure()
             data = payload.cleanse(payload.as_json(structure))
             qdata.response.put(data)
         elif qdata.query == ApiQuery.LightState:
-            assert qdata.topic is not None
+            if qdata.topic is None:
+                raise HomeBaseError.Unreachable
             light = self.home.find_light(topic=qdata.topic)
-            assert light is not None
-            print(light.topic.string)
-            print(light)
+            if light is None:
+                raise HomeBaseError.LightNotFound
             state = {
                 "brightness": light.state.brightness,
                 "hexColor": str(light.state.color.get_hex_l())

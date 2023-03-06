@@ -4,7 +4,7 @@ from typing import Optional, List, Tuple
 from paho.mqtt import client as mqtt
 from room import living_room, office, Room
 from topic import Topic
-from enums import ApiCommand
+from enums import ApiCommand, HomeBaseError
 from remote import Remote
 from light import AbstractLight, Light
 from light_group import LightGroup
@@ -26,7 +26,8 @@ class Home(Addressable):
     def remote_action(self, remote: Topic, action: str) -> Optional[Tuple[ApiCommand, Topic]]:
         "Attempts to determine the api command represented by the action of the given remote."
         device = self.find_remote(remote)
-        assert device is not None
+        if device is None:
+                raise HomeBaseError.RemoteNotFound
         cmd = device.cmd_for_action(action)
         if cmd is None:
             return None

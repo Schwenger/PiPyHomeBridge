@@ -10,6 +10,7 @@ from home import Home
 from topic import Topic
 import payload as Payload
 from queue_data import ApiCommand
+from enums import HomeBaseError
 
 # pylint: disable=too-few-public-methods
 class ApiExec:
@@ -45,16 +46,20 @@ class ApiExec:
         elif cmd == ApiCommand.DisableDynamicColor:
             pass
         elif cmd == ApiCommand.SetBrightness:
-            assert payload is not None
+            if payload is None:
+                raise HomeBaseError.PayloadNotFound
             self.__set_brightness(topic, payload)
         elif cmd == ApiCommand.SetWhiteTemp:
-            assert payload is not None
+            if payload is None:
+                raise HomeBaseError.PayloadNotFound
             self.__set_white_temp(topic, payload)
         elif cmd == ApiCommand.SetColor:
-            assert payload is not None
+            if payload is None:
+                raise HomeBaseError.PayloadNotFound
             self.__set_color(topic, payload)
         elif cmd == ApiCommand.Rename:
-            assert payload is not None
+            if payload is None:
+                raise HomeBaseError.PayloadNotFound
             self.__rename_device(topic, payload)
 
     def __get_target(self, topic: Topic) -> AbstractLight:
@@ -62,7 +67,8 @@ class ApiExec:
         if light is not None:
             return light
         room = self.__home.room_by_name(topic.name)
-        assert room is not None
+        if room is None:
+            raise HomeBaseError.RoomNotFound
         return room.lights
 
     def __toggle(self, topic: Topic):

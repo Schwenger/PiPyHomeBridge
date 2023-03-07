@@ -9,6 +9,7 @@ from topic import Topic
 import payload as Payload
 from queue_data import ApiQuery
 from enums import HomeBaseError
+from light_group import LightGroup
 
 # pylint: disable=too-few-public-methods
 class ApiResponder:
@@ -29,7 +30,42 @@ class ApiResponder:
         channel.put(data)
 
     def __respond_structure(self):
-        return self.__home.structure()
+        rooms = []
+        for room in self.__home.rooms:
+            remotes = list(map(
+                lambda r: {
+                    "name": r.name,
+                    "id": r.ident,
+                    "topic": r.topic.string,
+                    "kind": r.kind.value,
+                },
+                room.remotes
+            ))
+            rooms.append({
+                "name":     room.name,
+                "lights":   self.__compile_group_structure(room.lights),
+                "remotes":  remotes,
+            })
+        return {
+            "rooms": rooms,
+        }
+
+    def __compile_group_structure(self, group: LightGroup):
+        single = list(map(
+            lambda l: {
+                "name": l.name,
+                "id": l.ident,
+                "topic": l.topic.string,
+                "dimmable": l.is_dimmable(),
+                "color": l.is_color(),
+            },
+            group.single_lights
+        ))
+        return {
+            "name": group.name,
+            "singleLights": single,
+            "groups": list(map(self.__compile_group_structure, group.groups)),
+        }
 
     def __respond_light(self, topic):
         if topic is None:
@@ -40,5 +76,5 @@ class ApiResponder:
         return {
             "brightness": light.state.brightness,
             "hexColor": str(light.state.color.get_hex_l()),
-            "toggledOn": str(light.state.toggled_on)
+            "toggledOn": str(light.state.toggled_on),
         }

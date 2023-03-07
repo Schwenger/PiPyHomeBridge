@@ -7,7 +7,6 @@ from topic import Topic
 from enums import ApiCommand, HomeBaseError
 from remote import Remote
 from light import AbstractLight, Light
-from light_group import LightGroup
 from device import Addressable
 
 class Home(Addressable):
@@ -69,40 +68,3 @@ class Home(Addressable):
     def find_abstract_light(self, topic: Topic) -> Optional[AbstractLight]:
         "Find the abstract light, so a light or a group for the topic."
         raise NotImplementedError
-
-    def structure(self):
-        "Returns the structure of the home as dict of strings."
-        def group_structure(group: LightGroup):
-            single = list(map(
-                lambda l: {
-                    "name": l.name,
-                    "id": l.ident,
-                    "topic": l.topic.string,
-                    "kind": l.kind.value
-                },
-                room.lights.single_lights
-            ))
-            return {
-                "name": group.name,
-                "singleLights": single,
-                "groups": list(map(group_structure, group.groups)),
-            }
-        rooms = []
-        for room in self.rooms:
-            remotes = list(map(
-                lambda r: {
-                    "name": r.name,
-                    "id": r.ident,
-                    "topic": r.topic.string,
-                    "kind": r.kind.value,
-                },
-                room.remotes
-            ))
-            rooms.append({
-                "name":     room.name,
-                "lights":   group_structure(room.lights),
-                "remotes":  remotes,
-            })
-        return {
-            "rooms": rooms,
-        }

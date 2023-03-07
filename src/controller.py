@@ -21,7 +21,7 @@ class Controller:
     "Controls a home"
 
     # pylint: disable=invalid-name
-    def __init__(self, ip: str, port: int, queue: Queue[QData]):
+    def __init__(self, ip: str, port: int, queue: Queue):
         self.client = self.__init_client(ip, port)
         self.queue = queue
         self.home = Home()

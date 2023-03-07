@@ -19,7 +19,7 @@ class ApiResponder:
         self.__home = home
         # self.__client = client  # Send request to client for current state
 
-    def respond(self, topic: Topic, query: ApiQuery, channel: Queue[str]):
+    def respond(self, topic: Topic, query: ApiQuery, channel: Queue):
         "Executes an API query."
         if   query == ApiQuery.Structure:
             response = self.__respond_structure()

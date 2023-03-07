@@ -16,7 +16,7 @@ class QData:
         state:    Optional[LightState] = None,
         command:  Optional[ApiCommand] = None,
         query:    Optional[ApiQuery]   = None,
-        response: Optional[Queue[str]]      = None,
+        response: Optional[Queue]      = None,
     ):
         self.kind:     QDataKind            = kind
         self.topic:    Optional[Topic]      = topic

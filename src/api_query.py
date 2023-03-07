@@ -3,6 +3,7 @@ The logic for executing API commands
 """
 
 from queue import Queue
+from typing import Dict
 from paho.mqtt import client as mqtt
 from home import Home
 from topic import Topic
@@ -29,7 +30,7 @@ class ApiResponder:
         data = Payload.cleanse(Payload.as_json(response))
         channel.put(data)
 
-    def __respond_structure(self):
+    def __respond_structure(self) -> Dict:
         rooms = []
         for room in self.__home.rooms:
             remotes = list(map(
@@ -37,7 +38,6 @@ class ApiResponder:
                     "name": r.name,
                     "id": r.ident,
                     "topic": r.topic.string,
-                    "kind": r.kind.value,
                 },
                 room.remotes
             ))
@@ -50,12 +50,13 @@ class ApiResponder:
             "rooms": rooms,
         }
 
-    def __compile_group_structure(self, group: LightGroup):
+    def __compile_group_structure(self, group: LightGroup) -> Dict:
         single = list(map(
             lambda l: {
                 "name": l.name,
                 "id": l.ident,
                 "topic": l.topic.string,
+                "kind": l.kind.value,
                 "dimmable": l.is_dimmable(),
                 "color": l.is_color(),
             },
@@ -67,7 +68,7 @@ class ApiResponder:
             "groups": list(map(self.__compile_group_structure, group.groups)),
         }
 
-    def __respond_light(self, topic):
+    def __respond_light(self, topic) -> Dict:
         if topic is None:
             raise HomeBaseError.Unreachable
         light = self.__home.find_light(topic=topic)

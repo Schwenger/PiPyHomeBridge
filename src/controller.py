@@ -33,7 +33,6 @@ class Controller:
     def run(self):
         "Retrieves message from the queue and processes it."
         self.client.loop_start()
-        self.queue.put(QData.refresh())
         while True:
             try:
                 qdata: QData = self.queue.get(block=True)
@@ -86,8 +85,8 @@ class Controller:
     def __handle_query(self, qdata: QData):
         topic = qdata.topic
         query = qdata.query
-        isnt_query = qdata.query != QDataKind.ApiQuery
-        if isnt_query or topic is None or query is None or qdata.response is None:
+        is_query = qdata.kind is QDataKind.ApiQuery
+        if not is_query or topic is None or query is None or qdata.response is None:
             raise HomeBaseError.Unreachable
         self.responder.respond(topic, query, qdata.response)
 

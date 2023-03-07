@@ -104,7 +104,6 @@ def read_color(x: float, y: float, Y: float) -> Color:
 
 def _json(payload) -> str:
     "Creates a payload."
-    print(payload)
     return json.dumps(payload)
 
 def _with_transition(payload, transition_time: Optional[int] = None):

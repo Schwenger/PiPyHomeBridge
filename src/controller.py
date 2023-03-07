@@ -5,11 +5,11 @@ import json
 from queue import Queue
 from paho.mqtt import client as mqtt
 from home import Home
-from enums import QoS, ApiQuery, HomeBaseError
+from enums import QoS, HomeBaseError
 from topic import Topic
 from queue_data import QData, QDataKind
-from api import ApiExec
-import payload
+from api_command import ApiExec
+from api_query import ApiResponder
 import common
 from log import alert
 
@@ -21,11 +21,12 @@ class Controller:
     "Controls a home"
 
     # pylint: disable=invalid-name
-    def __init__(self, ip: str, port: int, queue: Queue):
+    def __init__(self, ip: str, port: int, queue: Queue[QData]):
         self.client = self.__init_client(ip, port)
         self.queue = queue
         self.home = Home()
-        self.api = ApiExec(self.home, self.client)
+        self.executer = ApiExec(self.home, self.client)
+        self.responder = ApiResponder(self.home, self.client)
         self.__subscribe_to_all()
         self.client.on_message = self.__handle_message
 
@@ -80,30 +81,15 @@ class Controller:
         cmd = qdata.command
         if qdata.kind != QDataKind.ApiAction or topic is None or cmd is None:
             raise HomeBaseError.Unreachable
-        self.api.exec(topic, cmd, qdata.payload)
+        self.executer.exec(topic, cmd, qdata.payload)
 
     def __handle_query(self, qdata: QData):
-        if qdata.kind != QDataKind.ApiQuery or qdata.response is None:
+        topic = qdata.topic
+        query = qdata.query
+        isnt_query = qdata.query != QDataKind.ApiQuery
+        if isnt_query or topic is None or query is None or qdata.response is None:
             raise HomeBaseError.Unreachable
-        if qdata.query == ApiQuery.Structure:
-            structure = self.home.structure()
-            data = payload.cleanse(payload.as_json(structure))
-            qdata.response.put(data)
-        elif qdata.query == ApiQuery.LightState:
-            if qdata.topic is None:
-                raise HomeBaseError.Unreachable
-            light = self.home.find_light(topic=qdata.topic)
-            if light is None:
-                raise HomeBaseError.LightNotFound
-            state = {
-                "brightness": light.state.brightness,
-                "hexColor": str(light.state.color.get_hex_l()),
-                "toggledOn": str(light.state.toggled_on)
-            }
-            data = payload.cleanse(payload.as_json(state))
-            qdata.response.put(data)
-        else:
-            raise ValueError("Unknown ApiQuery: " + str(qdata.query))
+        self.responder.respond(topic, query, qdata.response)
 
     # pylint: disable=invalid-name
     def __init_client(self, ip: str, port: int) -> mqtt.Client:

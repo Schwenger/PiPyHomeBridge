@@ -20,7 +20,7 @@ class ApiExec:
         self.__client = client
 
     def exec(self, topic: Topic, cmd: ApiCommand, payload: Dict[str, str]):
-        "Executes the specifier API command."
+        "Executes an API command."
         if   cmd == ApiCommand.Toggle:
             self.__toggle(topic)
         elif cmd == ApiCommand.TurnOn:

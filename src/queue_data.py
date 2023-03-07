@@ -16,7 +16,7 @@ class QData:
         state:    Optional[LightState] = None,
         command:  Optional[ApiCommand] = None,
         query:    Optional[ApiQuery]   = None,
-        response: Optional[Queue]      = None,
+        response: Optional[Queue[str]]      = None,
     ):
         self.kind:     QDataKind            = kind
         self.topic:    Optional[Topic]      = topic
@@ -24,7 +24,7 @@ class QData:
         self.command:  Optional[ApiCommand] = command
         self.query:    Optional[ApiQuery]   = query
         self.payload:  Dict[str, str]       = payload
-        self.response: Optional[Queue]      = response
+        self.response: Optional[Queue[str]]      = response
 
     @staticmethod
     def refresh() -> 'QData':

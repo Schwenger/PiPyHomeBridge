@@ -14,7 +14,7 @@ from log import alert
 class Handler(BaseHTTPRequestHandler):
     "Handles web requests and issues the required commands over the queue."
 
-    queue: Optional[Queue] = None
+    queue: Optional[Queue[QData]] = None
 
     def __parse_path(self) -> Optional[Tuple[str, str, Dict[str, str]]]:
         parsed = url.urlparse(self.path)
@@ -103,13 +103,13 @@ class Handler(BaseHTTPRequestHandler):
         self.__reply_succ()
         return
 
-def _update_handler_queue(queue: Queue):
+def _update_handler_queue(queue: Queue[QData]):
     "Sets the static queue of the handler class."
     Handler.queue = queue
 
 class WebAPI:
     "Represents the web api of the smart home"
-    def __init__(self, queue: Queue):
+    def __init__(self, queue: Queue[QData]):
         _update_handler_queue(queue)
         for retry in range(10):
             try:

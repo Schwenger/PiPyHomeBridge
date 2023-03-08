@@ -33,14 +33,14 @@ class ApiResponder:
     def __respond_structure(self) -> Dict:
         rooms = []
         for room in self.__home.rooms:
-            remotes = list(map(
-                lambda r: {
-                    "name": r.name,
-                    "id": r.ident,
-                    "topic": r.topic.string,
-                },
-                room.remotes
-            ))
+            remotes = []
+            for remote in room.remotes:
+                remotes.append({
+                    "name": remote.name,
+                    "id": remote.ident,
+                    "topic": remote.topic.string,
+                    "actions": list(map(lambda a: a.string, remote.actions()))
+                })
             rooms.append({
                 "name":     room.name,
                 "lights":   self.__compile_group_structure(room.lights),

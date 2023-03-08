@@ -1,6 +1,7 @@
 "All things related to remotes"
 from enum import Enum
-from typing import Dict, Optional, Callable
+from abc import abstractmethod
+from typing import Dict, Optional, Callable, List
 from queue_data import ApiCommand
 from enums import HomeBaseError
 from device import Device, DeviceKind, Vendor
@@ -12,6 +13,11 @@ class RemoteButton(Enum):
     def has_value(cls, value) -> bool:
         "Indicates if the value is a member of the enum"
         return value in cls._value2member_map_
+
+    @property
+    @abstractmethod
+    def string(self) -> str:
+        "Returns a string representation"
 
 class DimmerButtons(RemoteButton):
     "Enumeration of all dimmer action kinds"
@@ -25,6 +31,10 @@ class DimmerButtons(RemoteButton):
     def from_str(str_value: str) -> RemoteButton:
         "Creates a remote button based on the string.  Crashes if impossible"
         return DimmerButtons(str_value)
+
+    @property
+    def string(self) -> str:
+        return self.value
 
 
 class IkeaMultiButton(RemoteButton):
@@ -48,6 +58,10 @@ class IkeaMultiButton(RemoteButton):
         "Creates a remote button based on the string.  Crashes if impossible"
         return IkeaMultiButton(str_value)
 
+    @property
+    def string(self) -> str:
+        return self.value
+
 class Remote(Device):
     "Represents a remote."
     def __init__(
@@ -69,6 +83,10 @@ class Remote(Device):
         self.controls_topic = controls_topic
         self._button_from_str = button_from_str
         self._actions: Dict[RemoteButton, ApiCommand] = actions
+
+    def actions(self) -> List[RemoteButton]:
+        "Returns a list of all actions"
+        return list(self._actions.keys())
 
     def cmd_for_action(self, action: str) -> Optional[ApiCommand]:
         "Returns the api command corresponding to the button press if defined."

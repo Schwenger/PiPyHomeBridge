@@ -1,13 +1,14 @@
 "Main module for the smart home. Starts the controller and listens to a port for commands."
 
 import threading
-# import time
+import os
 from queue import Queue
 from controller import Controller
 import common
 from web_api import WebAPI
 
 if __name__ == "__main__":
+    os.mkdir("log")
     ip = common.config["mosquitto"]["ip"]
     port = common.config["mosquitto"]["port"]
     queue = Queue()

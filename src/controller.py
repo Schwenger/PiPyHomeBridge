@@ -11,7 +11,7 @@ from queue_data import QData, QDataKind
 from api_command import ApiExec
 from api_query import ApiResponder
 import common
-from log import alert
+from log import alert, log_qdata
 
 config = common.config
 IP   = common.config['mosquitto']['ip']
@@ -36,6 +36,12 @@ class Controller:
         while True:
             try:
                 qdata: QData = self.queue.get(block=True)
+                log_qdata(f"""
+                    Command: {qdata.command},
+                    Query: {qdata.query},
+                    Kind: {qdata.kind},
+                    Topic: {qdata.topic}
+                    """)
                 self.__process(qdata)
             except HomeBaseError as e:
                 if common.config["crash_on_error"]:

@@ -1,5 +1,7 @@
 "Logging logic."
 
+from typing import Optional
+from datetime import datetime
 import common
 
 INFO = False
@@ -30,8 +32,19 @@ def alert(msg: str):
     _put("****WARNING****")
     _put(msg)
 
-def _put(msg: str):
-    if WRITE_TO_FILE:
+def log_web_request(path: str):
+    "Prints infor about a web request"
+    _put(f"{datetime.now()}: Request to {path}", target="webapi.log")
+
+def log_qdata(qdata: str):
+    "Prints infor about a web request"
+    _put(f"{datetime.now()}: QData for {qdata}", target="qdata.log")
+
+def _put(msg: str, target: Optional[str] = None):
+    if target is not None:
+        with open("log/" + target, "a", encoding="utf-8") as file:
+            file.write(msg + "\n")
+    elif WRITE_TO_FILE:
         with open(PATH, "a", encoding="utf-8") as file:
             file.write(msg + "\n")
     else:

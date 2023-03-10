@@ -9,7 +9,7 @@ from enums import ApiCommand, ApiQuery, HomeBaseError
 from queue_data import QData, QDataKind
 from topic import Topic
 import common
-from log import alert
+from log import alert, log_web_request
 
 class Handler(BaseHTTPRequestHandler):
     "Handles web requests and issues the required commands over the queue."
@@ -21,6 +21,7 @@ class Handler(BaseHTTPRequestHandler):
         "Handles GET requests."
         print("GET: " + self.path)
         try:
+            log_web_request(self.path)
             self.__handle_request()
         except HomeBaseError as e:
             if common.config["crash_on_error"]:
@@ -42,7 +43,6 @@ class Handler(BaseHTTPRequestHandler):
         if kind == 'query':
             self.__handle_query(query_str=command, topic=topic)
             return
-
 
     def __parse_path(self) -> Optional[Tuple[str, str, Dict[str, str]]]:
         parsed = url.urlparse(self.path)

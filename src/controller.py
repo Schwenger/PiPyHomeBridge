@@ -30,12 +30,17 @@ class Controller:
     # pylint: disable=invalid-name
     def __init__(self, ip: str, port: int, queue: Queue):
         self.client = self.__init_client(ip, port)
+        self.client.on_disconnect = Controller.__on_disconnect
         self.queue = queue
         self.home = Home()
         self.executer = ApiExec(self.home, self.client)
         self.responder = ApiResponder(self.home, self.client)
         self.__subscribe_to_all()
         self.client.on_message = self.__handle_message
+
+    @staticmethod
+    def __on_disconnect(_client, _userdata,  _rc):
+        alert("Client disconnected.")
 
     def run(self):
         "Retrieves message from the queue and processes it."

@@ -2,7 +2,7 @@
 
 import time
 import json
-from queue import Queue
+from queue import Queue, Empty
 from paho.mqtt import client as mqtt
 from home import Home
 from enums import QoS, HomeBaseError
@@ -44,21 +44,29 @@ class Controller:
 
     def run(self):
         "Retrieves message from the queue and processes it."
-        self.client.loop_start()
-        while True:
-            try:
-                qdata: QData = self.queue.get(block=True)
+        try:
+            self.client.loop_start()
+            while True:
+                try:
+                    qdata: QData = self.queue.get(block=True, timeout=60*15)
+                except Empty:
+                    print("Controller: Heartbeat.")
+                    continue
                 log_qdata(f"""
                     Command: {qdata.command},
                     Query: {qdata.query},
                     Kind: {qdata.kind},
                     Topic: {qdata.topic}
                     """)
-                self.__process(qdata)
-            except HomeBaseError as e:
-                if common.config["crash_on_error"]:
-                    raise e
-                alert("Controller: {e}")
+                try:
+                    self.__process(qdata)
+                except HomeBaseError as e:
+                    if common.config["crash_on_error"]:
+                        raise e
+                    alert("Controller: {e}")
+        except Exception:
+            alert("Critical Error")
+        print("Exiting Controller.run()")
 
     def refresh_periodically(self):
         "Periodically issues a refresh command through the queue."

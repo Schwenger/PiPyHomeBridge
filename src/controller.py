@@ -40,7 +40,7 @@ class Controller:
             except HomeBaseError as e:
                 if common.config["crash_on_error"]:
                     raise e
-                alert(str(e))
+                alert("Controller: {e}")
 
     def refresh_periodically(self):
         "Periodically issues a refresh command through the queue."

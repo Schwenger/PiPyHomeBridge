@@ -16,6 +16,34 @@ class Handler(BaseHTTPRequestHandler):
 
     queue: Optional[Queue] = None
 
+    # pylint: disable=invalid-name
+    def do_GET(self):
+        "Handles GET requests."
+        print("GET: " + self.path)
+        try:
+            self.__handle_request()
+        except HomeBaseError as e:
+            if common.config["crash_on_error"]:
+                raise e
+            alert("WebApi: {e}")
+
+    def __handle_request(self):
+        parsed = self.__parse_path()
+        if parsed is None:
+            print("Parsing failed.")
+            self.__reply_err()
+            return
+        (kind, command, query) = parsed
+        topic = Topic.from_str(query["topic"])
+        print("Command targets " + topic.string)
+        if kind == 'command':
+            self.__handle_command(command=command, topic=topic, payload=query)
+            return
+        if kind == 'query':
+            self.__handle_query(query_str=command, topic=topic)
+            return
+
+
     def __parse_path(self) -> Optional[Tuple[str, str, Dict[str, str]]]:
         parsed = url.urlparse(self.path)
         split = parsed.path.split('/')
@@ -32,30 +60,6 @@ class Handler(BaseHTTPRequestHandler):
         for key, values in query.items():
             payload[key] = values[0]
         return (kind, command, payload)
-
-    # pylint: disable=invalid-name
-    def do_GET(self):
-        "Handles GET requests."
-        print("GET: " + self.path)
-        try:
-            parsed = self.__parse_path()
-            if parsed is None:
-                print("Parsing failed.")
-                self.__reply_err()
-                return
-            (kind, command, query) = parsed
-            topic = Topic.from_str(query["topic"])
-            print("Command targets " + topic.string)
-            if kind == 'command':
-                self.__handle_command(command=command, topic=topic, payload=query)
-                return
-            if kind == 'query':
-                self.__handle_query(query_str=command, topic=topic)
-                return
-        except HomeBaseError as e:
-            if common.config["crash_on_error"]:
-                raise e
-            alert(str(e))
 
     def __reply_err(self):
         self.send_response(401)

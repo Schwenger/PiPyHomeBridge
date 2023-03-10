@@ -1,6 +1,5 @@
 "Logging logic."
 
-from typing import Optional
 from datetime import datetime
 import common
 
@@ -9,7 +8,7 @@ ALERT = True
 TRACE = False
 
 PATH = common.config['log']
-WRITE_TO_FILE = PATH != ''
+LOG_TO_FILE = common.config['log_to_file']
 
 def trace(name: str, fun: str, cls: str = ""):
     "Traces function calls."
@@ -32,20 +31,22 @@ def alert(msg: str):
     _put("****WARNING****")
     _put(msg)
 
+
+def log_client(topic: str, payload):
+    "Prints info about a published message"
+    _put(f"{datetime.now()}: Publish {payload} to {topic}", target="client")
+
 def log_web_request(path: str):
     "Prints infor about a web request"
-    _put(f"{datetime.now()}: Request to {path}", target="webapi.log")
+    _put(f"{datetime.now()}: Request to {path}", target="webapi")
 
 def log_qdata(qdata: str):
     "Prints infor about a web request"
-    _put(f"{datetime.now()}: QData for {qdata}", target="qdata.log")
+    _put(f"{datetime.now()}: QData for {qdata}", target="qdata")
 
-def _put(msg: str, target: Optional[str] = None):
-    if target is not None:
-        with open("log/" + target, "a", encoding="utf-8") as file:
-            file.write(msg + "\n")
-    elif WRITE_TO_FILE:
-        with open(PATH, "a", encoding="utf-8") as file:
+def _put(msg: str, target: str = "main.log"):
+    if LOG_TO_FILE:
+        with open(PATH + "/" + target + ".log", "a", encoding="utf-8") as file:
             file.write(msg + "\n")
     else:
         print(msg)

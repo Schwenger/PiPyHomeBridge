@@ -11,11 +11,18 @@ from queue_data import QData, QDataKind
 from api_command import ApiExec
 from api_query import ApiResponder
 import common
-from log import alert, log_qdata
+from log import alert, log_qdata, log_client
 
 config = common.config
 IP   = common.config['mosquitto']['ip']
 PORT = common.config['mosquitto']['port']
+
+class PatchedClient(mqtt.Client):
+    "Patches the publish command to also log the request."
+    def publish(self: mqtt.Client, topic, payload=None, qos=0, retain=False, properties=None):
+        if payload is not None:
+            log_client(topic, payload=payload)
+        super().publish(topic, payload, qos, retain, properties)
 
 class Controller:
     "Controls a home"
@@ -99,7 +106,7 @@ class Controller:
     # pylint: disable=invalid-name
     def __init_client(self, ip: str, port: int) -> mqtt.Client:
         "Initializes a client."
-        res = mqtt.Client(common.CLIENT_NAME)
+        res = PatchedClient(common.CLIENT_NAME)
         res.connect(host=ip, port=port, keepalive=360)
         return res
 

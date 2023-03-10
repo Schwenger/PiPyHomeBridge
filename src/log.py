@@ -5,7 +5,7 @@ import common
 
 INFO = False
 ALERT = True
-TRACE = False
+TRACE = True
 
 PATH = common.config['log']
 LOG_TO_FILE = common.config['log_to_file']

@@ -12,6 +12,7 @@ from queue_data import ApiQuery
 from enums import HomeBaseError
 from light_group import LightGroup
 from device import Device
+from log import trace
 
 # pylint: disable=too-few-public-methods
 class ApiResponder:
@@ -22,6 +23,7 @@ class ApiResponder:
 
     def respond(self, topic: Topic, query: ApiQuery, channel: Queue):
         "Executes an API query."
+        trace("ApiQuery", "respond")
         if   query == ApiQuery.Structure:
             response = self.__respond_structure()
         elif query == ApiQuery.LightState:
@@ -32,6 +34,7 @@ class ApiResponder:
         channel.put(data)
 
     def __respond_structure(self) -> Dict:
+        trace("ApiQuery", "__respond_structure")
         rooms = []
         for room in self.__home.rooms:
             remotes = []
@@ -49,6 +52,7 @@ class ApiResponder:
         }
 
     def __compile_group_structure(self, group: LightGroup) -> Dict:
+        trace("ApiQuery", "__compile_group_structure")
         singles = []
         for light in group.single_lights:
             res = self.__respond_device(light)
@@ -62,6 +66,7 @@ class ApiResponder:
         }
 
     def __respond_device(self, device: Device) -> Dict:
+        trace("ApiQuery", "__respond_device")
         return {
             "name":   device.name,
             "id":     device.ident,
@@ -70,6 +75,7 @@ class ApiResponder:
         }
 
     def __respond_light(self, topic) -> Dict:
+        trace("ApiQuery", "__respond_light")
         if topic is None:
             raise HomeBaseError.Unreachable
         light = self.__home.find_light(topic=topic)

@@ -7,7 +7,7 @@ from colour import Color
 from paho.mqtt import client as mqtt
 from light import Light, ConcreteLight
 import payload
-from device import DeviceKind, Vendor
+from enums import DeviceModel
 
 class SimpleLight(Light):
     "A simple on-off light"
@@ -18,11 +18,15 @@ class SimpleLight(Light):
     def __init__(self,
         name: str,
         room: str,
-        vendor: Vendor,
+        model: DeviceModel,
         ident: str,
-        kind: DeviceKind = DeviceKind.Light
     ):
-        super().__init__(name=name, room=room, kind=kind, vendor=vendor, ident=ident)
+        super().__init__(
+            name=name,
+            room=room,
+            model=model,
+            ident=ident
+        )
         self.__lock = threading.Lock()  # protects virtual brightness
         self.__dimming = False
 
@@ -77,11 +81,15 @@ class DimmableLight(Light):
     def __init__(self,
         name: str,
         room: str,
-        vendor: Vendor,
         ident: str,
-        kind: DeviceKind = DeviceKind.Light
+        model: DeviceModel
     ):
-        super().__init__(name=name, room=room, kind=kind, vendor=vendor, ident=ident)
+        super().__init__(
+            name=name,
+            room=room,
+            model=model,
+            ident=ident
+        )
 
     def is_dimmable(self) -> bool:
         return True
@@ -122,11 +130,15 @@ class WhiteSpectrumLight(DimmableLight):
     def __init__(self,
         name: str,
         room: str,
-        vendor: Vendor,
+        model: DeviceModel,
         ident: str,
-        kind: DeviceKind = DeviceKind.Light
     ):
-        super().__init__(name=name, room=room, kind=kind, vendor=vendor, ident=ident)
+        super().__init__(
+            name=name,
+            room=room,
+            model=model,
+            ident=ident
+        )
 
     def is_dimmable(self) -> bool:
         return True
@@ -145,11 +157,15 @@ class ColorLight(DimmableLight):
     def __init__(self,
         name: str,
         room: str,
-        vendor: Vendor,
         ident: str,
-        kind: DeviceKind = DeviceKind.Light
+        model: DeviceModel,
     ):
-        super().__init__(name=name, room=room, kind=kind, vendor=vendor, ident=ident)
+        super().__init__(
+            name=name,
+            room=room,
+            model=model,
+            ident=ident,
+        )
 
     def is_color(self) -> bool:
         return True
@@ -163,18 +179,23 @@ class ColorLight(DimmableLight):
 ##### LIGHT CREATION
 #######################################
 
-def simple(name: str, room: str, vendor: Vendor, kind: DeviceKind, ident: str) -> SimpleLight:
+def simple(name: str, room: str, ident: str, model: DeviceModel) -> SimpleLight:
     "Creates a simple on-off light"
-    return SimpleLight(name=name, room=room, vendor=vendor, kind=kind, ident=ident)
+    return SimpleLight(
+        name=name,
+        room=room,
+        model=model,
+        ident=ident
+    )
 
-def dimmable(name: str, room: str, vendor: Vendor, ident: str) -> DimmableLight:
+def dimmable(name: str, room: str, ident: str, model: DeviceModel) -> DimmableLight:
     "Creates a dimmable light"
-    return DimmableLight(name=name, room=room, vendor=vendor, ident=ident)
+    return DimmableLight(name=name, room=room, ident=ident, model=model)
 
-def white(name: str, room: str, vendor: Vendor, ident: str) -> DimmableLight:
+def white(name: str, room: str, ident: str, model: DeviceModel) -> DimmableLight:
     "Creates a white spectrum light"
-    return WhiteSpectrumLight(name=name, room=room, vendor=vendor, ident=ident)
+    return WhiteSpectrumLight(name=name, room=room, ident=ident, model=model)
 
-def color(name: str, room: str, vendor: Vendor, ident: str) -> ColorLight:
+def color(name: str, room: str, ident: str, model: DeviceModel) -> ColorLight:
     "Creates a color light"
-    return ColorLight(name=name, room=room, vendor=vendor, ident=ident)
+    return ColorLight(name=name, room=room, ident=ident, model=model)

@@ -4,8 +4,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from paho.mqtt import client as mqtt
 from colour import Color
-from device import Device, DeviceKind, Vendor, Addressable
+from device import Device, Addressable
 import payload
+from enums import DeviceModel
 
 class LightState:
     "Represents the state of a light."
@@ -169,10 +170,14 @@ class ConcreteLight(Device, ABC):
         name: str,
         room: str,
         ident: str,
-        kind: DeviceKind = DeviceKind.Light,
-        vendor: Vendor = Vendor.Ikea,
+        model: DeviceModel,
     ):
-        super().__init__(name=name, room=room, kind=kind, vendor=vendor, ident=ident)
+        super().__init__(
+            name=name,
+            room=room,
+            model=model,
+            ident=ident
+        )
         self.__state = LightState()
 
     @property

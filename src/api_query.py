@@ -11,6 +11,7 @@ import payload as Payload
 from queue_data import ApiQuery
 from enums import HomeBaseError
 from light_group import LightGroup
+from device import Device
 
 # pylint: disable=too-few-public-methods
 class ApiResponder:
@@ -35,12 +36,9 @@ class ApiResponder:
         for room in self.__home.rooms:
             remotes = []
             for remote in room.remotes:
-                remotes.append({
-                    "name": remote.name,
-                    "id": remote.ident,
-                    "topic": remote.topic.string,
-                    "actions": list(map(lambda a: a.string, remote.actions()))
-                })
+                res = self.__respond_device(remote)
+                res["actions"] = list(map(lambda a: a.string, remote.actions()))
+                remotes.append(res)
             rooms.append({
                 "name":     room.name,
                 "lights":   self.__compile_group_structure(room.lights),
@@ -51,21 +49,24 @@ class ApiResponder:
         }
 
     def __compile_group_structure(self, group: LightGroup) -> Dict:
-        single = list(map(
-            lambda l: {
-                "name": l.name,
-                "id": l.ident,
-                "topic": l.topic.string,
-                "kind": l.kind.value,
-                "dimmable": l.is_dimmable(),
-                "color": l.is_color(),
-            },
-            group.single_lights
-        ))
+        singles = []
+        for light in group.single_lights:
+            res = self.__respond_device(light)
+            res["dimmable"] = light.is_dimmable()
+            res["color"] = light.is_color()
+            singles.append(res)
         return {
             "name": group.name,
-            "singleLights": single,
+            "singleLights": singles,
             "groups": list(map(self.__compile_group_structure, group.groups)),
+        }
+
+    def __respond_device(self, device: Device) -> Dict:
+        return {
+            "name":   device.name,
+            "id":     device.ident,
+            "topic":  device.topic.string,
+            "model":  device.model.value,
         }
 
     def __respond_light(self, topic) -> Dict:

@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from topic import Topic
-from enums import DeviceKind, Vendor
+from enums import DeviceKind, DeviceModel, Vendor
 
 TOPIC_BASE = "zigbee2mqtt"
 
@@ -20,21 +20,29 @@ class Device(Addressable, ABC):
     def __init__(self,
         name: str,
         room: str,
-        kind: DeviceKind,
-        vendor: Vendor,
+        model: DeviceModel,
         ident: str,
     ):
         self.name = name
         self.room = room
-        self.kind = kind
-        self.vendor = vendor
+        self.model = model
         self.ident = ident
         self._topic = Topic.for_device(
             name=self.name,
-            kind=self.kind,
+            kind=self.model.kind,
             ident=self.ident,
             groups=[]
         )
+
+    @property
+    def vendor(self) -> Vendor:
+        "Specifies the vendor of the device, Ikea or Hue."
+        return self.model.vendor
+
+    @property
+    def kind(self) -> DeviceKind:
+        "Specifies the physical kind of the device."
+        return self.model.kind
 
     @property
     def topic(self) -> Topic:

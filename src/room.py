@@ -5,8 +5,9 @@ from light import Light
 from remote import Remote
 from light_group import LightGroup
 from topic import Topic
-from device import DeviceKind, Vendor, Addressable
+from device import Addressable
 import light_types
+from enums import DeviceModel
 
 class Room(Addressable):
     "A room."
@@ -35,26 +36,25 @@ def living_room() -> Room:
         light_types.simple(
             name="Comfort Light",
             room=name,
-            vendor=Vendor.Ikea,
-            kind=DeviceKind.Outlet,
+            model=DeviceModel.IkeaOutlet,
             ident="aaaa",
         ),
         light_types.dimmable(
             name="Uplight/Reading",
             room=name,
-            vendor=Vendor.Ikea,
+            model=DeviceModel.IkeaDimmable,
             ident="aaab",
         ),
         light_types.white(
             name="Uplight/Main",
             room=name,
-            vendor=Vendor.Hue,
+            model=DeviceModel.HueColor,
             ident="aaac",
         ),
         light_types.color(
             name="Orb",
             room=name,
-            vendor=Vendor.Hue,
+            model=DeviceModel.HueColor,
             ident="aaad"
         ),
     ]
@@ -80,8 +80,7 @@ def office() -> Room:
         light_types.simple(
             name="Comfort Light",
             room=name,
-            kind=DeviceKind.Outlet,
-            vendor=Vendor.Ikea,
+            model=DeviceModel.IkeaOutlet,
             ident="aaad",
         )
     ]

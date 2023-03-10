@@ -3,8 +3,8 @@ from enum import Enum
 from abc import abstractmethod
 from typing import Dict, Optional, Callable, List
 from queue_data import ApiCommand
-from enums import HomeBaseError
-from device import Device, DeviceKind, Vendor
+from enums import HomeBaseError, DeviceModel
+from device import Device
 from topic import Topic
 
 class RemoteButton(Enum):
@@ -68,6 +68,7 @@ class Remote(Device):
         self,
         name: str,
         room: str,
+        model: DeviceModel,
         ident: str,
         controls_topic: Topic,
         button_from_str: Callable[[str], RemoteButton],
@@ -77,9 +78,9 @@ class Remote(Device):
             name=name,
             room=room,
             ident=ident,
-            kind=DeviceKind.Remote,
-            vendor=Vendor.Ikea
+            model=model
         )
+        self.model = model
         self.controls_topic = controls_topic
         self._button_from_str = button_from_str
         self._actions: Dict[RemoteButton, ApiCommand] = actions
@@ -108,6 +109,7 @@ class Remote(Device):
         return Remote(
             name=name,
             room=room,
+            model=DeviceModel.IkeaDimmer,
             controls_topic=controls,
             button_from_str=DimmerButtons.from_str,
             actions=actions,
@@ -133,6 +135,7 @@ class Remote(Device):
         return Remote(
             name=name,
             room=room,
+            model=DeviceModel.IkeaMultiButton,
             controls_topic=controls,
             button_from_str=IkeaMultiButton.from_str,
             actions=actions,

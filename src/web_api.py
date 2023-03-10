@@ -4,7 +4,7 @@ import urllib.parse as url
 from typing import Optional, Tuple, Dict
 from socketserver import TCPServer
 from http.server import BaseHTTPRequestHandler
-from queue import Queue
+from queue import Queue, Empty
 from enums import ApiCommand, ApiQuery, HomeBaseError
 from queue_data import QData, QDataKind
 from topic import Topic
@@ -84,9 +84,16 @@ class Handler(BaseHTTPRequestHandler):
         ))
         self.send_response(200)
         self.end_headers()
-        resp = response_queue.get(block=True)
-        print("Responding to query with:")
-        print(resp)
+        try:
+            resp = response_queue.get(block=True, timeout=60)
+        except Empty:
+            alert("Did not get a response within 60 seconds.")
+            return
+        if len(resp) > 10000:
+            alert("Huge response with over 2000 symbols.")
+        else:
+            print("Responding to query with:")
+            print(resp)
         self.wfile.write(str.encode(resp))
         return
 

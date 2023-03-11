@@ -36,6 +36,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         (kind, command, query) = parsed
         topic = Topic.from_str(query["topic"])
+        if topic.target == "bridge":
+            alert("Received a bridge-targetted message over Web API.")
+            alert(self.path)
+            alert(command)
+            alert(str(query))
         if kind == 'command':
             self.__handle_command(command=command, topic=topic, payload=query)
             return

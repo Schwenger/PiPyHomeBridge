@@ -129,6 +129,7 @@ class TopicTarget(Enum):
     Home   = "Home"
     Room   = "Room"
     Group  = "Group"
+    Bridge = "Bridge"
 
     @staticmethod
     def from_str(val: str) -> Optional['TopicTarget']:

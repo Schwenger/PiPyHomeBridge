@@ -6,7 +6,7 @@ from queue import Queue, Empty
 from paho.mqtt import client as mqtt
 from home import Home
 from enums import QoS, HomeBaseError
-from topic import Topic
+from topic import Topic, TopicTarget
 from queue_data import QData, QDataKind
 from api_command import ApiExec
 from api_query import ApiResponder
@@ -80,6 +80,10 @@ class Controller:
         "Handles the reception of a message"
         remote_topic = Topic.from_str(message.topic)
         data = json.loads(message.payload.decode("utf-8"))
+        if remote_topic.target is TopicTarget.Bridge:
+            info("Received a message with bridge event.")
+            info(str(remote_topic))
+            info(str(data))
         if "action" not in data:
             # Probably status update, can even come from a remote!
             return

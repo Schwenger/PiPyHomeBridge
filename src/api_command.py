@@ -112,5 +112,5 @@ class ApiExec:
 
     def __rename_device(self, topic: Topic, payload: Dict[str, str]):
         pay = Payload.rename(topic.without_base, payload["new_name"])
-        target = "zigbee2mqtt/bridge/request/device/rename"
-        self.__client.publish(target, payload=pay)
+        target = Topic.for_bridge(["request", "device"], "rename")
+        self.__client.publish(target.string, payload=pay)

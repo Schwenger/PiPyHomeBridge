@@ -8,7 +8,7 @@ from colour import Color
 from light_group import AbstractLight #, LightGroup
 from home import Home
 from topic import Topic
-import payload as Payload
+from payload import Payload
 from queue_data import ApiCommand
 from enums import HomeBaseError
 

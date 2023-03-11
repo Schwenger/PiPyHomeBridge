@@ -108,8 +108,8 @@ class LightGroup(AbstractLight):
 
     def turn_on(self, client: mqtt.Client):
         for light in self.all_lights:
-            light.turn_on(client)
             self._refresh(client, light)
+            light.turn_on(client)
 
     def turn_off(self, client: mqtt.Client):
         for light in self.all_lights:

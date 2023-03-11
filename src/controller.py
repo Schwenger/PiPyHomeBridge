@@ -11,7 +11,7 @@ from queue_data import QData, QDataKind
 from api_command import ApiExec
 from api_query import ApiResponder
 import common
-from log import alert, log_qdata, log_client
+from log import alert, log_qdata, log_client, info
 
 config = common.config
 IP   = common.config['mosquitto']['ip']
@@ -21,7 +21,7 @@ class PatchedClient(mqtt.Client):
     "Patches the publish command to also log the request."
     def publish(self: mqtt.Client, topic, payload=None, qos=0, retain=False, properties=None):
         if payload is not None:
-            log_client(topic, payload=payload)
+            log_client(topic, payload=str(payload))
         super().publish(topic, payload, qos, retain, properties)
 
 class Controller:
@@ -50,7 +50,7 @@ class Controller:
                 try:
                     qdata: QData = self.queue.get(block=True, timeout=60*15)
                 except Empty:
-                    print("Controller: Heartbeat.")
+                    info("Controller: Heartbeat.")
                     continue
                 log_qdata(f"""
                     Command: {qdata.command},

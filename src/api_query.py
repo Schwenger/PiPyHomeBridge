@@ -7,7 +7,7 @@ from typing import Dict
 from paho.mqtt import client as mqtt
 from home import Home
 from topic import Topic
-import payload as Payload
+from payload import Payload
 from queue_data import ApiQuery
 from enums import HomeBaseError
 from light_group import LightGroup
@@ -30,7 +30,7 @@ class ApiResponder:
             response = self.__respond_light(topic)
         else:
             raise ValueError("Unknown ApiQuery: " + str(query))
-        data = Payload.cleanse(Payload.as_json(response))
+        data = Payload.prep_for_sending(response)
         channel.put(data)
 
     def __respond_structure(self) -> Dict:

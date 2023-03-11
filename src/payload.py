@@ -8,10 +8,6 @@ from device import Vendor
 __DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
 
-def cleanse(value):
-    "Cleanses the value of swift-incompatible symbols."
-    return value.replace("\"[", "[").replace("]\"", "]").replace("'", "\"")
-
 class Payload:
     "A class for creating payloads."
 
@@ -52,15 +48,20 @@ class Payload:
         self.body["transition"] = time or __DEFAULT_TRANS
         return self
 
-    def as_json(self) -> str:
+    def finalize(self) -> str:
         "Finalizes the payload in json format."
-        return cleanse(json.dumps(self.body))
+        return Payload.prep_for_sending(self.body)
+
+    @staticmethod
+    def cleanse(value):
+        "Cleanses the value of swift-incompatible symbols."
+        return value.replace("\"[", "[").replace("]\"", "]").replace("'", "\"")
 
     @staticmethod
     def __brightness_move(val: float) -> str:
         res = Payload()
         res.body["brightness_move"] = val
-        return res.as_json()
+        return res.finalize()
 
     @staticmethod
     def start_dim(down: bool, speed: int = DEFAULT_DIMMING_SPEED) -> str:
@@ -79,7 +80,16 @@ class Payload:
         res = Payload()
         res.body["from"] = old
         res.body["to"]   = new
-        return res.as_json()
+        return res.finalize()
+
+    @staticmethod
+    def __as_json(data: dict) -> str:
+        return json.dumps(data)
+
+    @staticmethod
+    def prep_for_sending(data: dict) -> str:
+        "Prepares a payload for sending."
+        return Payload.cleanse(Payload.__as_json(data))
 
 ################################################
 ##### READING

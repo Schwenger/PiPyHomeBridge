@@ -193,7 +193,7 @@ class ConcreteLight(Device, ABC):
         "Updates the physical state of the light depending on its virtual state."
         payload = self.state_change_payload()
         if payload is not None:
-            client.publish(self.set_topic(), payload.as_json())
+            client.publish(self.set_topic(), payload.finalize())
 
     def set_toggled_on(self, client: Optional[mqtt.Client], toggled_on: bool):
         """
@@ -247,14 +247,14 @@ class ConcreteLight(Device, ABC):
         Does NOT update anything in the light.
         """
         payload = Payload().state(toggled_on=None)
-        client.publish(self.get_topic(), payload.as_json())
+        client.publish(self.get_topic(), payload.finalize())
 
     def query_brightness(self, client: mqtt.Client):
         """
         Queries a message containing the current brightness of the light.
         Does NOT update anything in the light.
         """
-        client.publish(self.get_topic(), Payload().brightness(None).as_json())
+        client.publish(self.get_topic(), Payload().brightness(None).finalize())
 
 class Light(AbstractLight, ConcreteLight, ABC):
     """

@@ -3,7 +3,7 @@
 from datetime import datetime
 import common
 
-INFO = False
+INFO = True
 ALERT = True
 TRACE = True
 
@@ -32,7 +32,7 @@ def alert(msg: str):
     _put(msg)
 
 
-def log_client(topic: str, payload):
+def log_client(topic: str, payload: str):
     "Prints info about a published message"
     _put(f"{datetime.now()}: Publish {payload} to {topic}", target="client")
 

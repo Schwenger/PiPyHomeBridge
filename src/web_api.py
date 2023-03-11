@@ -9,7 +9,7 @@ from enums import ApiCommand, ApiQuery, HomeBaseError
 from queue_data import QData, QDataKind
 from topic import Topic
 import common
-from log import alert, log_web_request
+from log import alert, log_web_request, info
 
 class Handler(BaseHTTPRequestHandler):
     "Handles web requests and issues the required commands over the queue."
@@ -19,7 +19,7 @@ class Handler(BaseHTTPRequestHandler):
     # pylint: disable=invalid-name
     def do_GET(self):
         "Handles GET requests."
-        print("GET: " + self.path)
+        info("GET: " + self.path)
         try:
             log_web_request(self.path)
             self.__handle_request()
@@ -31,12 +31,11 @@ class Handler(BaseHTTPRequestHandler):
     def __handle_request(self):
         parsed = self.__parse_path()
         if parsed is None:
-            print("Parsing failed.")
+            alert("Parsing request failed: " + self.path)
             self.__reply_err()
             return
         (kind, command, query) = parsed
         topic = Topic.from_str(query["topic"])
-        print("Command targets " + topic.string)
         if kind == 'command':
             self.__handle_command(command=command, topic=topic, payload=query)
             return
@@ -48,13 +47,13 @@ class Handler(BaseHTTPRequestHandler):
         parsed = url.urlparse(self.path)
         split = parsed.path.split('/')
         if len(split) != 3 or split[0] != '':
-            print("Length of path is not 3 or the first entry is not empty.")
+            alert("Length of path is not 3 or the first entry is not empty.")
             return None
         kind = split[1]
         command = split[2]
         query = url.parse_qs(parsed.query)
         if "topic" not in query or len(query["topic"]) == 0:
-            print(f"Query: {query}")
+            alert("Either there is no topic or the topic is empty.")
             return None
         payload: Dict[str, str] = { }
         for key, values in query.items():
@@ -92,8 +91,8 @@ class Handler(BaseHTTPRequestHandler):
         if len(resp) > 10000:
             alert("Huge response with over 2000 symbols.")
         else:
-            print("Responding to query with:")
-            print(resp)
+            info("Responding to query with:")
+            info(resp)
         self.wfile.write(str.encode(resp))
         return
 
@@ -102,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
             raise HomeBaseError.Unreachable
         cmd = ApiCommand.from_str(command)
         if cmd is None:
-            print("Cannot determine cmd")
+            alert("Cannot determine cmd: " + command)
             self.__reply_err()
             return
         Handler.queue.put(QData(
@@ -111,7 +110,6 @@ class Handler(BaseHTTPRequestHandler):
             command=cmd,
             payload=payload
         ))
-        print("Success")
         self.__reply_succ()
         return
 

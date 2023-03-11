@@ -61,11 +61,13 @@ class Controller:
                 try:
                     self.__process(qdata)
                 except HomeBaseError as e:
+                    alert("Controller: {e}")
                     if common.config["crash_on_error"]:
                         raise e
-                    alert("Controller: {e}")
-        except Exception:
+        except Exception as e:
             alert("Critical Error")
+            if common.config["crash_on_error"]:
+                raise e
         print("Exiting Controller.run()")
 
     def refresh_periodically(self):

@@ -2,6 +2,7 @@
 
 from typing import List, Optional, Tuple
 from enums import TopicTarget, TopicCommand, DeviceKind, HomeBaseError
+from log import alert
 
 class Topic:
     """
@@ -52,20 +53,24 @@ class Topic:
         "Creates a topic from a string.  Asserts proper format. May not be a command."
         split = string.split(Topic.SEP)
         if len(split) < 3 or split[0] != Topic.BASE:
+            alert(f"Topic {string} misses base or has less than 3 components.")
             raise HomeBaseError.TopicParseError
         target = TopicTarget.from_str(split[1])
         if target is None:
+            alert(f"Topic {string} has an invalid target.")
             raise HomeBaseError.TopicParseError
         name = split[-1]
         groups = split[2:-1]
         device_id: Optional[Tuple[DeviceKind, str]] = None
         if target is TopicTarget.Device:
             if len(groups) < 2:
+                alert(f"Topic {string} has less than two groups but is a device.")
                 raise HomeBaseError.TopicParseError
             ident = name
             name = groups[-1]
             device_kind = DeviceKind.from_str(groups[0])
             if device_kind is None:
+                alert(f"Topic {string} has an invalid device kind.")
                 raise HomeBaseError.TopicParseError
             groups = groups[1:-1]
             device_id = (device_kind, ident)

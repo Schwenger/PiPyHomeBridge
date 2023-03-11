@@ -6,7 +6,7 @@ import threading
 from colour import Color
 from paho.mqtt import client as mqtt
 from light import Light, ConcreteLight
-import payload
+from payload import Payload
 from enums import DeviceModel
 
 class SimpleLight(Light):
@@ -58,11 +58,9 @@ class SimpleLight(Light):
     def stop_dim(self, client: mqtt.Client):
         self.__dimming = False
 
-    def update_state(self, client: mqtt.Client):
-        if self.state.toggled_on and self.__over_threshold():
-            client.publish(self.set_topic(), payload.state(True, self.kind))
-        else:
-            client.publish(self.set_topic(), payload.state(False, self.kind))
+    def state_change_payload(self) -> Optional[Payload]:
+        physically_on = self.state.toggled_on and self.__over_threshold()
+        return Payload().state(toggled_on=physically_on)
 
     def __over_threshold(self) -> bool:
         return self.state.brightness > self.BRIGHTNESS_THRESHOLD
@@ -108,21 +106,19 @@ class DimmableLight(Light):
         ConcreteLight.set_color_temp(self, client, color)
 
     def start_dim_down(self, client: mqtt.Client):
-        client.publish(self.set_topic(), payload.start_dim(down=True))
+        client.publish(self.set_topic(), Payload.start_dim(down=True))
 
     def start_dim_up(self, client: mqtt.Client):
-        client.publish(self.set_topic(), payload.start_dim(down=False))
+        client.publish(self.set_topic(), Payload.start_dim(down=False))
 
     def stop_dim(self, client: mqtt.Client):
-        client.publish(self.set_topic(), payload.stop_dim())
+        client.publish(self.set_topic(), Payload.stop_dim())
 
-    def update_state(self, client: mqtt.Client):
-        if self.state.toggled_on:
-            client.publish(self.set_topic(), payload.state(True, self.kind))
-        else:
-            client.publish(self.set_topic(), payload.state(False, self.kind))
+    def state_change_payload(self) -> Optional[Payload]:
+        "Creates a payload to realize the current virtual state."
+        payload = Payload().state(self.state.toggled_on)
         new_brightness = int(self.state.toggled_on) * self.state.brightness
-        client.publish(self.set_topic(), payload.brightness(new_brightness))
+        return payload.brightness(new_brightness)
 
 class WhiteSpectrumLight(DimmableLight):
     "A light of varying brightness."
@@ -146,10 +142,12 @@ class WhiteSpectrumLight(DimmableLight):
     def is_color(self) -> bool:
         return False
 
-    def update_state(self, client: mqtt.Client):
-        super().update_state(client)
-        load = payload.white_temp(self.state.white_temp, vendor=self.vendor)
-        client.publish(self.set_topic(), load)
+    def state_change_payload(self) -> Optional[Payload]:
+        payload = super().state_change_payload()
+        if payload is None:
+            return None
+        new_white = int(self.state.toggled_on) * self.state.white_temp
+        return payload.white_temp(new_white, vendor=self.vendor)
 
 class ColorLight(DimmableLight):
     "A light of varying color"
@@ -170,10 +168,11 @@ class ColorLight(DimmableLight):
     def is_color(self) -> bool:
         return True
 
-    def update_state(self, client: mqtt.Client):
-        super().update_state(client)
-        load = payload.color(self.state.color, self.vendor)
-        client.publish(self.set_topic(), load)
+    def state_change_payload(self) -> Optional[Payload]:
+        payload = super().state_change_payload()
+        if payload is None:
+            return None
+        return payload.color(self.state.color, self.vendor)
 
 #######################################
 ##### LIGHT CREATION

@@ -5,7 +5,7 @@ from typing import Optional, List
 from paho.mqtt import client as mqtt
 from colour import Color
 from device import Device, Addressable
-import payload
+from payload import Payload
 from enums import DeviceModel
 
 class LightState:
@@ -186,8 +186,14 @@ class ConcreteLight(Device, ABC):
         return self.__state
 
     @abstractmethod
+    def state_change_payload(self) -> Optional[Payload]:
+        "Creates a payload to realize the current virtual state."
+
     def update_state(self, client: mqtt.Client):
         "Updates the physical state of the light depending on its virtual state."
+        payload = self.state_change_payload()
+        if payload is not None:
+            client.publish(self.set_topic(), payload.as_json())
 
     def set_toggled_on(self, client: Optional[mqtt.Client], toggled_on: bool):
         """
@@ -240,14 +246,15 @@ class ConcreteLight(Device, ABC):
         Queries a message containing the current brightness of the light.
         Does NOT update anything in the light.
         """
-        client.publish(self.get_topic(), payload.state(None, for_kind=None))
+        payload = Payload().state(toggled_on=None)
+        client.publish(self.get_topic(), payload.as_json())
 
     def query_brightness(self, client: mqtt.Client):
         """
         Queries a message containing the current brightness of the light.
         Does NOT update anything in the light.
         """
-        client.publish(self.get_topic(), payload.brightness(None))
+        client.publish(self.get_topic(), Payload().brightness(None).as_json())
 
 class Light(AbstractLight, ConcreteLight, ABC):
     """

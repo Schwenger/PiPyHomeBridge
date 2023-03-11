@@ -3,71 +3,83 @@
 from typing import Optional
 import json
 from colour import Color
-from enums import DeviceKind
 from device import Vendor
 
-DEFAULT_TRANS = 2
+__DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
 
-def as_json(data):
-    "Returns the given dict in json format."
-    return _json(data)
-
-def cleanse(value: str) -> str:
-    "Cleanses a string such that it's compatible with Swift."
+def cleanse(value):
+    "Cleanses the value of swift-incompatible symbols."
     return value.replace("\"[", "[").replace("]\"", "]").replace("'", "\"")
 
-################################################
-##### SENDING
-################################################
-def state(value: Optional[bool], for_kind: Optional[DeviceKind]) -> str:
-    "Creates a payload for a state change."
-    if value is None:
-        val = ""
-    elif value:
-        val = "ON"
-    else:
-        val = "OFF"
-    if for_kind == DeviceKind.Light:
-        return _json(_with_transition({"state" : val}))
-    else:
-        return _json({"state" : val})
+class Payload:
+    "A class for creating payloads."
 
-def brightness(value: Optional[float]) -> str:
-    "Returns a payload to set or retrieve the brightness."
-    if value is None:
-        return _json(_with_transition({"brightness": ""}))
-    return _json(_with_transition({"brightness": _Bright.scaled(value)}))
+    def __init__(self):
+        self.body = {}
 
-def white_temp(value: Optional[float], vendor: Vendor) -> str:
-    "Returns a payload to set or retrieve the color temp."
-    if value is None:
-        return _json(_with_transition({"color_temp": ""}))
-    payload = {"color_temp": _WhiteTemp.scaled(value, vendor)}
-    return _json(_with_transition(payload))
+    def state(self, toggled_on: Optional[bool]) -> 'Payload':
+        "Sets the state or queries it if None."
+        if toggled_on is None:
+            target = ""
+        elif toggled_on:
+            target = "ON"
+        else:
+            target = "OFF"
+        self.body["state"] = target
+        return self
 
-def color(col: Optional[Color], _vendor: Vendor) -> str:
-    "Returns a payload to set or retrieve the given hex color."
-    if col is None:
-        return _json(_with_transition({"color": ""}))
-    payload = { "color": { "hex": col.get_hex_l() } }
-    return _json(_with_transition(payload))
+    def brightness(self, val: Optional[float]) -> 'Payload':
+        "Sets the brightness to val or queries it if none"
+        target = _Bright.scaled(val) if val is not None else ""
+        self.body["brightness"] = target
+        return self
 
-def start_dim(down: bool, speed: int = DEFAULT_DIMMING_SPEED) -> str:
-    "Starts gradually reducing or increasing the brightness."
-    factor = -1 if down else 1
-    payload = { "brightness_move": factor*speed }
-    return _json(payload)
+    def white_temp(self, val: Optional[float], vendor: Vendor) -> 'Payload':
+        "Sets the white temp to val or queries it if none"
+        target = _WhiteTemp.scaled(val, vendor) if val is not None else ""
+        self.body["color_temp"] = target
+        return self
 
-def stop_dim() -> str:
-    "Stops gradually changing the brightness."
-    payload = { "brightness_move": 0 }
-    return _json(payload)
+    def color(self, col: Optional[Color], _vendor: Vendor) -> 'Payload':
+        "Sets the color to col or queries it if none"
+        target = { "hex": col.get_hex_l() } if col is not None else ""
+        self.body["color"] = target
+        return self
 
-def rename(old: str, new: str) -> str:
-    "Returns a payload to rename a device."
-    payload = { "from": old, "to": new }
-    return _json(payload)
+    def with_transition(self, time: Optional[float] = None) -> 'Payload':
+        "Adds a transition component to the payload."
+        self.body["transition"] = time or __DEFAULT_TRANS
+        return self
+
+    def as_json(self) -> str:
+        "Finalizes the payload in json format."
+        return cleanse(json.dumps(self.body))
+
+    @staticmethod
+    def __brightness_move(val: float) -> str:
+        res = Payload()
+        res.body["brightness_move"] = val
+        return res.as_json()
+
+    @staticmethod
+    def start_dim(down: bool, speed: int = DEFAULT_DIMMING_SPEED) -> str:
+        "Starts gradually reducing or increasing the brightness."
+        factor = -1 if down else 1
+        return Payload.__brightness_move(factor*speed)
+
+    @staticmethod
+    def stop_dim() -> str:
+        "Stops gradually changing the brightness."
+        return Payload.__brightness_move(0)
+
+    @staticmethod
+    def rename(old: str, new: str) -> str:
+        "Returns a payload to rename a device."
+        res = Payload()
+        res.body["from"] = old
+        res.body["to"]   = new
+        return res.as_json()
 
 ################################################
 ##### READING
@@ -101,16 +113,6 @@ def read_color(x: float, y: float, Y: float) -> Color:
     g = 12.92*g if g <= 0.0031308 else (1.0 + 0.055) * pow(g, (1.0 / 2.4)) - 0.055
     b = 12.92*b if b <= 0.0031308 else (1.0 + 0.055) * pow(b, (1.0 / 2.4)) - 0.055
     return Color(rgb=(r, g, b))
-
-def _json(payload) -> str:
-    "Creates a payload."
-    return json.dumps(payload)
-
-def _with_transition(payload, transition_time: Optional[int] = None):
-    "Adds a transition specification to the payload"
-    transition_time = transition_time or DEFAULT_TRANS
-    payload["transition"] = transition_time
-    return payload
 
 class _Bright:
     "Deals with brightness values, translates relative brightnesses into absolute values."

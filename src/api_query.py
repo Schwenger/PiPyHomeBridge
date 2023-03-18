@@ -14,24 +14,25 @@ from light_group import LightGroup
 from device import Device
 from log import trace
 
-# pylint: disable=too-few-public-methods
+
 class ApiResponder:
     "Responds to API queries."
-    def __init__(self, home: Home, _client: mqtt.Client):
+    def __init__(self, home: Home, response: Queue, _client: mqtt.Client):
         self.__home = home
+        self.__response = response
         # self.__client = client  # Send request to client for current state
 
-    def respond(self, topic: Topic, query: ApiQuery, channel: Queue):
+    def respond(self, topic: Topic, query: ApiQuery):
         "Executes an API query."
         trace("ApiQuery", "respond")
-        if   query == ApiQuery.Structure:
+        if query == ApiQuery.Structure:
             response = self.__respond_structure()
         elif query == ApiQuery.LightState:
             response = self.__respond_light(topic)
         else:
             raise ValueError("Unknown ApiQuery: " + str(query))
         data = Payload.prep_for_sending(response)
-        channel.put(data)
+        self.__response.put(data)
 
     def __respond_structure(self) -> Dict:
         trace("ApiQuery", "__respond_structure")

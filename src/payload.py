@@ -8,6 +8,7 @@ from device import Vendor
 __DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
 
+
 class Payload:
     "A class for creating payloads."
 
@@ -67,7 +68,7 @@ class Payload:
     def start_dim(down: bool, speed: int = DEFAULT_DIMMING_SPEED) -> str:
         "Starts gradually reducing or increasing the brightness."
         factor = -1 if down else 1
-        return Payload.__brightness_move(factor*speed)
+        return Payload.__brightness_move(factor * speed)
 
     @staticmethod
     def stop_dim() -> str:
@@ -92,19 +93,24 @@ class Payload:
         return Payload.cleanse(Payload.__as_json(data))
 
 ################################################
-##### READING
+# READING
 ################################################
+
+
 def read_brightness(val: str) -> float:
     "Returns the white temperature as scale based on the value retrieved from the device."
     return _Bright.from_device(int(val))
+
 
 def read_state(val: str) -> bool:
     "Returns the white temperature as scale based on the value retrieved from the device."
     return val == "ON"
 
+
 def read_white_temp(val: str, vendor: Vendor) -> float:
     "Returns the white temperature as scale based on the value retrieved from the device."
     return _WhiteTemp.read(int(val), vendor)
+
 
 def read_color(x: float, y: float, Y: float) -> Color:
     "Returns the color temperature based on the value retrieved from the device."
@@ -119,10 +125,11 @@ def read_color(x: float, y: float, Y: float) -> Color:
     g = -X * 0.5217933 + Y * 1.4472381 + Z * 0.0677227
     b = X * 0.0349342 - Y * 0.0968930 + Z * 1.2884099
     # Gamma-correction
-    r = 12.92*r if r <= 0.0031308 else (1.0 + 0.055) * pow(r, (1.0 / 2.4)) - 0.055
-    g = 12.92*g if g <= 0.0031308 else (1.0 + 0.055) * pow(g, (1.0 / 2.4)) - 0.055
-    b = 12.92*b if b <= 0.0031308 else (1.0 + 0.055) * pow(b, (1.0 / 2.4)) - 0.055
+    r = 12.92 * r if r <= 0.0031308 else (1.0 + 0.055) * pow(r, (1.0 / 2.4)) - 0.055
+    g = 12.92 * g if g <= 0.0031308 else (1.0 + 0.055) * pow(g, (1.0 / 2.4)) - 0.055
+    b = 12.92 * b if b <= 0.0031308 else (1.0 + 0.055) * pow(b, (1.0 / 2.4)) - 0.055
     return Color(rgb=(r, g, b))
+
 
 class _Bright:
     "Deals with brightness values, translates relative brightnesses into absolute values."
@@ -132,12 +139,13 @@ class _Bright:
     @staticmethod
     def scaled(scale: float) -> int:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return int(_Bright.max*scale)
+        return int(_Bright.max * scale)
 
     @staticmethod
     def from_device(val: int) -> float:
         "Returns the scalar based on the value retrieved from the device."
         return float(val) / _Bright.max
+
 
 class _WhiteTemp:
     "Deals with white color temperature"
@@ -145,23 +153,23 @@ class _WhiteTemp:
         Vendor.Ikea: {
             "min":  250,
             "max":  454,
-            "diff": 454-250,
+            "diff": 454 - 250,
         },
         Vendor.Hue: {
             "min":  153,
             "max":  500,
-            "diff": 500-153,
+            "diff": 500 - 153,
         }
     }
 
     @staticmethod
     def scaled(scale: float, vendor: Vendor) -> float:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return _WhiteTemp.cfg[vendor]["diff"]*(1-scale) + _WhiteTemp.cfg[vendor]["min"]
+        return _WhiteTemp.cfg[vendor]["diff"] * (1 - scale) + _WhiteTemp.cfg[vendor]["min"]
 
     @staticmethod
     def read(val: int, vendor: Vendor) -> float:
         "Returns the scalar based on the value retrieved from the device."
         upper = _WhiteTemp.cfg[vendor]["diff"]
         val = val - _WhiteTemp.cfg[vendor]["min"]
-        return 1-(float(val) / upper)
+        return 1 - (float(val) / upper)

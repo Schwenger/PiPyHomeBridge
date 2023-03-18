@@ -9,6 +9,7 @@ from device import Addressable
 import light_types
 from enums import DeviceModel
 
+
 class Room(Addressable):
     "A room."
 
@@ -28,6 +29,7 @@ class Room(Addressable):
     def _remote_by_name(self, name: str) -> Optional[Remote]:
         "Finds the light with the given name in the room."
         return next((remote for remote in self.remotes if remote.name == name), None)
+
 
 def living_room() -> Room:
     "Creates an instance of the living room."
@@ -60,7 +62,7 @@ def living_room() -> Room:
     ]
     lights = LightGroup(
         name="Main",
-        single_lights = lights_list,
+        single_lights=lights_list,
         adaptive=True,
         colorful=True,
         hierarchie=[name],
@@ -72,6 +74,7 @@ def living_room() -> Room:
         Remote.default_dimmer(name, controls=room_topic, name="Dimmer", ident="bbbb")
     ]
     return Room(name, lights, remotes)
+
 
 def office() -> Room:
     "Creates an instance of the living room."

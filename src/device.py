@@ -6,6 +6,7 @@ from enums import DeviceKind, DeviceModel, Vendor
 
 TOPIC_BASE = "zigbee2mqtt"
 
+
 class Addressable(ABC):
     "Marks an entity as addressable."
 
@@ -14,10 +15,12 @@ class Addressable(ABC):
     def topic(self) -> Topic:
         "Returns the topic to address this entity"
 
+
 class Device(Addressable, ABC):
     "Represents a generic device"
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         room: str,
         model: DeviceModel,

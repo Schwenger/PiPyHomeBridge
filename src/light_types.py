@@ -9,13 +9,15 @@ from light import Light, ConcreteLight
 from payload import Payload
 from enums import DeviceModel
 
+
 class SimpleLight(Light):
     "A simple on-off light"
 
     BRIGHTNESS_THRESHOLD = 0.33
     DIMMING_SPEED = 0.2
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         room: str,
         model: DeviceModel,
@@ -69,14 +71,16 @@ class SimpleLight(Light):
         speed = 0.2
         while self.__dimming:
             with self.__lock:
-                new_brightness = self.state.brightness + factor*speed*self.DIMMING_SPEED
+                new_brightness = self.state.brightness + factor * speed * self.DIMMING_SPEED
                 super().set_brightness(client, new_brightness)
             time.sleep(speed)
+
 
 class DimmableLight(Light):
     "A light of varying brightness."
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         room: str,
         ident: str,
@@ -120,10 +124,12 @@ class DimmableLight(Light):
         new_brightness = int(self.state.toggled_on) * self.state.brightness
         return payload.brightness(new_brightness)
 
+
 class WhiteSpectrumLight(DimmableLight):
     "A light of varying brightness."
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         room: str,
         model: DeviceModel,
@@ -149,10 +155,12 @@ class WhiteSpectrumLight(DimmableLight):
         new_white = int(self.state.toggled_on) * self.state.white_temp
         return payload.white_temp(new_white, vendor=self.vendor)
 
+
 class ColorLight(DimmableLight):
     "A light of varying color"
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         room: str,
         ident: str,
@@ -175,8 +183,9 @@ class ColorLight(DimmableLight):
         return payload.color(self.state.color, self.vendor)
 
 #######################################
-##### LIGHT CREATION
+# LIGHT CREATION
 #######################################
+
 
 def simple(name: str, room: str, ident: str, model: DeviceModel) -> SimpleLight:
     "Creates a simple on-off light"
@@ -187,13 +196,16 @@ def simple(name: str, room: str, ident: str, model: DeviceModel) -> SimpleLight:
         ident=ident
     )
 
+
 def dimmable(name: str, room: str, ident: str, model: DeviceModel) -> DimmableLight:
     "Creates a dimmable light"
     return DimmableLight(name=name, room=room, ident=ident, model=model)
 
+
 def white(name: str, room: str, ident: str, model: DeviceModel) -> DimmableLight:
     "Creates a white spectrum light"
     return WhiteSpectrumLight(name=name, room=room, ident=ident, model=model)
+
 
 def color(name: str, room: str, ident: str, model: DeviceModel) -> ColorLight:
     "Creates a color light"

@@ -7,6 +7,7 @@ from enums import HomeBaseError, DeviceModel
 from device import Device
 from topic import Topic
 
+
 class RemoteButton(Enum):
     "Abstract button class"
     @classmethod
@@ -18,6 +19,7 @@ class RemoteButton(Enum):
     @abstractmethod
     def string(self) -> str:
         "Returns a string representation"
+
 
 class DimmerButtons(RemoteButton):
     "Enumeration of all dimmer action kinds"
@@ -39,19 +41,19 @@ class DimmerButtons(RemoteButton):
 
 class IkeaMultiButton(RemoteButton):
     "Enumeration of all ikea multi remote action kinds"
-    TOGGLE           = "toggle"
-    ARR_LEFT_CLICK   = "arrow_left_click"
-    ARR_LEFT_HOLD    = "arrow_left_hold"
-    ARR_LEFT_RELEASE = "arrow_left_release"
-    ARR_RIGHT_CLICK  = "arrow_right_click"
-    ARR_RIGHT_HOLD   = "arrow_right_hold"
-    ARR_RIGHT_RELEASE= "arrow_right_release"
-    BRI_DOWN_CLICK   = "brightness_down_click"
-    BRI_DOWN_HOLD    = "brightness_down_hold"
-    BRI_DOWN_RELEASE = "brightness_down_release"
-    BRI_UP_CLICK     = "brightness_up_click"
-    BRI_UP_HOLD      = "brightness_up_hold"
-    BRI_UP_RELEASE   = "brightness_up_release"
+    TOGGLE            = "toggle"
+    ARR_LEFT_CLICK    = "arrow_left_click"
+    ARR_LEFT_HOLD     = "arrow_left_hold"
+    ARR_LEFT_RELEASE  = "arrow_left_release"
+    ARR_RIGHT_CLICK   = "arrow_right_click"
+    ARR_RIGHT_HOLD    = "arrow_right_hold"
+    ARR_RIGHT_RELEASE = "arrow_right_release"
+    BRI_DOWN_CLICK    = "brightness_down_click"
+    BRI_DOWN_HOLD     = "brightness_down_hold"
+    BRI_DOWN_RELEASE  = "brightness_down_release"
+    BRI_UP_CLICK      = "brightness_up_click"
+    BRI_UP_HOLD       = "brightness_up_hold"
+    BRI_UP_RELEASE    = "brightness_up_release"
 
     @staticmethod
     def from_str(str_value: str) -> RemoteButton:
@@ -61,6 +63,7 @@ class IkeaMultiButton(RemoteButton):
     @property
     def string(self) -> str:
         return self.value
+
 
 class Remote(Device):
     "Represents a remote."

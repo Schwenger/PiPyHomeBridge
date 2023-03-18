@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 from enums import TopicTarget, TopicCommand, DeviceKind, HomeBaseError
 import log
 
+
 class Topic:
     """
     Represents topics in the zigbee protocol.
@@ -12,6 +13,7 @@ class Topic:
     """
     BASE = "zigbee2mqtt"
     SEP = "/"
+
     def __init__(
         self,
         target: TopicTarget,

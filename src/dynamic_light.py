@@ -16,14 +16,17 @@ zones = [
     (18, Color("Orange"),    "evening"),
 ]
 
+
 def recommended() -> LightState:
     "Returns the recommended light state for the current time of day."
     current_time = datetime.now()
     time = _time_as_float(current_time)
     return _recommended(time)
 
+
 def _time_as_float(time: datetime) -> float:
-    return time.hour + (time.minute/60)
+    return time.hour + (time.minute / 60)
+
 
 def _recommended(time: float) -> LightState:
     color = _recommended_color(time)
@@ -31,11 +34,14 @@ def _recommended(time: float) -> LightState:
     temp = _recommended_temp(time)
     return LightState(True, brightness, temp, color)
 
+
 def _recommended_brightness(time: float) -> float:
     return 1 - (abs(12 - time) / 12)
 
+
 def _recommended_temp(time: float) -> float:
     return _recommended_brightness(time)
+
 
 def _recommended_color(time: float) -> Color:
     for start, end in zip(zones, zones[1:]):
@@ -43,6 +49,7 @@ def _recommended_color(time: float) -> Color:
             return _color_in_zone(time, start, end)
     end_color = zones[0][1]
     return _color_in_zone(time, zones[-1], (24, end_color, "irrelevant"))
+
 
 def _color_in_zone(
     time: float,

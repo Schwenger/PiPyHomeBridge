@@ -5,23 +5,24 @@ The logic for executing API commands
 from typing import Dict
 from paho.mqtt import client as mqtt
 from colour import Color
-from light_group import AbstractLight #, LightGroup
+from light_group import AbstractLight  # , LightGroup
 from home import Home
 from topic import Topic
 from payload import Payload
 from queue_data import ApiCommand
 from enums import HomeBaseError
 
-# pylint: disable=too-few-public-methods
+
 class ApiExec:
     "Executes API command."
+
     def __init__(self, home: Home, client: mqtt.Client):
         self.__home = home
         self.__client = client
 
     def exec(self, topic: Topic, cmd: ApiCommand, payload: Dict[str, str]):
         "Executes an API command."
-        if   cmd == ApiCommand.Toggle:
+        if cmd == ApiCommand.Toggle:
             self.__toggle(topic)
         elif cmd == ApiCommand.TurnOn:
             self.__turn_on(topic)
@@ -61,6 +62,8 @@ class ApiExec:
             if payload is None:
                 raise HomeBaseError.PayloadNotFound
             self.__rename_device(topic, payload)
+        elif cmd == ApiCommand.Refresh:
+            self.__refresh()
 
     def __get_target(self, topic: Topic) -> AbstractLight:
         light = self.__home.find_light(topic)
@@ -114,3 +117,6 @@ class ApiExec:
         pay = Payload.rename(topic.without_base, payload["new_name"])
         target = Topic.for_bridge(["request", "device"], "rename")
         self.__client.publish(target.string, payload=pay)
+
+    def __refresh(self):
+        self.__home.refresh_lights(self.__client)

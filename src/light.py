@@ -8,6 +8,7 @@ from device import Device, Addressable
 from payload import Payload
 from enums import DeviceModel
 
+
 class LightState:
     "Represents the state of a light."
     def __init__(
@@ -58,15 +59,16 @@ class LightState:
             blue += state.color.get_blue()**2
         # pylint: disable=invalid-name
         n = len(states)
-        red = math.sqrt(red/n)
-        green = math.sqrt(green/n)
-        blue = math.sqrt(blue/n)
+        red = math.sqrt(red / n)
+        green = math.sqrt(green / n)
+        blue = math.sqrt(blue / n)
         return LightState(
-            toggled_on = ons / n >= 0.5,
-            brightness=brightness/n,
-            white_temp=white_temp/n,
+            toggled_on=ons / n >= 0.5,
+            brightness=brightness / n,
+            white_temp=white_temp / n,
             color=Color(rgb=(red, green, blue))
         )
+
 
 class AbstractLight(Addressable, ABC):
     """
@@ -79,7 +81,7 @@ class AbstractLight(Addressable, ABC):
         "The light state."
 
     ################################################
-    ############## INFORMATIONAL API ###############
+    # INFORMATIONAL API
     ################################################
     @abstractmethod
     def is_dimmable(self) -> bool:
@@ -90,7 +92,7 @@ class AbstractLight(Addressable, ABC):
         "Determines if the light can display different colors"
 
     ################################################
-    ##### FUNCTIONAL API
+    # FUNCTIONAL API
     ################################################
 
     @abstractmethod
@@ -158,6 +160,7 @@ class AbstractLight(Addressable, ABC):
             Also physically realizes the state if a client is given.
         """
 
+
 class ConcreteLight(Device, ABC):
     """
         Represents a concrete, physical light source, e.g. a light source
@@ -166,7 +169,8 @@ class ConcreteLight(Device, ABC):
         physical commands sent over the mqtt bridge.
     """
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str,
         room: str,
         ident: str,
@@ -239,7 +243,7 @@ class ConcreteLight(Device, ABC):
         self.update_state(client)
 
     #######################################
-    ##### QUERY
+    # QUERY
     #######################################
     def query_state(self, client: mqtt.Client):
         """
@@ -256,6 +260,7 @@ class ConcreteLight(Device, ABC):
         """
         client.publish(self.get_topic(), Payload().brightness(None).finalize())
 
+
 class Light(AbstractLight, ConcreteLight, ABC):
     """
         Translates abstract commands like 'Dim the light!' into a virtual
@@ -271,7 +276,7 @@ class Light(AbstractLight, ConcreteLight, ABC):
         self._realize_state(client, state)
 
     ################################################
-    ##### FUNCTIONAL API
+    # FUNCTIONAL API
     ################################################
 
     def turn_on(self, client: mqtt.Client):

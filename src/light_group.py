@@ -7,6 +7,7 @@ from light import Light, LightState, AbstractLight
 from topic import Topic
 import dynamic_light
 
+
 class LightGroup(AbstractLight):
     """
         A collection of abstract lights.
@@ -40,10 +41,10 @@ class LightGroup(AbstractLight):
     @property
     def all_lights(self) -> List[AbstractLight]:
         "Returns a list of all abstract lights"
-        return self.single_lights + self.groups # type: ignore
+        return self.single_lights + self.groups  # type: ignore
 
     ################################################
-    ##### CONFIGURATIVE API
+    # CONFIGURATIVE API
     ################################################
     def enable_adaptive_dimming(self):
         "Enables AdaptiveDimming"
@@ -62,7 +63,7 @@ class LightGroup(AbstractLight):
         self.colorful = False
 
     ################################################
-    ##### INFORMATIONAL API
+    # INFORMATIONAL API
     ################################################
     def is_dimmable(self) -> bool:
         return any(map(AbstractLight.is_dimmable, self.all_lights))
@@ -71,7 +72,7 @@ class LightGroup(AbstractLight):
         return any(map(AbstractLight.is_color, self.all_lights))
 
     ################################################
-    ##### COLLECTION API
+    # COLLECTION API
     ################################################
 
     def refresh(self, client):
@@ -87,7 +88,7 @@ class LightGroup(AbstractLight):
         return res
 
     ################################################
-    ##### FUNCTIONAL API
+    # FUNCTIONAL API
     ################################################
 
     def realize_state(self, client: mqtt.Client, state: LightState):
@@ -150,7 +151,7 @@ class LightGroup(AbstractLight):
             light.set_color_temp(client, color)
 
     ################################################
-    ##### PROTECTED
+    # PROTECTED
     ################################################
 
     def _any_on(self) -> bool:

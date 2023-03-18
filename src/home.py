@@ -9,6 +9,7 @@ from remote import Remote
 from light import AbstractLight, Light
 from device import Addressable
 
+
 class Home(Addressable):
     "Collection of rooms"
 

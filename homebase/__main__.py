@@ -3,6 +3,7 @@ Main module for the smart home.
 Starts the controller, handles requests, and listens to a port for commands.
 """
 
+import logging
 import os
 import threading
 import time
@@ -18,7 +19,15 @@ from worker import Worker
 import common
 
 if __name__ == "__main__":
-    log_dir = common.config["log"]
+    log_dir   = common.config["log"]["dir"]
+    log_fmt   = common.config["log"]["format"]
+    log_level = common.config["log"]["level"]
+    logging.basicConfig(
+        filename=os.path.join(log_dir, 'mylogs.log'),
+        level=log_level,
+        format=log_fmt
+    )
+
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 

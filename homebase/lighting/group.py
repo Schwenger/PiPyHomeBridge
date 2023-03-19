@@ -2,16 +2,18 @@
 
 from typing import List, Optional
 
-import lights
 from colour import Color
 from comm.topic import Topic
-from lights.interface import AbstractLight, Light, LightState
+from lighting import dynamic
+from lighting.abstract import Abstract
+from lighting.concrete import Concrete
+from lighting.state import State
 from paho.mqtt import client as mqtt
 
 # import lights.dynamic_light
 
 
-class LightGroup(AbstractLight):
+class Group(Abstract):
     """
         A collection of abstract lights.
         Has additional configurative options like colorful mode or adaptive dimming.
@@ -19,23 +21,23 @@ class LightGroup(AbstractLight):
 
     def __init__(
         self,
-        single_lights:     List[Light],
-        name: str,
-        groups:     List['LightGroup'],
-        adaptive:   bool,
-        colorful:   bool,
-        hierarchie: List[str]
+        single_lights: List[Concrete],
+        name:          str,
+        groups:        List['Group'],
+        adaptive:      bool,
+        colorful:      bool,
+        hierarchie:    List[str]
     ):
-        self.name: str = name
-        self.adaptive:      bool                = adaptive
-        self.colorful:      bool                = colorful
-        self.groups:        List[LightGroup]    = groups
-        self.hierarchie:    List[str]           = hierarchie
-        self.single_lights: List[Light]         = single_lights
+        self.name:          str            = name
+        self.adaptive:      bool           = adaptive
+        self.colorful:      bool           = colorful
+        self.groups:        List[Group]    = groups
+        self.hierarchie:    List[str]      = hierarchie
+        self.single_lights: List[Concrete] = single_lights
 
     @property
-    def state(self) -> LightState:
-        return LightState.average(list(map(lambda lig: lig.state, self.all_lights)))
+    def state(self) -> State:
+        return State.average(list(map(lambda lig: lig.state, self.all_lights)))
 
     @property
     def topic(self) -> Topic:
@@ -43,7 +45,7 @@ class LightGroup(AbstractLight):
         return Topic.for_group(self.hierarchie)
 
     @property
-    def all_lights(self) -> List[AbstractLight]:
+    def all_lights(self) -> List[Abstract]:
         "Returns a list of all abstract lights"
         return self.single_lights + self.groups  # type: ignore
 
@@ -70,10 +72,10 @@ class LightGroup(AbstractLight):
     # INFORMATIONAL API
     ################################################
     def is_dimmable(self) -> bool:
-        return any(map(AbstractLight.is_dimmable, self.all_lights))
+        return any(map(Abstract.is_dimmable, self.all_lights))
 
     def is_color(self) -> bool:
-        return any(map(AbstractLight.is_color, self.all_lights))
+        return any(map(Abstract.is_color, self.all_lights))
 
     ################################################
     # COLLECTION API
@@ -84,7 +86,7 @@ class LightGroup(AbstractLight):
         for light in self.all_lights:
             self._refresh(client, light)
 
-    def flatten_lights(self) -> List[Light]:
+    def flatten_lights(self) -> List[Concrete]:
         "Returns a flat list of lights appearing in this group."
         res = self.single_lights
         for group in self.groups:
@@ -95,7 +97,7 @@ class LightGroup(AbstractLight):
     # FUNCTIONAL API
     ################################################
 
-    def realize_state(self, client: mqtt.Client, state: LightState):
+    def realize_state(self, client: mqtt.Client, state: State):
         for light in self.all_lights:
             light.realize_state(client, state)
 
@@ -161,7 +163,7 @@ class LightGroup(AbstractLight):
     def _any_on(self) -> bool:
         return any(map(lambda light: light.state.toggled_on, self.all_lights))
 
-    def _refresh(self, client, light: AbstractLight):
-        target_state = lights.dynamic.recommended()
+    def _refresh(self, client, light: Abstract):
+        target_state = dynamic.recommended()
         if light.state.toggled_on and target_state.toggled_on:
             light.realize_state(client, target_state)

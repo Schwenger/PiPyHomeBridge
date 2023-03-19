@@ -1,16 +1,16 @@
 "Bla"
+import logging
 import urllib.parse as url
 from http.server import BaseHTTPRequestHandler
 from queue import Empty, Queue
 from socketserver import TCPServer
 from typing import Dict, Optional, Tuple
 
-from comm.enums import ApiCommand, ApiQuery, HomeBaseError
+from comm.enums import ApiCommand, ApiQuery
 from comm.queue_data import QData, QDataKind
 from comm.topic import Topic
+from homebaseerror import HomeBaseError
 from worker import Worker
-
-import log
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -23,43 +23,43 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         "Handles GET requests."
         try:
-            log.web_request(self.path)
+            logging.info("Web Request: %s", self.path)
             self.__handle_request()
         except Exception as err:
-            log.report_error(err, src="WebApi")
+            logging.critical("Error in WebApi: %s", err.with_traceback(None))
             self.send_response(401)
             self.end_headers()
 
     def __handle_request(self):
         parsed = self.__parse_path()
         if parsed is None:
-            log.alert("Parsing request failed: " + self.path)
+            logging.error("Parsing request failed: %s", self.path)
             raise HomeBaseError.WebRequestParseError
         (kind, command, query) = parsed
         topic = Topic.from_str(query["topic"])
         if topic.target == "bridge":
-            log.alert("Received a bridge-targetted message over Web API.")
-            log.alert(self.path)
-            log.alert(command)
-            log.alert(str(query))
+            logging.info("Received a bridge-targetted message over Web API.")
+            logging.info(self.path)
+            logging.info(command)
+            logging.info(str(query))
         if kind == 'command':
             return self.__handle_command(command=command, topic=topic, payload=query)
         elif kind == 'query':
             return self.__handle_query(query_str=command, topic=topic)
-        log.alert("Parsing request kind failed: " + kind)
+        logging.error("Parsing request kind failed: %s", kind)
         raise HomeBaseError.WebRequestParseError
 
     def __parse_path(self) -> Optional[Tuple[str, str, Dict[str, str]]]:
         parsed = url.urlparse(self.path)
         split = parsed.path.split('/')
         if len(split) != 3 or split[0] != '':
-            log.alert("Length of path is not 3 or the first entry is not empty.")
+            logging.error("Length of path is not 3 or the first entry is not empty.")
             raise HomeBaseError.WebRequestParseError
         kind = split[1]
         command = split[2]
         query = url.parse_qs(parsed.query)
         if "topic" not in query or len(query["topic"]) == 0:
-            log.alert("Either there is no topic or the topic is empty.")
+            logging.error("Either there is no topic or the topic is empty.")
             raise HomeBaseError.WebRequestParseError
         payload: Dict[str, str] = { }
         for key, values in query.items():
@@ -71,7 +71,7 @@ class Handler(BaseHTTPRequestHandler):
             raise HomeBaseError.Unreachable
         query = ApiQuery.from_str(query_str)
         if query is None:
-            log.alert("Query does not contain a valid command: " + str(query))
+            logging.error("Query does not contain a valid command: %s", query)
             raise HomeBaseError.WebRequestParseError
         Handler.request.put(QData.api_query(
             topic=topic,
@@ -82,10 +82,10 @@ class Handler(BaseHTTPRequestHandler):
         try:
             resp = Handler.response.get(block=True, timeout=60)
         except Empty as ecx:
-            log.alert("Did not get a response within 60 seconds.")
+            logging.error("Did not get a response within 60 seconds.")
             raise HomeBaseError.QueryNoResponse from ecx
-        log.info("Responding to query with:")
-        log.info(resp)
+        logging.debug("Responding to query with:")
+        logging.debug(resp)
         self.wfile.write(str.encode(resp))
         return
 
@@ -94,7 +94,7 @@ class Handler(BaseHTTPRequestHandler):
             raise HomeBaseError.Unreachable
         cmd = ApiCommand.from_str(command)
         if cmd is None:
-            log.alert("Command does not contain a valid command: " + str(command))
+            logging.error("Command does not contain a valid command: %s", command)
             raise HomeBaseError.WebRequestParseError
         Handler.request.put(QData(
             kind=QDataKind.ApiAction,
@@ -118,7 +118,7 @@ class WebAPI(Worker):
     def __init__(self, request: Queue, response: Queue):
         _update_handler_queue(request=request, response=response)
 
-    def run(self):
+    def _run(self):
         "Starts serving TCP requests."
         try:
             httpd = TCPServer(("", 8088), Handler)

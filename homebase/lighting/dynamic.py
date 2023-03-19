@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Tuple
 
 from colour import Color
-from lights.interface import LightState
+from lighting.state import State
 
 zones = [
     ( 0, Color("DarkGreen"), "midnight"),
@@ -18,7 +18,7 @@ zones = [
 ]
 
 
-def recommended() -> LightState:
+def recommended() -> State:
     "Returns the recommended light state for the current time of day."
     current_time = datetime.now()
     time = _time_as_float(current_time)
@@ -29,11 +29,11 @@ def _time_as_float(time: datetime) -> float:
     return time.hour + (time.minute / 60)
 
 
-def _recommended(time: float) -> LightState:
+def _recommended(time: float) -> State:
     color = _recommended_color(time)
     brightness = _recommended_brightness(time)
     temp = _recommended_temp(time)
-    return LightState(True, brightness, temp, color)
+    return State(True, brightness, temp, color)
 
 
 def _recommended_brightness(time: float) -> float:

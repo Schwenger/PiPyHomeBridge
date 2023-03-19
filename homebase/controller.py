@@ -1,18 +1,18 @@
 "Example for contorling tradfri devices over python."
 
 import json
+import logging
 import time
 from queue import Queue
 
-from comm.enums import HomeBaseError, QoS
+import common
+from comm.enums import QoS
 from comm.queue_data import QData
 from comm.topic import Topic, TopicTarget
 from home.home import Home
+from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 from worker import Worker
-
-import common
-import log
 
 config = common.config
 IP   = common.config['mosquitto']['ip']
@@ -23,7 +23,7 @@ class PatchedClient(mqtt.Client):
     "Patches the publish command to also log the request."
     def publish(self: mqtt.Client, topic, payload=None, qos=0, retain=False, properties=None):
         if payload is not None:
-            log.client(topic, payload=str(payload))
+            logging.info("MQTT: Sending message to %s with payload %s.", topic, payload)
         super().publish(topic, payload, qos, retain, properties)
 
 
@@ -43,9 +43,9 @@ class Controller(Worker):
 
     @staticmethod
     def __on_disconnect(_client, _userdata,  _rc):
-        log.alert("Client disconnected.")
+        logging.error("Client disconnected.")
 
-    def run(self):
+    def _run(self):
         "Retrieves message from the queue and processes it."
         self.client.loop_start()
 
@@ -54,9 +54,9 @@ class Controller(Worker):
         remote_topic = Topic.from_str(message.topic)
         data = json.loads(message.payload.decode("utf-8"))
         if remote_topic.target is TopicTarget.Bridge:
-            log.info("Received a message with bridge event.")
-            log.info(str(remote_topic))
-            log.info(str(data))
+            logging.info("Received a message with bridge event.")
+            logging.info(str(remote_topic))
+            logging.info(str(data))
         if "action" not in data:
             # Probably status update, can even come from a remote!
             return
@@ -100,7 +100,7 @@ class Refresher(Worker):
     def __init__(self, queue: Queue):
         self.queue = queue
 
-    def run(self):
+    def _run(self):
         "Periodically issues a refresh command through the queue."
         while True:
             self.queue.put(QData.refresh())

@@ -1,10 +1,10 @@
 "Anything related to zigbee topics."
 
+import logging
 from typing import List, Optional, Tuple
 
-from comm.enums import DeviceKind, HomeBaseError, TopicCommand, TopicTarget
-
-import log
+from comm.enums import DeviceKind, TopicCommand, TopicTarget
+from homebaseerror import HomeBaseError
 
 
 class Topic:
@@ -57,24 +57,24 @@ class Topic:
         "Creates a topic from a string.  Asserts proper format. May not be a command."
         split = string.split(Topic.SEP)
         if len(split) < 3 or split[0] != Topic.BASE:
-            log.alert(f"Topic {string} misses base or has less than 3 components.")
+            logging.error("Topic %s misses base or has less than 3 components.", string)
             raise HomeBaseError.TopicParseError
         target = TopicTarget.from_str(split[1])
         if target is None:
-            log.alert(f"Topic {string} has an invalid target.")
+            logging.error("Topic %s has an invalid target.", string)
             raise HomeBaseError.TopicParseError
         name = split[-1]
         groups = split[2:-1]
         device_id: Optional[Tuple[DeviceKind, str]] = None
         if target is TopicTarget.Device:
             if len(groups) < 2:
-                log.alert(f"Topic {string} has less than two groups but is a device.")
+                logging.error("Topic %s has less than two groups but is a device.", string)
                 raise HomeBaseError.TopicParseError
             ident = name
             name = groups[-1]
             device_kind = DeviceKind.from_str(groups[0])
             if device_kind is None:
-                log.alert(f"Topic {string} has an invalid device kind.")
+                logging.error("Topic %s has an invalid device kind.", string)
                 raise HomeBaseError.TopicParseError
             groups = groups[1:-1]
             device_id = (device_kind, ident)

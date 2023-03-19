@@ -2,12 +2,14 @@
 
 from typing import List, Optional, Tuple
 
-from comm.enums import ApiCommand, HomeBaseError
+from comm.enums import ApiCommand
 from comm.topic import Topic
 from home.device import Addressable
 from home.remote import Remote
 from home.room import Room, living_room, office
-from lights.interface import AbstractLight, Light
+from homebaseerror import HomeBaseError
+from lighting import Abstract as AbstractLight
+from lighting import Concrete as ConcreteLight
 from paho.mqtt import client as mqtt
 
 
@@ -47,9 +49,9 @@ class Home(Addressable):
         "Returns all remotes in the home"
         return sum(map(lambda r: r.remotes, self.rooms), [])
 
-    def flatten_lights(self) -> List[Light]:
+    def flatten_lights(self) -> List[ConcreteLight]:
         "Returns all lights in the home"
-        return sum(map(lambda r: r.lights.flatten_lights(), self.rooms), [])
+        return sum(map(lambda r: r.group.flatten_lights(), self.rooms), [])
 
     def find_remote(self, topic: Topic) -> Optional[Remote]:
         "Find the remote with the given topic."
@@ -59,7 +61,7 @@ class Home(Addressable):
                     return remote
         return None
 
-    def find_light(self, topic: Topic) -> Optional[Light]:
+    def find_light(self, topic: Topic) -> Optional[ConcreteLight]:
         "Find the light with the given topic."
         for room in self.rooms:
             for light in room.group.flatten_lights():

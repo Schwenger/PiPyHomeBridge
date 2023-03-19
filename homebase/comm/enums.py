@@ -146,16 +146,3 @@ class TopicTarget(str, Enum):
         if val not in set(item.value for item in TopicTarget):
             return None
         return TopicTarget(val)
-
-
-class HomeBaseError(Exception, Enum):
-    "General error class"
-    PayloadNotFound = "Could not find a they required payload."
-    RoomNotFound = "Could not find room."
-    RemoteNotFound = "Could not find remote."
-    Unreachable = "Some programmer error occured."
-    LightNotFound = "Could not find light."
-    InvalidRemoteAction = "Cannot determine the action of a remote operation."
-    TopicParseError = "Failed to parse remote string."
-    WebRequestParseError = "Failed to parse URL of web request."
-    QueryNoResponse = "Did not receive a response for a query in time."

@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 from comm.enums import ApiCommand, ApiQuery, QDataKind
 from comm.topic import Topic
-from lights.interface import LightState
+import lighting
 
 
 class QData:
@@ -14,13 +14,13 @@ class QData:
         kind:     QDataKind,
         payload:  Dict[str, str],
         topic:    Optional[Topic]      = None,
-        state:    Optional[LightState] = None,
+        state:    Optional[lighting.State] = None,
         command:  Optional[ApiCommand] = None,
         query:    Optional[ApiQuery]   = None,
     ):
         self.kind:     QDataKind            = kind
         self.topic:    Optional[Topic]      = topic
-        self.state:    Optional[LightState] = state
+        self.state:    Optional[lighting.State] = state
         self.command:  Optional[ApiCommand] = command
         self.query:    Optional[ApiQuery]   = query
         self.payload:  Dict[str, str]       = payload

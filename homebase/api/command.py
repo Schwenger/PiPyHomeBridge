@@ -5,12 +5,12 @@ The logic for executing API commands
 from typing import Dict
 
 from colour import Color
-from comm.enums import HomeBaseError
 from comm.payload import Payload
 from comm.queue_data import ApiCommand
 from comm.topic import Topic
 from home.home import Home
-from lights.interface import AbstractLight
+from homebaseerror import HomeBaseError
+from lighting import Abstract
 from paho.mqtt import client as mqtt
 
 
@@ -66,14 +66,14 @@ class ApiExec:
         elif cmd == ApiCommand.Refresh:
             self.__refresh()
 
-    def __get_target(self, topic: Topic) -> AbstractLight:
+    def __get_target(self, topic: Topic) -> Abstract:
         light = self.__home.find_light(topic)
         if light is not None:
             return light
         room = self.__home.room_by_name(topic.name)
         if room is None:
             raise HomeBaseError.RoomNotFound
-        return room.lights
+        return room.group
 
     def __toggle(self, topic: Topic):
         self.__get_target(topic).toggle(self.__client)

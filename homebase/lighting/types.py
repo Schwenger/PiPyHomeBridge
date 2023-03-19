@@ -4,14 +4,14 @@ import threading
 import time
 from typing import Optional
 
-from colour import Color
 from comm.enums import DeviceModel
 from comm.payload import Payload
-from lights.interface import ConcreteLight, Light
+from lighting.concrete import Concrete
+from lighting.abstract import Abstract
 from paho.mqtt import client as mqtt
 
 
-class SimpleLight(Light):
+class SimpleLight(Concrete, Abstract):
     "A simple on-off light"
 
     BRIGHTNESS_THRESHOLD = 0.33
@@ -33,23 +33,18 @@ class SimpleLight(Light):
         self.__lock = threading.Lock()  # protects virtual brightness
         self.__dimming = False
 
-    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
-        with self.__lock:
-            ConcreteLight.set_brightness(self, client, brightness)
-
-    def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
-        ConcreteLight.set_white_temp(self, client, temp)
-
-    # pylint: disable=redefined-outer-name
-    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
-        ConcreteLight.set_color_temp(self, client, color)
-
+    ################################################
+    # Implement Abstract
+    ################################################
     def is_dimmable(self) -> bool:
         return False
 
     def is_color(self) -> bool:
         return False
 
+    ################################################
+    # Overriding Functions
+    ################################################
     def start_dim_down(self, client: mqtt.Client):
         self.__dimming = True
         threading.Thread(target=self.__pseudo_dim, args=(client, -1)).start()
@@ -65,6 +60,10 @@ class SimpleLight(Light):
         physically_on = self.state.toggled_on and self.__over_threshold()
         return Payload().state(toggled_on=physically_on)
 
+    ################################################
+    # Private Functions
+    ################################################
+
     def __over_threshold(self) -> bool:
         return self.state.brightness > self.BRIGHTNESS_THRESHOLD
 
@@ -77,7 +76,7 @@ class SimpleLight(Light):
             time.sleep(speed)
 
 
-class DimmableLight(Light):
+class DimmableLight(Concrete):
     "A light of varying brightness."
 
     def __init__(
@@ -94,36 +93,14 @@ class DimmableLight(Light):
             ident=ident
         )
 
+    ################################################
+    # Implement Abstract
+    ################################################
     def is_dimmable(self) -> bool:
         return True
 
     def is_color(self) -> bool:
         return False
-
-    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
-        ConcreteLight.set_brightness(self, client, brightness)
-
-    def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
-        ConcreteLight.set_white_temp(self, client, temp)
-
-    # pylint: disable=redefined-outer-name
-    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
-        ConcreteLight.set_color_temp(self, client, color)
-
-    def start_dim_down(self, client: mqtt.Client):
-        client.publish(self.set_topic(), Payload.start_dim(down=True))
-
-    def start_dim_up(self, client: mqtt.Client):
-        client.publish(self.set_topic(), Payload.start_dim(down=False))
-
-    def stop_dim(self, client: mqtt.Client):
-        client.publish(self.set_topic(), Payload.stop_dim())
-
-    def state_change_payload(self) -> Optional[Payload]:
-        "Creates a payload to realize the current virtual state."
-        payload = Payload().state(self.state.toggled_on)
-        new_brightness = int(self.state.toggled_on) * self.state.brightness
-        return payload.brightness(new_brightness)
 
 
 class WhiteSpectrumLight(DimmableLight):
@@ -149,13 +126,6 @@ class WhiteSpectrumLight(DimmableLight):
     def is_color(self) -> bool:
         return False
 
-    def state_change_payload(self) -> Optional[Payload]:
-        payload = super().state_change_payload()
-        if payload is None:
-            return None
-        new_white = int(self.state.toggled_on) * self.state.white_temp
-        return payload.white_temp(new_white, vendor=self.vendor)
-
 
 class ColorLight(DimmableLight):
     "A light of varying color"
@@ -176,12 +146,6 @@ class ColorLight(DimmableLight):
 
     def is_color(self) -> bool:
         return True
-
-    def state_change_payload(self) -> Optional[Payload]:
-        payload = super().state_change_payload()
-        if payload is None:
-            return None
-        return payload.color(self.state.color, self.vendor)
 
 #######################################
 # LIGHT CREATION

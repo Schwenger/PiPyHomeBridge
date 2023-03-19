@@ -2,19 +2,18 @@
 The logic for executing API commands
 """
 
+import logging
 from queue import Queue
 from typing import Dict
 
-from comm.enums import HomeBaseError
+import lighting
 from comm.payload import Payload
 from comm.queue_data import ApiQuery
 from comm.topic import Topic
 from home.device import Device
 from home.home import Home
-from lights.group import LightGroup
+from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
-
-import log
 
 
 class ApiResponder:
@@ -26,7 +25,7 @@ class ApiResponder:
 
     def respond(self, topic: Topic, query: ApiQuery):
         "Executes an API query."
-        log.trace("ApiQuery", "respond")
+        logging.debug("ApiQuery: respond")
         if query == ApiQuery.Structure:
             response = self.__respond_structure()
         elif query == ApiQuery.LightState:
@@ -37,7 +36,7 @@ class ApiResponder:
         self.__response.put(data)
 
     def __respond_structure(self) -> Dict:
-        log.trace("ApiQuery", "__respond_structure")
+        logging.debug("ApiQuery: __respond_structure")
         rooms = []
         for room in self.__home.rooms:
             remotes = []
@@ -47,15 +46,15 @@ class ApiResponder:
                 remotes.append(res)
             rooms.append({
                 "name":     room.name,
-                "lights":   self.__compile_group_structure(room.lights),
+                "lights":   self.__compile_group_structure(room.group),
                 "remotes":  remotes,
             })
         return {
             "rooms": rooms,
         }
 
-    def __compile_group_structure(self, group: LightGroup) -> Dict:
-        log.trace("ApiQuery", "__compile_group_structure")
+    def __compile_group_structure(self, group: lighting.Group) -> Dict:
+        logging.debug("ApiQuery: __compile_group_structure")
         singles = []
         for light in group.single_lights:
             res = self.__respond_device(light)
@@ -69,7 +68,7 @@ class ApiResponder:
         }
 
     def __respond_device(self, device: Device) -> Dict:
-        log.trace("ApiQuery", "__respond_device")
+        logging.debug("ApiQuery: __respond_device")
         return {
             "name":   device.name,
             "id":     device.ident,
@@ -78,7 +77,7 @@ class ApiResponder:
         }
 
     def __respond_light(self, topic) -> Dict:
-        log.trace("ApiQuery", "__respond_light")
+        logging.debug("ApiQuery: __respond_light")
         if topic is None:
             raise HomeBaseError.Unreachable
         light = self.__home.find_light(topic=topic)

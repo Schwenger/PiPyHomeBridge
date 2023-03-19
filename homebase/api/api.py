@@ -1,16 +1,16 @@
 "Bla"
 
+import logging
 from queue import Empty, Queue
 
 from api.command import ApiExec
 from api.query import ApiResponder
 from comm.enums import QDataKind
 from comm.queue_data import QData
-from home.home import Home, HomeBaseError
+from home.home import Home
+from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 from worker import Worker
-
-import log
 
 
 class Api(Worker):
@@ -22,19 +22,20 @@ class Api(Worker):
         self.exec       = ApiExec(home, client)
         self.responder  = ApiResponder(home, response_q, client)
 
-    def run(self):
+    def _run(self):
         while True:
             try:
                 qdata: QData = self.request_q.get(block=True, timeout=60 * 15)
             except Empty:
-                log.info("Controller: Heartbeat.")
+                logging.info("Controller: Heartbeat.")
                 continue
-            log.qdata(f"""
-                Command: {qdata.command},
-                Query: {qdata.query},
-                Kind: {qdata.kind},
-                Topic: {qdata.topic}
-                """)
+            logging.info(
+                "Command: %s, Query: %s, Kind: %s, Topic: %s",
+                qdata.command,
+                qdata.query,
+                qdata.kind,
+                str(qdata.topic)
+            )
             self.__process(qdata)
 
     def __process(self, qdata: QData):

@@ -2,13 +2,12 @@
 
 from typing import List, Optional
 
-import lights.types as LightTypes
 from comm.enums import DeviceModel
 from comm.topic import Topic
 from home.device import Addressable
 from home.remote import Remote
-from lights.group import LightGroup
-from lights.interface import Light
+from lighting import Concrete as ConcreteLight, Group as LightGroup
+import lighting
 
 
 class Room(Addressable):
@@ -35,33 +34,33 @@ class Room(Addressable):
 def living_room() -> Room:
     "Creates an instance of the living room."
     name = "Living Room"
-    lights_list: List[Light] = [
-        LightTypes.simple(
+    lights_list: List[ConcreteLight] = [
+        lighting.simple(
             name="Comfort Light",
             room=name,
             model=DeviceModel.IkeaOutlet,
             ident="aaaa",
         ),
-        LightTypes.dimmable(
+        lighting.dimmable(
             name="Uplight/Reading",
             room=name,
             model=DeviceModel.IkeaDimmable,
             ident="aaab",
         ),
-        LightTypes.white(
+        lighting.white(
             name="Uplight/Main",
             room=name,
             model=DeviceModel.HueColor,
             ident="aaac",
         ),
-        LightTypes.color(
+        lighting.color(
             name="Orb",
             room=name,
             model=DeviceModel.HueColor,
             ident="aaad"
         ),
     ]
-    lights = LightGroup(
+    lights = lighting.Group(
         name="Main",
         single_lights=lights_list,
         adaptive=True,
@@ -80,15 +79,15 @@ def living_room() -> Room:
 def office() -> Room:
     "Creates an instance of the living room."
     name = "Office"
-    lights_list: List[Light] = [
-        LightTypes.simple(
+    lights_list: List[ConcreteLight] = [
+        lighting.simple(
             name="Comfort Light",
             room=name,
             model=DeviceModel.IkeaOutlet,
             ident="aaad",
         )
     ]
-    lights = LightGroup(
+    lights = lighting.Group(
         name="Main",
         single_lights=lights_list,
         adaptive=True,

@@ -4,9 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from paho.mqtt import client as mqtt
 from colour import Color
-from device import Device, Addressable
-from payload import Payload
-from enums import DeviceModel
+from home.device import Device, Addressable
+from comm.payload import Payload
+from comm.enums import DeviceModel
+from comm.topic import Topic
 
 
 class LightState:
@@ -79,6 +80,11 @@ class AbstractLight(Addressable, ABC):
     @abstractmethod
     def state(self) -> LightState:
         "The light state."
+
+    @property
+    @abstractmethod
+    def topic(self) -> Topic:
+        "The topic to address the abstract light."
 
     ################################################
     # INFORMATIONAL API
@@ -271,6 +277,10 @@ class Light(AbstractLight, ConcreteLight, ABC):
     def state(self) -> LightState:
         "The virtual state of the light"
         return self._state
+
+    @property
+    def topic(self) -> Topic:
+        return super(self, Device).topic
 
     def realize_state(self, client: mqtt.Client, state: LightState):
         self._realize_state(client, state)

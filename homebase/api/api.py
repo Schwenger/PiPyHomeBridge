@@ -2,12 +2,12 @@
 
 from queue import Queue, Empty
 from paho.mqtt import client as mqtt
-from enums import QDataKind
-from queue_data import QData
+from comm.enums import QDataKind
+from comm.queue_data import QData
 from worker import Worker
-from api_command import ApiExec
-from api_query import ApiResponder
-from home import Home, HomeBaseError
+from home.home import Home, HomeBaseError
+from api.command import ApiExec
+from api.query import ApiResponder
 import log
 
 
@@ -44,7 +44,7 @@ class Api(Worker):
         elif qdata.kind == QDataKind.ApiQuery:
             self.__handle_query(qdata)
         else:
-            raise ValueError("Unknown QDataKind: " + qdata.kind)
+            raise ValueError("Unknown QDataKind: " + str(qdata.kind))
 
     def __handle_api_action(self, qdata: QData):
         topic = qdata.topic

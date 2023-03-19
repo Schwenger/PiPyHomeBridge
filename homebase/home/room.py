@@ -1,21 +1,22 @@
 "Rooms"
 
 from typing import List, Optional
-from light import Light
-from remote import Remote
-from light_group import LightGroup
-from topic import Topic
-from device import Addressable
-import light_types
+
+import lights.types as LightTypes
 from enums import DeviceModel
+from lights.group import LightGroup
+from lights.interface import Light
+from home.device import Addressable
+from home.remote import Remote
+from home.topic import Topic
 
 
 class Room(Addressable):
     "A room."
 
-    def __init__(self, name: str, lights: LightGroup, remotes: List[Remote]):
+    def __init__(self, name: str, group: LightGroup, remotes: List[Remote]):
         self.name: str = name
-        self.lights: LightGroup = lights
+        self.group: LightGroup = group
         self.remotes: List[Remote] = remotes
 
     @property
@@ -35,25 +36,25 @@ def living_room() -> Room:
     "Creates an instance of the living room."
     name = "Living Room"
     lights_list: List[Light] = [
-        light_types.simple(
+        LightTypes.simple(
             name="Comfort Light",
             room=name,
             model=DeviceModel.IkeaOutlet,
             ident="aaaa",
         ),
-        light_types.dimmable(
+        LightTypes.dimmable(
             name="Uplight/Reading",
             room=name,
             model=DeviceModel.IkeaDimmable,
             ident="aaab",
         ),
-        light_types.white(
+        LightTypes.white(
             name="Uplight/Main",
             room=name,
             model=DeviceModel.HueColor,
             ident="aaac",
         ),
-        light_types.color(
+        LightTypes.color(
             name="Orb",
             room=name,
             model=DeviceModel.HueColor,
@@ -80,7 +81,7 @@ def office() -> Room:
     "Creates an instance of the living room."
     name = "Office"
     lights_list: List[Light] = [
-        light_types.simple(
+        LightTypes.simple(
             name="Comfort Light",
             room=name,
             model=DeviceModel.IkeaOutlet,

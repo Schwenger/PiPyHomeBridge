@@ -2,12 +2,12 @@
 
 from typing import Optional, List, Tuple
 from paho.mqtt import client as mqtt
-from room import living_room, office, Room
-from topic import Topic
+from lights.interface import AbstractLight, Light
 from enums import ApiCommand, HomeBaseError
-from remote import Remote
-from light import AbstractLight, Light
-from device import Addressable
+from home.room import living_room, office, Room
+from home.topic import Topic
+from home.remote import Remote
+from home.device import Addressable
 
 
 class Home(Addressable):
@@ -40,7 +40,7 @@ class Home(Addressable):
     def refresh_lights(self, client: mqtt.Client):
         "Adapts the lights to the current time of day.  Should be called periodically."
         for room in self.rooms:
-            room.lights.refresh(client)
+            room.group.refresh(client)
 
     def remotes(self) -> List[Remote]:
         "Returns all remotes in the home"
@@ -61,7 +61,7 @@ class Home(Addressable):
     def find_light(self, topic: Topic) -> Optional[Light]:
         "Find the light with the given topic."
         for room in self.rooms:
-            for light in room.lights.flatten_lights():
+            for light in room.group.flatten_lights():
                 if light.topic == topic:
                     return light
         return None

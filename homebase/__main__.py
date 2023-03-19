@@ -8,12 +8,12 @@ import time
 import os
 from queue import Queue
 from typing import List
+from web_api import WebAPI
 from worker import Worker
 from controller import Controller, Refresher
+from home.home import Home
+from api.api import Api
 import common
-from web_api import WebAPI
-from home import Home
-from api import Api
 
 if __name__ == "__main__":
     log_dir = common.config["log"]

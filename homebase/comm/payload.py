@@ -3,7 +3,7 @@
 from typing import Optional
 import json
 from colour import Color
-from device import Vendor
+from home.device import Vendor
 
 __DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
@@ -114,7 +114,7 @@ def read_white_temp(val: str, vendor: Vendor) -> float:
 
 def read_color(x: float, y: float, Y: float) -> Color:
     "Returns the color temperature based on the value retrieved from the device."
-     # pylint: disable=invalid-name
+    # pylint: disable=invalid-name
     # x/y to x/y/z
     z = 1.0 - x - y
     # x/y/z to X/Y/Z

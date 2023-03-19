@@ -4,7 +4,7 @@ import math
 from typing import Tuple
 from datetime import datetime
 from colour import Color
-from light import LightState
+from lights.interface import LightState
 
 zones = [
     ( 0, Color("DarkGreen"), "midnight"),

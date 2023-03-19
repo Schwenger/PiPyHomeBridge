@@ -5,9 +5,9 @@ from typing import Optional
 import threading
 from colour import Color
 from paho.mqtt import client as mqtt
-from light import Light, ConcreteLight
-from payload import Payload
-from enums import DeviceModel
+from comm.payload import Payload
+from comm.enums import DeviceModel
+from lights.interface import Light, ConcreteLight
 
 
 class SimpleLight(Light):

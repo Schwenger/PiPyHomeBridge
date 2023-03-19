@@ -4,8 +4,8 @@ from abc import abstractmethod
 from typing import Dict, Optional, Callable, List
 from queue_data import ApiCommand
 from enums import HomeBaseError, DeviceModel
-from device import Device
-from topic import Topic
+from home.device import Device
+from home.topic import Topic
 
 
 class RemoteButton(Enum):

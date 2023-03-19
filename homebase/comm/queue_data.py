@@ -1,9 +1,9 @@
 "Data to be put into the queue."
 
 from typing import Optional, Dict
-from topic import Topic
-from light import LightState
-from enums import QDataKind, ApiCommand, ApiQuery
+from comm.topic import Topic
+from comm.enums import QDataKind, ApiCommand, ApiQuery
+from lights.interface import LightState
 
 
 class QData:

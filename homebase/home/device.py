@@ -1,7 +1,7 @@
 "Definition of devices."
 
 from abc import ABC, abstractmethod
-from topic import Topic
+from home.topic import Topic
 from enums import DeviceKind, DeviceModel, Vendor
 
 TOPIC_BASE = "zigbee2mqtt"

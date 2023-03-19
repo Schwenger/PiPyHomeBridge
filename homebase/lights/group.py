@@ -3,9 +3,10 @@
 from typing import List, Optional
 from colour import Color
 from paho.mqtt import client as mqtt
-from light import Light, LightState, AbstractLight
-from topic import Topic
-import dynamic_light
+from comm.topic import Topic
+from lights.interface import Light, LightState, AbstractLight
+import lights
+# import lights.dynamic_light
 
 
 class LightGroup(AbstractLight):
@@ -32,10 +33,11 @@ class LightGroup(AbstractLight):
 
     @property
     def state(self) -> LightState:
-        return LightState.average(list(map(lambda l: l.state, self.all_lights)))
+        return LightState.average(list(map(lambda lig: lig.state, self.all_lights)))
 
     @property
     def topic(self) -> Topic:
+        "Topic"
         return Topic.for_group(self.hierarchie)
 
     @property
@@ -155,9 +157,9 @@ class LightGroup(AbstractLight):
     ################################################
 
     def _any_on(self) -> bool:
-        return any(map(lambda l: l.state.toggled_on, self.all_lights))
+        return any(map(lambda light: light.state.toggled_on, self.all_lights))
 
     def _refresh(self, client, light: AbstractLight):
-        target_state = dynamic_light.recommended()
+        target_state = lights.dynamic.recommended()
         if light.state.toggled_on and target_state.toggled_on:
             light.realize_state(client, target_state)

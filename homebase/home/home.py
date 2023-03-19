@@ -2,8 +2,8 @@
 
 from typing import List, Optional, Tuple
 
-from comm.enums import ApiCommand
 from comm.topic import Topic
+from enums import ApiCommand
 from home.device import Addressable
 from home.remote import Remote
 from home.room import Room, living_room, office

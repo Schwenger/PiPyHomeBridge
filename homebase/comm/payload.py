@@ -4,7 +4,7 @@ import json
 from typing import Optional
 
 from colour import Color
-from home.device import Vendor
+from enums import Vendor
 
 __DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40

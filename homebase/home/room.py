@@ -2,12 +2,13 @@
 
 from typing import List, Optional
 
-from comm.enums import DeviceModel
+import lighting
 from comm.topic import Topic
+from enums import DeviceModel
 from home.device import Addressable
 from home.remote import Remote
-from lighting import Concrete as ConcreteLight, Group as LightGroup
-import lighting
+from lighting import Concrete as ConcreteLight
+from lighting import Group as LightGroup
 
 
 class Room(Addressable):

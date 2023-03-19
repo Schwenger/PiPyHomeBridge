@@ -6,9 +6,9 @@ import time
 from queue import Queue
 
 import common
-from comm.enums import QoS
+from enums import QoS, TopicTarget
 from comm.queue_data import QData
-from comm.topic import Topic, TopicTarget
+from comm.topic import Topic
 from home.home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt

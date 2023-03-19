@@ -6,8 +6,8 @@ from typing import Dict
 
 from colour import Color
 from comm.payload import Payload
-from comm.queue_data import ApiCommand
 from comm.topic import Topic
+from enums import ApiCommand
 from home.home import Home
 from homebaseerror import HomeBaseError
 from lighting import Abstract

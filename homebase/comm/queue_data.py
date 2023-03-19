@@ -2,9 +2,9 @@
 
 from typing import Dict, Optional
 
-from comm.enums import ApiCommand, ApiQuery, QDataKind
-from comm.topic import Topic
 import lighting
+from comm.topic import Topic
+from enums import ApiCommand, ApiQuery, QDataKind
 
 
 class QData:

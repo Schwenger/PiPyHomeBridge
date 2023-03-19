@@ -1,6 +1,5 @@
 "What"
 
-import sys
 from lighting.abstract import Abstract
 from lighting.concrete import Concrete
 from lighting.state import State

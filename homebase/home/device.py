@@ -2,8 +2,8 @@
 
 from abc import ABC, abstractmethod
 
-from comm.enums import DeviceKind, DeviceModel, Vendor
 from comm.topic import Topic
+from enums import DeviceKind, DeviceModel, Vendor
 
 TOPIC_BASE = "zigbee2mqtt"
 

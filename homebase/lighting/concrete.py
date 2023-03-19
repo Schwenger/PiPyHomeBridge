@@ -3,8 +3,8 @@
 from typing import Optional
 
 from colour import Color
-from comm.enums import DeviceModel
 from comm.payload import Payload
+from enums import DeviceModel
 from home.device import Device
 from lighting.abstract import Abstract
 from lighting.state import State

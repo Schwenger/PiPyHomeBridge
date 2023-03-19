@@ -4,60 +4,6 @@ from enum import Enum
 from typing import Optional
 
 
-# pylint: disable="invalid-name"
-class Vendor(Enum):
-    "List of known vendors"
-    Ikea = "Ikea"
-    Hue = "Hue"
-    Other = "Other"
-
-
-# pylint: disable="invalid-name"
-class DeviceKind(Enum):
-    "Kind of device"
-    Light = "Light"
-    Remote = "Remote"
-    Outlet = "Outlet"
-
-    @staticmethod
-    def from_str(val: str) -> Optional['DeviceKind']:
-        "Creates a device kind from a string if possible."
-        if val not in DeviceKind._member_names_:  # pylint: disable=no-member
-            return None
-        return DeviceKind[val]
-
-
-# pylint: disable="invalid-name"
-class DeviceModel(Enum):
-    "A list of device models supported."
-    IkeaDimmer = "IkeaDimmer"
-    IkeaMultiButton = "IkeaMultiButton"
-    IkeaDimmable = "IkeaDimmable"
-    IkeaOutlet = "IkeaOutlet"
-    HueColor = "HueColor"
-
-    @property
-    def vendor(self) -> Vendor:
-        "Specifies the vendor of the device, Ikea or Hue."
-        return {
-            DeviceModel.IkeaDimmer:      Vendor.Ikea,
-            DeviceModel.IkeaOutlet:      Vendor.Ikea,
-            DeviceModel.IkeaMultiButton: Vendor.Ikea,
-            DeviceModel.IkeaDimmable:    Vendor.Ikea,
-            DeviceModel.HueColor:        Vendor.Hue,
-        }[self]
-
-    @property
-    def kind(self) -> DeviceKind:
-        "Specifies the physical kind of the device."
-        return {
-            DeviceModel.IkeaDimmer:      DeviceKind.Remote,
-            DeviceModel.IkeaOutlet:      DeviceKind.Outlet,
-            DeviceModel.IkeaMultiButton: DeviceKind.Remote,
-            DeviceModel.IkeaDimmable:    DeviceKind.Light,
-            DeviceModel.HueColor:        DeviceKind.Light,
-        }[self]
-
 
 class TopicCommand(Enum):
     "Different Commands"

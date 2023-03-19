@@ -8,10 +8,11 @@ from typing import Dict
 
 import lighting
 from comm.payload import Payload
-from comm.queue_data import ApiQuery
 from comm.topic import Topic
-from home.device import Device
+from enums import ApiQuery
 from home.home import Home
+from home.remote import Remote
+from home.room import Room
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 
@@ -37,43 +38,41 @@ class ApiResponder:
 
     def __respond_structure(self) -> Dict:
         logging.debug("ApiQuery: __respond_structure")
-        rooms = []
-        for room in self.__home.rooms:
-            remotes = []
-            for remote in room.remotes:
-                res = self.__respond_device(remote)
-                res["actions"] = list(map(lambda a: a.string, remote.actions()))
-                remotes.append(res)
-            rooms.append({
-                "name":     room.name,
-                "lights":   self.__compile_group_structure(room.group),
-                "remotes":  remotes,
-            })
         return {
-            "rooms": rooms,
+            "rooms": list(map(self.__compile_room, self.__home.rooms))
         }
 
-    def __compile_group_structure(self, group: lighting.Group) -> Dict:
-        logging.debug("ApiQuery: __compile_group_structure")
-        singles = []
-        for light in group.single_lights:
-            res = self.__respond_device(light)
-            res["dimmable"] = light.is_dimmable()
-            res["color"] = light.is_color()
-            singles.append(res)
+    def __compile_room(self, room: Room) -> Dict:
+        return {
+            "name":     room.name,
+            "lights":   self.__compile_group(room.group),
+            "remotes":  list(map(self.__compile_remote, room.remotes)),
+        }
+
+    def __compile_remote(self, remote: Remote) -> Dict:
+        return {
+            "name":   remote.name,
+            "id":     remote.ident,
+            "topic":  remote.topic.string,
+            "model":  remote.model.value,
+            "actions": list(map(lambda a: a.string, remote.actions())),
+        }
+
+    def __compile_group(self, group: lighting.Group) -> Dict:
         return {
             "name": group.name,
-            "singleLights": singles,
-            "groups": list(map(self.__compile_group_structure, group.groups)),
+            "singleLights": list(map(self.__compile_concrete, group.single_lights)),
+            "groups": list(map(self.__compile_group, group.groups)),
         }
 
-    def __respond_device(self, device: Device) -> Dict:
-        logging.debug("ApiQuery: __respond_device")
+    def __compile_concrete(self, light: lighting.Concrete) -> Dict:
         return {
-            "name":   device.name,
-            "id":     device.ident,
-            "topic":  device.topic.string,
-            "model":  device.model.value,
+            "name":     light.name,
+            "id":       light.ident,
+            "topic":    light.topic.string,
+            "model":    light.model.value,
+            "dimmable": light.is_dimmable(),
+            "color":    light.is_color(),
         }
 
     def __respond_light(self, topic) -> Dict:
@@ -83,8 +82,11 @@ class ApiResponder:
         light = self.__home.find_light(topic=topic)
         if light is None:
             raise HomeBaseError.LightNotFound
+        return self.__respond_light_state(light.state)
+
+    def __respond_light_state(self, state: lighting.State) -> Dict:
         return {
-            "brightness": light.state.brightness,
-            "hexColor": str(light.state.color.get_hex_l()),
-            "toggledOn": str(light.state.toggled_on),
+            "brightness": state.brightness,
+            "hexColor": str(state.color.get_hex_l()),
+            "toggledOn": str(state.toggled_on),
         }

@@ -3,7 +3,7 @@
 import logging
 from typing import List, Optional, Tuple
 
-from comm.enums import DeviceKind, TopicCommand, TopicTarget
+from enums import DeviceKind, TopicCommand, TopicTarget
 from homebaseerror import HomeBaseError
 
 

@@ -4,9 +4,9 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Callable, Dict, List, Optional
 
-from comm.enums import DeviceModel
 from comm.queue_data import ApiCommand
 from comm.topic import Topic
+from enums import DeviceModel
 from home.device import Device
 from homebaseerror import HomeBaseError
 

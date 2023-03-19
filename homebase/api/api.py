@@ -5,7 +5,7 @@ from queue import Empty, Queue
 
 from api.command import ApiExec
 from api.query import ApiResponder
-from comm.enums import QDataKind
+from enums import QDataKind
 from comm.queue_data import QData
 from home.home import Home
 from homebaseerror import HomeBaseError

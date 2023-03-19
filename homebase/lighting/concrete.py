@@ -26,7 +26,8 @@ class Concrete(Abstract, Device):
         model: DeviceModel,
         ident: str,
     ):
-        super().__init__(name=name, room=room, model=model, ident=ident)
+        Abstract.__init__(self, full_config=None, relative_config=None)
+        Device.__init__(self, name=name, room=room, model=model, ident=ident)
         self._state = State()
 
     @property

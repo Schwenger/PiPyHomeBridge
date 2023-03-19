@@ -11,6 +11,9 @@ TOPIC_BASE = "zigbee2mqtt"
 class Addressable(ABC):
     "Marks an entity as addressable."
 
+    def __init__(self):
+        pass
+
     @property
     @abstractmethod
     def topic(self) -> Topic:

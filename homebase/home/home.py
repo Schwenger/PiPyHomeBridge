@@ -8,13 +8,14 @@ from home.device import Addressable
 from home.remote import Remote
 from home.room import Room, living_room, office
 from homebaseerror import HomeBaseError
-from lighting import Abstract as AbstractLight
-from lighting import Concrete as ConcreteLight
+import lighting
 from paho.mqtt import client as mqtt
 
 
 class Home(Addressable):
     "Collection of rooms"
+
+    ROOT_LIGHT_CONFIG = lighting.FullConfig()
 
     def __init__(self):
         self.rooms = [
@@ -49,7 +50,7 @@ class Home(Addressable):
         "Returns all remotes in the home"
         return sum(map(lambda r: r.remotes, self.rooms), [])
 
-    def flatten_lights(self) -> List[ConcreteLight]:
+    def flatten_lights(self) -> List[lighting.Concrete]:
         "Returns all lights in the home"
         return sum(map(lambda r: r.group.flatten_lights(), self.rooms), [])
 
@@ -61,7 +62,7 @@ class Home(Addressable):
                     return remote
         return None
 
-    def find_light(self, topic: Topic) -> Optional[ConcreteLight]:
+    def find_light(self, topic: Topic) -> Optional[lighting.Concrete]:
         "Find the light with the given topic."
         for room in self.rooms:
             for light in room.group.flatten_lights():
@@ -69,6 +70,15 @@ class Home(Addressable):
                     return light
         return None
 
-    def find_abstract_light(self, topic: Topic) -> Optional[AbstractLight]:
+    def find_abstract_light(self, topic: Topic) -> Optional[lighting.Abstract]:
         "Find the abstract light, so a light or a group for the topic."
         raise NotImplementedError
+
+    def compile_light_config(self, topic: Topic) -> lighting.FullConfig:
+        "Compiles a light configuration for the light with the given topic."
+        root = self.ROOT_LIGHT_CONFIG
+        for room in self.rooms:
+            res = room.group.compile_light_config(root, topic)
+            if res is not None:
+                return res
+        return root

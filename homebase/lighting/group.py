@@ -8,9 +8,8 @@ from lighting import dynamic
 from lighting.abstract import Abstract
 from lighting.concrete import Concrete
 from lighting.state import State
+from lighting.config import Full as FullConfig
 from paho.mqtt import client as mqtt
-
-# import lights.dynamic_light
 
 
 class Group(Abstract):
@@ -24,16 +23,13 @@ class Group(Abstract):
         single_lights: List[Concrete],
         name:          str,
         groups:        List['Group'],
-        adaptive:      bool,
-        colorful:      bool,
         hierarchie:    List[str]
     ):
-        self.name:          str            = name
-        self.adaptive:      bool           = adaptive
-        self.colorful:      bool           = colorful
-        self.groups:        List[Group]    = groups
-        self.hierarchie:    List[str]      = hierarchie
-        self.single_lights: List[Concrete] = single_lights
+        super().__init__(full_config=None, relative_config=None)
+        self.name:          str               = name
+        self.groups:        List[Group]       = groups
+        self.hierarchie:    List[str]         = hierarchie
+        self.single_lights: List[Concrete]    = single_lights
 
     @property
     def state(self) -> State:
@@ -41,7 +37,6 @@ class Group(Abstract):
 
     @property
     def topic(self) -> Topic:
-        "Topic"
         return Topic.for_group(self.hierarchie)
 
     @property
@@ -49,24 +44,22 @@ class Group(Abstract):
         "Returns a list of all abstract lights"
         return self.single_lights + self.groups  # type: ignore
 
-    ################################################
-    # CONFIGURATIVE API
-    ################################################
-    def enable_adaptive_dimming(self):
-        "Enables AdaptiveDimming"
-        self.adaptive = True
-
-    def disable_adaptive_dimming(self):
-        "Disables AdaptiveDimming"
-        self.adaptive = False
-
-    def enable_colorful(self):
-        "Enables Colorful"
-        self.colorful = True
-
-    def disable_colorful(self):
-        "Disables Colorful"
-        self.colorful = False
+    def compile_light_config(self, root: FullConfig, topic: Topic) -> Optional[FullConfig]:
+        """
+            Compiles the light configuration for a light with the given topic.
+            Returns None if the light is not a member of this group.
+        """
+        root = self.defined_full_config or root
+        root = root.modified_by(self.relative_config)
+        for light in self.all_lights:
+            if light.topic == topic:
+                root = light.defined_full_config or root
+                return root.modified_by(light.relative_config)
+        for group in self.groups:
+            res = group.compile_light_config(root, topic)
+            if res is not None:
+                return res
+        return None
 
     ################################################
     # INFORMATIONAL API

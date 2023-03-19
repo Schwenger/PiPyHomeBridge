@@ -5,6 +5,20 @@ import platform
 
 import yaml
 
+def bounded(value: float, least: float = 1.0, greatest: float = 1.0) -> float:
+    "Returns value bounded between min and max."
+    if value < least:
+        return least
+    if value > greatest:
+        return greatest
+    return value
+
+def scale_relative(value: float, scale: float) -> float:
+    "Scales a value between 0 and 1 by a factor between -1 and +1."
+    if scale < 0.0:
+        return value * -scale
+    return value + (1 - value) * scale
+
 NODE_NAME = platform.node()
 if 'Mairxbook' in NODE_NAME:
     CLIENT_NAME = 'Mac'

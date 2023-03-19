@@ -6,6 +6,7 @@ from typing import Optional
 from colour import Color
 from home.device import Addressable
 from lighting.state import State
+from lighting.config import Full as FullConfig, Relative as RelativeConfig
 from paho.mqtt import client as mqtt
 
 
@@ -14,10 +15,47 @@ class Abstract(Addressable, ABC):
         Carries the informational and function API of light sources.
     """
 
+    def __init__(
+        self,
+        full_config: Optional[FullConfig] = None,
+        relative_config: Optional[RelativeConfig] = None
+    ):
+        self._full_config = full_config or FullConfig()
+        self._relative_config = relative_config or RelativeConfig()
+
+    ################################################
+    # PROPERTIES
+    ################################################
+
     @property
     @abstractmethod
     def state(self) -> State:
         "The light state."
+
+    @property
+    def defined_full_config(self) -> Optional[FullConfig]:
+        "Returns a full config if defined."
+        return self._full_config
+
+    @property
+    def relative_config(self) -> RelativeConfig:
+        "Returns which values are currently overridden."
+        return self._relative_config
+
+    ################################################
+    # CONFIGURATIVE API
+    ################################################
+    def set_full_config(self, config: FullConfig):
+        "Sets the full config."
+        self._full_config = config
+
+    def inherit_config(self):
+        "Invalidates the full config and inherits from parent entities."
+        self._full_config = None
+
+    def set_relative_config(self, config: RelativeConfig):
+        "Sets the relative config."
+        self._relative_config = config
 
     ################################################
     # INFORMATIONAL API

@@ -1,7 +1,8 @@
 "A module for common functionality"
 
-import platform
 import os
+import platform
+
 import yaml
 
 NODE_NAME = platform.node()

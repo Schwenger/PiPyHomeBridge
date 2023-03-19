@@ -3,14 +3,15 @@ The logic for executing API commands
 """
 
 from typing import Dict
-from paho.mqtt import client as mqtt
+
 from colour import Color
-from lights.interface import AbstractLight
-from home.home import Home
-from comm.topic import Topic
+from comm.enums import HomeBaseError
 from comm.payload import Payload
 from comm.queue_data import ApiCommand
-from comm.enums import HomeBaseError
+from comm.topic import Topic
+from home.home import Home
+from lights.interface import AbstractLight
+from paho.mqtt import client as mqtt
 
 
 class ApiExec:

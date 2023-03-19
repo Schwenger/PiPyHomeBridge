@@ -1,14 +1,16 @@
 "Example for contorling tradfri devices over python."
 
-import time
 import json
+import time
 from queue import Queue
-from paho.mqtt import client as mqtt
+
+from comm.enums import HomeBaseError, QoS
+from comm.queue_data import QData
+from comm.topic import Topic, TopicTarget
 from home.home import Home
-from home.topic import Topic, TopicTarget
-from enums import QoS, HomeBaseError
-from queue_data import QData
+from paho.mqtt import client as mqtt
 from worker import Worker
+
 import common
 import log
 

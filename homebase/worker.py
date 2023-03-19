@@ -1,4 +1,5 @@
 "Module contains naught but an abstract base class for general workers."
+
 from abc import ABC, abstractmethod
 
 

@@ -1,13 +1,15 @@
 "Bla"
 
-from queue import Queue, Empty
-from paho.mqtt import client as mqtt
-from comm.enums import QDataKind
-from comm.queue_data import QData
-from worker import Worker
-from home.home import Home, HomeBaseError
+from queue import Empty, Queue
+
 from api.command import ApiExec
 from api.query import ApiResponder
+from comm.enums import QDataKind
+from comm.queue_data import QData
+from home.home import Home, HomeBaseError
+from paho.mqtt import client as mqtt
+from worker import Worker
+
 import log
 
 

@@ -3,12 +3,12 @@
 from typing import List, Optional
 
 import lights.types as LightTypes
-from enums import DeviceModel
-from lights.group import LightGroup
-from lights.interface import Light
+from comm.enums import DeviceModel
+from comm.topic import Topic
 from home.device import Addressable
 from home.remote import Remote
-from home.topic import Topic
+from lights.group import LightGroup
+from lights.interface import Light
 
 
 class Room(Addressable):

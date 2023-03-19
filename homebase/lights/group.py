@@ -1,11 +1,13 @@
 "Represents a collection of light sources."
 
 from typing import List, Optional
-from colour import Color
-from paho.mqtt import client as mqtt
-from comm.topic import Topic
-from lights.interface import Light, LightState, AbstractLight
+
 import lights
+from colour import Color
+from comm.topic import Topic
+from lights.interface import AbstractLight, Light, LightState
+from paho.mqtt import client as mqtt
+
 # import lights.dynamic_light
 
 

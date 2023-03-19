@@ -3,16 +3,18 @@ Main module for the smart home.
 Starts the controller, handles requests, and listens to a port for commands.
 """
 
+import os
 import threading
 import time
-import os
 from queue import Queue
 from typing import List
-from web_api import WebAPI
-from worker import Worker
+
+from api.api import Api
 from controller import Controller, Refresher
 from home.home import Home
-from api.api import Api
+from web_api import WebAPI
+from worker import Worker
+
 import common
 
 if __name__ == "__main__":

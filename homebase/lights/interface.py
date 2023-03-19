@@ -1,13 +1,14 @@
 "Handling lights in all shapes and forms."
 import math
 from abc import ABC, abstractmethod
-from typing import Optional, List
-from paho.mqtt import client as mqtt
+from typing import List, Optional
+
 from colour import Color
-from home.device import Device, Addressable
-from comm.payload import Payload
 from comm.enums import DeviceModel
+from comm.payload import Payload
 from comm.topic import Topic
+from home.device import Addressable, Device
+from paho.mqtt import client as mqtt
 
 
 class LightState:

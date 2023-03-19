@@ -1,13 +1,14 @@
 "Represents a home."
 
-from typing import Optional, List, Tuple
-from paho.mqtt import client as mqtt
-from lights.interface import AbstractLight, Light
-from enums import ApiCommand, HomeBaseError
-from home.room import living_room, office, Room
-from home.topic import Topic
-from home.remote import Remote
+from typing import List, Optional, Tuple
+
+from comm.enums import ApiCommand, HomeBaseError
+from comm.topic import Topic
 from home.device import Addressable
+from home.remote import Remote
+from home.room import Room, living_room, office
+from lights.interface import AbstractLight, Light
+from paho.mqtt import client as mqtt
 
 
 class Home(Addressable):

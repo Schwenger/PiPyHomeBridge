@@ -1,13 +1,14 @@
 "Different types of light sources."
 
+import threading
 import time
 from typing import Optional
-import threading
+
 from colour import Color
-from paho.mqtt import client as mqtt
-from comm.payload import Payload
 from comm.enums import DeviceModel
-from lights.interface import Light, ConcreteLight
+from comm.payload import Payload
+from lights.interface import ConcreteLight, Light
+from paho.mqtt import client as mqtt
 
 
 class SimpleLight(Light):

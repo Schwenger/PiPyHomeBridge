@@ -1,8 +1,9 @@
 "Allows for altering requests based on time"
 
 import math
-from typing import Tuple
 from datetime import datetime
+from typing import Tuple
+
 from colour import Color
 from lights.interface import LightState
 

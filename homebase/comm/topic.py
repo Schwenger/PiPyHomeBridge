@@ -1,7 +1,9 @@
 "Anything related to zigbee topics."
 
 from typing import List, Optional, Tuple
-from enums import TopicTarget, TopicCommand, DeviceKind, HomeBaseError
+
+from comm.enums import DeviceKind, HomeBaseError, TopicCommand, TopicTarget
+
 import log
 
 

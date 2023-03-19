@@ -1,7 +1,8 @@
 "Everything regarding payloads"
 
-from typing import Optional
 import json
+from typing import Optional
+
 from colour import Color
 from home.device import Vendor
 

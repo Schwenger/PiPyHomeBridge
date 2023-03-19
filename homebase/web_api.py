@@ -1,13 +1,15 @@
 "Bla"
 import urllib.parse as url
-from typing import Optional, Tuple, Dict
-from socketserver import TCPServer
 from http.server import BaseHTTPRequestHandler
-from queue import Queue, Empty
-from enums import ApiCommand, ApiQuery, HomeBaseError
-from queue_data import QData, QDataKind
-from home.topic import Topic
+from queue import Empty, Queue
+from socketserver import TCPServer
+from typing import Dict, Optional, Tuple
+
+from comm.enums import ApiCommand, ApiQuery, HomeBaseError
+from comm.queue_data import QData, QDataKind
+from comm.topic import Topic
 from worker import Worker
+
 import log
 
 

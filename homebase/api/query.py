@@ -4,14 +4,16 @@ The logic for executing API commands
 
 from queue import Queue
 from typing import Dict
-from paho.mqtt import client as mqtt
-from home.home import Home
-from home.device import Device
-from comm.topic import Topic
+
+from comm.enums import HomeBaseError
 from comm.payload import Payload
 from comm.queue_data import ApiQuery
-from comm.enums import HomeBaseError
+from comm.topic import Topic
+from home.device import Device
+from home.home import Home
 from lights.group import LightGroup
+from paho.mqtt import client as mqtt
+
 import log
 
 

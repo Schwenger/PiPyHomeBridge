@@ -10,7 +10,7 @@ from comm.topic import Topic
 from enums import ApiCommand
 from home.home import Home
 from homebaseerror import HomeBaseError
-from lighting import Abstract
+import lighting
 from paho.mqtt import client as mqtt
 
 
@@ -66,7 +66,7 @@ class ApiExec:
         elif cmd == ApiCommand.Refresh:
             self.__refresh()
 
-    def __get_target(self, topic: Topic) -> Abstract:
+    def __get_target(self, topic: Topic) -> lighting.Abstract:
         light = self.__home.find_light(topic)
         if light is not None:
             return light
@@ -76,10 +76,15 @@ class ApiExec:
         return room.group
 
     def __toggle(self, topic: Topic):
-        self.__get_target(topic).toggle(self.__client)
+        light = self.__get_target(topic)
+        light.toggle(self.__client)
+        if light.state.toggled_on:
+            self.__refresh_single(light)
 
     def __turn_on(self, topic: Topic):
-        self.__get_target(topic).turn_on(self.__client)
+        light = self.__get_target(topic)
+        light.turn_on(self.__client)
+        self.__refresh_single(light)
 
     def __turn_off(self, topic: Topic):
         self.__get_target(topic).turn_off(self.__client)
@@ -120,4 +125,13 @@ class ApiExec:
         self.__client.publish(target.string, payload=pay)
 
     def __refresh(self):
-        self.__home.refresh_lights(self.__client)
+        for light in self.__home.flatten_lights():
+            self.__refresh_single(light)
+
+    def __refresh_single(self, light: lighting.Abstract):
+        dynamic = lighting.dynamic.recommended()
+        config = self.__home.compile_config(light.topic)
+        assert config is not None
+        target = lighting.config.resolve(self.__home.ROOT_LIGHT_CONFIG, config, dynamic)
+        if light.state.toggled_on and target.toggled_on:
+            light.realize_state(self.__client, target)

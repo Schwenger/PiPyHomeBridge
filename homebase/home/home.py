@@ -2,20 +2,23 @@
 
 from typing import List, Optional, Tuple
 
+import lighting
 from comm.topic import Topic
 from enums import ApiCommand
 from home.device import Addressable
 from home.remote import Remote
 from home.room import Room, living_room, office
 from homebaseerror import HomeBaseError
-import lighting
-from paho.mqtt import client as mqtt
 
 
 class Home(Addressable):
     "Collection of rooms"
 
-    ROOT_LIGHT_CONFIG = lighting.FullConfig()
+    ROOT_LIGHT_CONFIG = lighting.RootConfig(
+        colorful=True,
+        dynamic=True,
+        static=lighting.State.max()
+    )
 
     def __init__(self):
         self.rooms = [
@@ -40,11 +43,6 @@ class Home(Addressable):
     def room_by_name(self, name: str) -> Optional[Room]:
         "Finds the room with the given name in the home."
         return next((room for room in self.rooms if room.name == name), None)
-
-    def refresh_lights(self, client: mqtt.Client):
-        "Adapts the lights to the current time of day.  Should be called periodically."
-        for room in self.rooms:
-            room.group.refresh(client)
 
     def remotes(self) -> List[Remote]:
         "Returns all remotes in the home"
@@ -74,11 +72,10 @@ class Home(Addressable):
         "Find the abstract light, so a light or a group for the topic."
         raise NotImplementedError
 
-    def compile_light_config(self, topic: Topic) -> lighting.FullConfig:
-        "Compiles a light configuration for the light with the given topic."
-        root = self.ROOT_LIGHT_CONFIG
+    def compile_config(self, topic: Topic) -> Optional[lighting.Config]:
+        "Compiles the configuration for the light with the given topic if present."
         for room in self.rooms:
-            res = room.group.compile_light_config(root, topic)
+            res = room.group.compile_config(topic)
             if res is not None:
                 return res
-        return root
+        return None

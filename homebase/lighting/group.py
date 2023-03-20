@@ -4,11 +4,10 @@ from typing import List, Optional
 
 from colour import Color
 from comm.topic import Topic
-from lighting import dynamic
 from lighting.abstract import Abstract
 from lighting.concrete import Concrete
 from lighting.state import State
-from lighting.config import Full as FullConfig
+from lighting.config import Config
 from paho.mqtt import client as mqtt
 
 
@@ -25,7 +24,7 @@ class Group(Abstract):
         groups:        List['Group'],
         hierarchie:    List[str]
     ):
-        super().__init__(full_config=None, relative_config=None)
+        super().__init__(config=Config())
         self.name:          str               = name
         self.groups:        List[Group]       = groups
         self.hierarchie:    List[str]         = hierarchie
@@ -44,21 +43,19 @@ class Group(Abstract):
         "Returns a list of all abstract lights"
         return self.single_lights + self.groups  # type: ignore
 
-    def compile_light_config(self, root: FullConfig, topic: Topic) -> Optional[FullConfig]:
+    def compile_config(self, topic: Topic) -> Optional[Config]:
         """
             Compiles the light configuration for a light with the given topic.
             Returns None if the light is not a member of this group.
         """
-        root = self.defined_full_config or root
-        root = root.modified_by(self.relative_config)
+        cfg = self.config
         for light in self.all_lights:
             if light.topic == topic:
-                root = light.defined_full_config or root
-                return root.modified_by(light.relative_config)
+                return light.config.with_parent(cfg)
         for group in self.groups:
-            res = group.compile_light_config(root, topic)
+            res = group.compile_config(topic)
             if res is not None:
-                return res
+                return res.with_parent(cfg)
         return None
 
     ################################################
@@ -73,11 +70,6 @@ class Group(Abstract):
     ################################################
     # COLLECTION API
     ################################################
-
-    def refresh(self, client):
-        "Refreshes the light state of all lights according to config."
-        for light in self.all_lights:
-            self._refresh(client, light)
 
     def flatten_lights(self) -> List[Concrete]:
         "Returns a flat list of lights appearing in this group."
@@ -108,7 +100,6 @@ class Group(Abstract):
 
     def turn_on(self, client: mqtt.Client):
         for light in self.all_lights:
-            self._refresh(client, light)
             light.turn_on(client)
 
     def turn_off(self, client: mqtt.Client):
@@ -118,8 +109,6 @@ class Group(Abstract):
     def toggle(self, client: mqtt.Client):
         for light in self.all_lights:
             light.toggle(client)
-            if light.state.toggled_on:
-                self._refresh(client, light)
 
     def shift_color_clockwise(self, client: mqtt.Client):
         for light in self.all_lights:
@@ -155,8 +144,3 @@ class Group(Abstract):
 
     def _any_on(self) -> bool:
         return any(map(lambda light: light.state.toggled_on, self.all_lights))
-
-    def _refresh(self, client, light: Abstract):
-        target_state = dynamic.recommended()
-        if light.state.toggled_on and target_state.toggled_on:
-            light.realize_state(client, target_state)

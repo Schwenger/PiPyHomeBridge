@@ -18,6 +18,15 @@ class State:
         self.white_temp: float = white_temp
         self.color: Color = color
 
+    @staticmethod
+    def max() -> 'State':
+        return State(
+            toggled_on=True,
+            brightness=1,
+            white_temp=1,
+            color=Color("White")
+        )
+
     def with_color(self, color: Color):
         "Reduces or increases brightness  and turns color (counter-)clockwise."
         self.color = color
@@ -63,3 +72,4 @@ class State:
             white_temp=white_temp / n,
             color=Color(rgb=(red, green, blue))
         )
+

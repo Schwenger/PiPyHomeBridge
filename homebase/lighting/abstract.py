@@ -3,10 +3,11 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+import common
 from colour import Color
 from home.device import Addressable
 from lighting.state import State
-from lighting.config import Full as FullConfig, Relative as RelativeConfig
+from lighting.config import Config, Override
 from paho.mqtt import client as mqtt
 
 
@@ -17,11 +18,9 @@ class Abstract(Addressable, ABC):
 
     def __init__(
         self,
-        full_config: Optional[FullConfig] = None,
-        relative_config: Optional[RelativeConfig] = None
+        config: Config,
     ):
-        self._full_config = full_config or FullConfig()
-        self._relative_config = relative_config or RelativeConfig()
+        self._config = config
 
     ################################################
     # PROPERTIES
@@ -33,29 +32,51 @@ class Abstract(Addressable, ABC):
         "The light state."
 
     @property
-    def defined_full_config(self) -> Optional[FullConfig]:
-        "Returns a full config if defined."
-        return self._full_config
-
-    @property
-    def relative_config(self) -> RelativeConfig:
-        "Returns which values are currently overridden."
-        return self._relative_config
+    def config(self) -> Config:
+        "Returns the light's current configuration."
+        return self._config
 
     ################################################
     # CONFIGURATIVE API
     ################################################
-    def set_full_config(self, config: FullConfig):
-        "Sets the full config."
-        self._full_config = config
+    def override_static(self, static: State):
+        "Permanently overrides parent's static state."
+        self._config.absolute.state = Override.perm(static)
 
-    def inherit_config(self):
-        "Invalidates the full config and inherits from parent entities."
-        self._full_config = None
+    def inherit_static(self):
+        "Inherit parent's static state."
+        self._config.absolute.state = Override.none()
 
-    def set_relative_config(self, config: RelativeConfig):
-        "Sets the relative config."
-        self._relative_config = config
+    def override_colorful(self, colorful: bool):
+        "Permanently overrides parent's colorful-flag."
+        self._config.absolute.colorful = Override.perm(colorful)
+
+    def inherit_colorful(self):
+        "Inherit parent's colorful-flag."
+        self._config.absolute.colorful = Override.none()
+
+    def override_dynamic(self, dynamic: bool):
+        "Overrides parent's dynamic-flag."
+        self._config.absolute.dynamic = Override.perm(dynamic)
+
+    def inherit_dynamic(self):
+        "Inherit parent's dynamic-flag."
+        self._config.absolute.dynamic = Override.none()
+
+    def set_brightness_mod(self, modifier: float):
+        "Permanently modifies the brightness."
+        modifier = common.bounded(modifier, least=-1.0, greatest=+1.0)
+        self._config.relative.brightness_mod = modifier
+
+    def set_white_temp_mod(self, modifier: float):
+        "Permanently modifies the white temperature."
+        modifier = common.bounded(modifier, least=-1.0, greatest=+1.0)
+        self._config.relative.white_temp_mod = modifier
+
+    def set_color_offset(self, modifier: int):
+        "Permanently offsets the color."
+        modifier = int(common.bounded(float(modifier), least=0.0, greatest=5.0))
+        self._config.relative.color_offset = modifier
 
     ################################################
     # INFORMATIONAL API

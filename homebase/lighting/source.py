@@ -5,13 +5,13 @@ from typing import List, Optional
 
 import common
 from colour import Color
-from home.device import Addressable
 from comm.payload import Payload
 from enums.web import DeviceModel
-from home.device import Device
+from home.device import Addressable, Device
 from lighting.config import Config, Override
 from lighting.state import State
 from paho.mqtt import client as mqtt
+
 
 class Collection:
     "Indicates a collection of light sources."

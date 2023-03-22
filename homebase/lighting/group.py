@@ -141,4 +141,3 @@ class Group(Abstract, Collection):
 
     def _any_on(self) -> bool:
         return any(map(lambda light: light.state.toggled_on, self.all_lights))
-

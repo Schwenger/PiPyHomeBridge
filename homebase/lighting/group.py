@@ -4,14 +4,13 @@ from typing import List, Optional
 
 from colour import Color
 from comm.topic import Topic
-from lighting.abstract import Abstract
-from lighting.concrete import Concrete
-from lighting.state import State
 from lighting.config import Config
+from lighting.source import Abstract, Collection, Concrete
+from lighting.state import State
 from paho.mqtt import client as mqtt
 
 
-class Group(Abstract):
+class Group(Abstract, Collection):
     """
         A collection of abstract lights.
         Has additional configurative options like colorful mode or adaptive dimming.
@@ -49,6 +48,8 @@ class Group(Abstract):
             Returns None if the light is not a member of this group.
         """
         cfg = self.config
+        if topic == self.topic:
+            return cfg
         for light in self.all_lights:
             if light.topic == topic:
                 return light.config.with_parent(cfg)
@@ -72,11 +73,7 @@ class Group(Abstract):
     ################################################
 
     def flatten_lights(self) -> List[Concrete]:
-        "Returns a flat list of lights appearing in this group."
-        res = self.single_lights
-        for group in self.groups:
-            res += group.flatten_lights()
-        return res
+        return self.single_lights + sum(map(lambda grp: grp.flatten_lights(), self.groups), [])
 
     ################################################
     # FUNCTIONAL API
@@ -144,3 +141,4 @@ class Group(Abstract):
 
     def _any_on(self) -> bool:
         return any(map(lambda light: light.state.toggled_on, self.all_lights))
+

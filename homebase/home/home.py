@@ -1,6 +1,7 @@
 "Represents a home."
 
 from typing import List, Optional, Tuple
+import logging
 
 import lighting
 from comm.topic import Topic
@@ -11,7 +12,7 @@ from home.room import Room, living_room, office
 from homebaseerror import HomeBaseError
 
 
-class Home(Addressable):
+class Home(Addressable, lighting.Collection):
     "Collection of rooms"
 
     ROOT_LIGHT_CONFIG = lighting.RootConfig(
@@ -21,6 +22,7 @@ class Home(Addressable):
     )
 
     def __init__(self):
+        logging.debug("Home.__init__")
         self.rooms = [
             living_room(),
             office()
@@ -47,10 +49,6 @@ class Home(Addressable):
     def remotes(self) -> List[Remote]:
         "Returns all remotes in the home"
         return sum(map(lambda r: r.remotes, self.rooms), [])
-
-    def flatten_lights(self) -> List[lighting.Concrete]:
-        "Returns all lights in the home"
-        return sum(map(lambda r: r.group.flatten_lights(), self.rooms), [])
 
     def find_remote(self, topic: Topic) -> Optional[Remote]:
         "Find the remote with the given topic."
@@ -79,3 +77,6 @@ class Home(Addressable):
             if res is not None:
                 return res
         return None
+
+    def flatten_lights(self) -> List[lighting.Concrete]:
+        return sum(map(lambda r: r.group.flatten_lights(), self.rooms), [])

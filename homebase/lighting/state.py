@@ -18,6 +18,10 @@ class State:
         self.white_temp: float = white_temp
         self.color: Color = color
 
+    def __str__(self) -> str:
+        onoff = "On" if self.toggled_on else "Off"
+        return f"<{onoff} @ {self.brightness*100}% with color {self.color}>"
+
     @staticmethod
     def max() -> 'State':
         return State(

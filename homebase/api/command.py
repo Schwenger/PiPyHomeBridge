@@ -3,6 +3,7 @@ The logic for executing API commands
 """
 
 from typing import Dict
+import logging
 
 from colour import Color
 from comm.payload import Payload
@@ -66,7 +67,7 @@ class ApiExec:
         elif cmd == ApiCommand.Refresh:
             self.__refresh()
 
-    def __get_target(self, topic: Topic) -> lighting.Abstract:
+    def __get_target(self, topic: Topic) -> lighting.Collection:
         light = self.__home.find_light(topic)
         if light is not None:
             return light
@@ -76,48 +77,65 @@ class ApiExec:
         return room.group
 
     def __toggle(self, topic: Topic):
-        light = self.__get_target(topic)
-        light.toggle(self.__client)
-        if light.state.toggled_on:
-            self.__refresh_single(light)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.toggle(self.__client)
+            if light.state.toggled_on:
+                self.__refresh_single(light)
 
     def __turn_on(self, topic: Topic):
-        light = self.__get_target(topic)
-        light.turn_on(self.__client)
-        self.__refresh_single(light)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.turn_on(self.__client)
+            self.__refresh_single(light)
 
     def __turn_off(self, topic: Topic):
-        self.__get_target(topic).turn_off(self.__client)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.turn_off(self.__client)
 
     def __dim_up(self, topic: Topic):
-        self.__get_target(topic).dim_up(self.__client)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.dim_up(self.__client)
 
     def __dim_down(self, topic: Topic):
-        self.__get_target(topic).dim_down(self.__client)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.dim_down(self.__client)
 
     def __start_dim_up(self, topic: Topic):
-        self.__get_target(topic).start_dim_up(self.__client)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.start_dim_up(self.__client)
 
     def __start_dim_down(self, topic: Topic):
-        self.__get_target(topic).start_dim_down(self.__client)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.start_dim_down(self.__client)
 
     def __stop_dimming(self, topic: Topic):
-        self.__get_target(topic).stop_dim(self.__client)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            light.stop_dim(self.__client)
 
     def __set_brightness(self, topic: Topic, payload: Dict[str, str]):
-        light = self.__get_target(topic)
-        brightness = float(payload["brightness"])
-        light.set_brightness(self.__client, brightness)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            brightness = float(payload["brightness"])
+            light.set_brightness(self.__client, brightness)
 
     def __set_white_temp(self, topic: Topic, payload: Dict[str, str]):
-        light = self.__get_target(topic)
-        white_temp = float(payload["white"])
-        light.set_white_temp(self.__client, white_temp)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            white_temp = float(payload["white"])
+            light.set_white_temp(self.__client, white_temp)
 
     def __set_color(self, topic: Topic, payload: Dict[str, str]):
-        light = self.__get_target(topic)
-        color = Color(payload["color"])
-        light.set_color_temp(self.__client, color)
+        coll = self.__get_target(topic)
+        for light in coll.flatten_lights():
+            color = Color(payload["color"])
+            light.set_color_temp(self.__client, color)
 
     def __rename_device(self, topic: Topic, payload: Dict[str, str]):
         pay = Payload.rename(topic.without_base, payload["new_name"])
@@ -125,10 +143,11 @@ class ApiExec:
         self.__client.publish(target.string, payload=pay)
 
     def __refresh(self):
+        logging.debug("Refreshing all lights.")
         for light in self.__home.flatten_lights():
             self.__refresh_single(light)
 
-    def __refresh_single(self, light: lighting.Abstract):
+    def __refresh_single(self, light: lighting.Concrete):
         dynamic = lighting.dynamic.recommended()
         config = self.__home.compile_config(light.topic)
         assert config is not None

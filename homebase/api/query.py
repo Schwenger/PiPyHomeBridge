@@ -2,7 +2,6 @@
 The logic for executing API commands
 """
 
-import logging
 from queue import Queue
 from typing import Dict
 
@@ -84,6 +83,6 @@ class ApiResponder:
     def __respond_light_state(self, state: lighting.State) -> Dict:
         return {
             "brightness": state.brightness,
-            "hexColor": str(state.color.get_hex_l()),
-            "toggledOn": str(state.toggled_on),
+            "hexColor": state.color.get_hex_l(),
+            "toggledOn": state.toggled_on,
         }

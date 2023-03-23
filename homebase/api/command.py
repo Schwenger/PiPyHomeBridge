@@ -4,13 +4,13 @@ The logic for executing API commands
 
 from typing import Dict
 
+import lighting
 from colour import Color
 from comm.payload import Payload
 from comm.topic import Topic
 from enums import ApiCommand
 from home.home import Home
 from homebaseerror import HomeBaseError
-import lighting
 from paho.mqtt import client as mqtt
 
 
@@ -65,6 +65,10 @@ class ApiExec:
             self.__rename_device(topic, payload)
         elif cmd == ApiCommand.Refresh:
             self.__refresh()
+        elif cmd == ApiCommand.QueryPhysicalState:
+            self.__query_physical_state(topic)
+        elif cmd == ApiCommand.UpdateVirtualState:
+            self.__update_virtual_state(topic, payload)
 
     def __get_target(self, topic: Topic) -> lighting.Collection:
         light = self.__home.find_light(topic)
@@ -152,3 +156,18 @@ class ApiExec:
         target = lighting.config.resolve(self.__home.ROOT_LIGHT_CONFIG, config, dynamic)
         if light.state.toggled_on and target.toggled_on:
             light.realize_state(self.__client, target)
+
+    def __query_physical_state(self, topic: Topic):
+        target = self.__get_target(topic)
+        if not isinstance(target, lighting.Concrete):
+            raise HomeBaseError.InvalidPhysicalQuery
+        payload = Payload()
+        payload.state(None)
+        self.__client.publish(topic.as_get(), payload=payload.finalize())
+
+    def __update_virtual_state(self, topic: Topic, payload: Dict[str, str]):
+        target = self.__get_target(topic)
+        if not isinstance(target, lighting.Concrete):
+            raise HomeBaseError.InvalidPhysicalQuery
+        state = lighting.State.read_light_state(payload)
+        target.update_virtual_state(state)

@@ -6,7 +6,7 @@ import time
 from queue import Queue
 
 import common
-from enums import QoS, TopicTarget
+from enums import QoS, TopicTarget, ApiCommand
 from comm.queue_data import QData
 from comm.topic import Topic
 from home.home import Home
@@ -41,6 +41,7 @@ class Controller(Worker):
         self.client.on_disconnect = Controller.__on_disconnect
         self.client.on_message    = self.__handle_message
         self.__subscribe_to_all()
+        self.__query_physical_states()
 
     @staticmethod
     def __on_disconnect(_client, _userdata,  _rc):
@@ -53,22 +54,24 @@ class Controller(Worker):
     def __handle_message(self, _client, _userdata, message: mqtt.MQTTMessage):
         "Handles the reception of a message"
         logging.info("MQTT: Message received.")
-        remote_topic = Topic.from_str(message.topic)
-        logging.debug("MQTT: Message from %s received.", remote_topic)
+        sender = Topic.from_str(message.topic)
+        logging.debug("MQTT: Message from %s received.", sender)
         data = json.loads(message.payload.decode("utf-8"))
-        if remote_topic.target is TopicTarget.Bridge:
+        if sender.target is TopicTarget.Bridge:
             logging.debug("Received a message with bridge event.")
-            logging.debug(str(remote_topic))
+            logging.debug(str(sender))
             logging.debug(str(data))
-        if "action" not in data:
-            # Probably status update, can even come from a remote!
-            return
-        remote_target = self.home.remote_action(remote_topic, data["action"])
-        if remote_target is None:
-            raise HomeBaseError.RemoteNotFound
-        (cmd, target_topic) = remote_target
-        qdata = QData.api_command(target_topic, cmd, payload={ })
-        self.queue.put(qdata)
+        if "action" in data:
+            remote_target = self.home.remote_action(sender, data["action"])
+            if remote_target is None:
+                raise HomeBaseError.RemoteNotFound
+            (cmd, target_topic) = remote_target
+            qdata = QData.api_command(target_topic, cmd, payload={ })
+            self.queue.put(qdata)
+        if "state" in data:
+            qdata = QData.api_command(sender, ApiCommand.UpdateVirtualState, payload=data)
+            self.queue.put(qdata)
+
 
     # pylint: disable=invalid-name
     def __init_client(self, ip: str, port: int) -> mqtt.Client:
@@ -96,6 +99,12 @@ class Controller(Worker):
             # This currently works because there are no light groups, yet.
             # Fix by having a function return physical lights from a room/group/home
             self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)
+
+    def __query_physical_states(self):
+        "Queries the physical states of all lights"
+        for light in self.home.flatten_lights():
+            data = QData.api_command(light.topic, ApiCommand.QueryPhysicalState, payload={ })
+            self.queue.put(data)
 
 
 class Refresher(Worker):

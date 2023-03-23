@@ -14,3 +14,4 @@ class HomeBaseError(Exception, Enum):
     TopicParseError = "Failed to parse remote string."
     WebRequestParseError = "Failed to parse URL of web request."
     QueryNoResponse = "Did not receive a response for a query in time."
+    InvalidPhysicalQuery = "Query target is not a valid physical device."

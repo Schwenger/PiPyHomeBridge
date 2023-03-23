@@ -205,6 +205,10 @@ class Concrete(Abstract, Device):
     # FUNCTIONAL API
     ################################################
 
+    def update_virtual_state(self, state: State):
+        "Updates the internal state without changing anything regarding the physical state."
+        self._state = state
+
     def realize_state(self, client: mqtt.Client, state: State):
         self._set_toggled_on(None, state.toggled_on)
         self.set_brightness(None, state.brightness)

@@ -1,6 +1,6 @@
 "Collecting enums."
 
-from enum import Enum
+from enum import Enum, auto
 from typing import Optional
 
 
@@ -27,23 +27,25 @@ class QoS(Enum):
 # pylint: disable=invalid-name
 class ApiCommand(Enum):
     "An API Command."
-    Toggle                  = 0
-    TurnOn                  = 1
-    TurnOff                 = 2
-    DimUp                   = 3
-    DimDown                 = 4
-    StartDimUp              = 5
-    StartDimDown            = 6
-    StopDimming             = 7
-    EnableDynamicDimming    = 8
-    DisableDynamicDimming   = 9
-    EnableDynamicColor      = 10
-    DisableDynamicColor     = 11
-    SetBrightness           = 12
-    SetWhiteTemp            = 13
-    SetColor                = 14
-    Rename                  = 15
-    Refresh                 = 16
+    Toggle                  = auto()
+    TurnOn                  = auto()
+    TurnOff                 = auto()
+    DimUp                   = auto()
+    DimDown                 = auto()
+    StartDimUp              = auto()
+    StartDimDown            = auto()
+    StopDimming             = auto()
+    EnableDynamicDimming    = auto()
+    DisableDynamicDimming   = auto()
+    EnableDynamicColor      = auto()
+    DisableDynamicColor     = auto()
+    SetBrightness           = auto()
+    SetWhiteTemp            = auto()
+    SetColor                = auto()
+    Rename                  = auto()
+    Refresh                 = auto()
+    QueryPhysicalState      = auto()
+    UpdateVirtualState      = auto()
 
     @staticmethod
     def from_str(val: str) -> Optional['ApiCommand']:

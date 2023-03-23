@@ -1,7 +1,6 @@
 "Rooms"
 
 from typing import List, Optional
-import logging
 
 import lighting
 from comm.topic import Topic
@@ -66,9 +65,6 @@ def living_room() -> Room:
         ),
     ]
 
-    for light in lights_list:
-        logging.debug(light.state)
-
     lights = lighting.Group(
         name="Main",
         single_lights=lights_list,
@@ -94,9 +90,6 @@ def office() -> Room:
             ident="aaad",
         )
     ]
-
-    for light in lights_list:
-        logging.debug(light.state)
 
     lights = lighting.Group(
         name="Main",

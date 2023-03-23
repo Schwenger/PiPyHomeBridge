@@ -1,7 +1,6 @@
 "Represents a home."
 
 from typing import List, Optional, Tuple
-import logging
 
 import lighting
 from comm.topic import Topic
@@ -22,7 +21,6 @@ class Home(Addressable, lighting.Collection):
     )
 
     def __init__(self):
-        logging.debug("Home.__init__")
         self.rooms = [
             living_room(),
             office()

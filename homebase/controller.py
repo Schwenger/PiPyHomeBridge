@@ -22,8 +22,9 @@ PORT = common.config['mosquitto']['port']
 class PatchedClient(mqtt.Client):
     "Patches the publish command to also log the request."
     def publish(self: mqtt.Client, topic, payload=None, qos=0, retain=False, properties=None):
+        logging.info("MQTT: Sending message.")
         if payload is not None:
-            logging.info("MQTT: Sending message to %s with payload %s.", topic, payload)
+            logging.info("MQTT: Sending to %s: %s.", topic, payload)
         super().publish(topic, payload, qos, retain, properties)
 
 
@@ -51,12 +52,14 @@ class Controller(Worker):
 
     def __handle_message(self, _client, _userdata, message: mqtt.MQTTMessage):
         "Handles the reception of a message"
+        logging.info("MQTT: Message received.")
         remote_topic = Topic.from_str(message.topic)
+        logging.debug("MQTT: Message from %s received.", remote_topic)
         data = json.loads(message.payload.decode("utf-8"))
         if remote_topic.target is TopicTarget.Bridge:
-            logging.info("Received a message with bridge event.")
-            logging.info(str(remote_topic))
-            logging.info(str(data))
+            logging.debug("Received a message with bridge event.")
+            logging.debug(str(remote_topic))
+            logging.debug(str(data))
         if "action" not in data:
             # Probably status update, can even come from a remote!
             return

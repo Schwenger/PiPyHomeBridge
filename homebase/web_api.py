@@ -23,7 +23,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         "Handles GET requests."
         try:
-            logging.info("Web Request: %s", self.path)
+            logging.info("WebAPI: Received GET request.")
             self.__handle_request()
         except Exception as err:
             logging.critical("Error in WebApi: %s", err.with_traceback(None))
@@ -36,12 +36,14 @@ class Handler(BaseHTTPRequestHandler):
             logging.error("Parsing request failed: %s", self.path)
             raise HomeBaseError.WebRequestParseError
         (kind, command, query) = parsed
+        logging.info("WebAPI: %s", command)
         topic = Topic.from_str(query["topic"])
+        logging.debug("WebAPI: %s to %s", command, topic)
         if topic.target == "bridge":
-            logging.info("Received a bridge-targetted message over Web API.")
-            logging.info(self.path)
-            logging.info(command)
-            logging.info(str(query))
+            logging.debug("Received a bridge-targetted message over Web API.")
+            logging.debug(self.path)
+            logging.debug(command)
+            logging.debug(str(query))
         if kind == 'command':
             return self.__handle_command(command=command, topic=topic, payload=query)
         elif kind == 'query':
@@ -84,8 +86,7 @@ class Handler(BaseHTTPRequestHandler):
         except Empty as ecx:
             logging.error("Did not get a response within 60 seconds.")
             raise HomeBaseError.QueryNoResponse from ecx
-        logging.debug("Responding to query with:")
-        logging.debug(resp)
+        logging.debug("Responding to query with: %s", resp)
         self.wfile.write(str.encode(resp))
         return
 

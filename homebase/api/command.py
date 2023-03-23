@@ -3,7 +3,6 @@ The logic for executing API commands
 """
 
 from typing import Dict
-import logging
 
 from colour import Color
 from comm.payload import Payload
@@ -143,7 +142,6 @@ class ApiExec:
         self.__client.publish(target.string, payload=pay)
 
     def __refresh(self):
-        logging.debug("Refreshing all lights.")
         for light in self.__home.flatten_lights():
             self.__refresh_single(light)
 

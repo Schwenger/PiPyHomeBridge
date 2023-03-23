@@ -25,7 +25,8 @@ if __name__ == "__main__":
     logging.basicConfig(
         filename=os.path.join(log_dir, 'mylogs.log'),
         level=log_level,
-        format=log_fmt
+        format=log_fmt,
+        datefmt='%d/%H:%M:%S'
     )
 
     if not os.path.exists(log_dir):

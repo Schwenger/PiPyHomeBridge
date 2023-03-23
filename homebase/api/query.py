@@ -26,7 +26,6 @@ class ApiResponder:
 
     def respond(self, topic: Topic, query: ApiQuery):
         "Executes an API query."
-        logging.debug("ApiQuery: respond")
         if query == ApiQuery.Structure:
             response = self.__respond_structure()
         elif query == ApiQuery.LightState:
@@ -37,7 +36,6 @@ class ApiResponder:
         self.__response.put(data)
 
     def __respond_structure(self) -> Dict:
-        logging.debug("ApiQuery: __respond_structure")
         return {
             "rooms": list(map(self.__compile_room, self.__home.rooms))
         }
@@ -76,7 +74,6 @@ class ApiResponder:
         }
 
     def __respond_light(self, topic) -> Dict:
-        logging.debug("ApiQuery: __respond_light")
         if topic is None:
             raise HomeBaseError.Unreachable
         light = self.__home.find_light(topic=topic)

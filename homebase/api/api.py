@@ -27,13 +27,11 @@ class Api(Worker):
             try:
                 qdata: QData = self.request_q.get(block=True, timeout=60 * 15)
             except Empty:
-                logging.info("Controller: Heartbeat.")
+                logging.info("API: Heartbeat.")
                 continue
             logging.info(
-                "Command: %s, Query: %s, Kind: %s, Topic: %s",
-                qdata.command,
-                qdata.query,
-                qdata.kind,
+                "Command: %s, Topic: %s",
+                qdata.command or qdata.query,
                 str(qdata.topic)
             )
             self.__process(qdata)

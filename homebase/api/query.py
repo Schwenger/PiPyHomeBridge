@@ -8,7 +8,8 @@ from typing import Dict
 import lighting
 from comm import Payload, Topic
 from enums import ApiQuery
-from home import Home, Remote, Room
+from home import Home, Room
+from remote import Remote
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 

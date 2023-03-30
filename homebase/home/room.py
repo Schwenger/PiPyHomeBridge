@@ -4,18 +4,15 @@ from typing import List, Optional
 
 import lighting
 from comm import Topic
-from home.device import Addressable
-from home.remote import Remote
-from lighting import Concrete as ConcreteLight
-from lighting import Group as LightGroup
-
+from device import Addressable
+from remote import Remote
 
 class Room(Addressable, lighting.Collection):
     "A room."
 
-    def __init__(self, name: str, group: LightGroup, remotes: List[Remote]):
+    def __init__(self, name: str, group: lighting.Group, remotes: List[Remote]):
         self.name: str = name
-        self.group: LightGroup = group
+        self.group: lighting.Group = group
         self.remotes: List[Remote] = remotes
 
     @property
@@ -30,5 +27,5 @@ class Room(Addressable, lighting.Collection):
         "Finds the light with the given name in the room."
         return next((remote for remote in self.remotes if remote.name == name), None)
 
-    def flatten_lights(self) -> List[ConcreteLight]:
+    def flatten_lights(self) -> List[lighting.Concrete]:
         return self.group.flatten_lights()

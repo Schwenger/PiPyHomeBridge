@@ -1,12 +1,14 @@
 "Encodes a home into a yml description."
 
 from typing import Dict
+
 import lighting
 import yaml
 from enums import DeviceModel
 from home.home import Home
-from home.remote import Remote
 from home.room import Room
+from remote import Remote
+
 
 def write(home: Home, path: str):
     "Encodes the home in yml format."

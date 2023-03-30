@@ -5,8 +5,8 @@ from enum import Enum
 from typing import Callable, Dict, List, Optional
 
 from comm import ApiCommand, Topic
+from device import Device
 from enums import DeviceModel
-from home.device import Device
 from homebaseerror import HomeBaseError
 
 

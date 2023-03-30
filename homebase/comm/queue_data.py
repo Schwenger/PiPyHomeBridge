@@ -2,10 +2,8 @@
 
 from typing import Dict, Optional
 
-import lighting
 from comm.topic import Topic
 from enums import ApiCommand, ApiQuery, QDataKind
-
 
 class QData:
     "Data to be stored in the queue."
@@ -14,13 +12,11 @@ class QData:
         kind:     QDataKind,
         payload:  Dict[str, str],
         topic:    Optional[Topic]      = None,
-        state:    Optional[lighting.State] = None,
         command:  Optional[ApiCommand] = None,
         query:    Optional[ApiQuery]   = None,
     ):
         self.kind:     QDataKind            = kind
         self.topic:    Optional[Topic]      = topic
-        self.state:    Optional[lighting.State] = state
         self.command:  Optional[ApiCommand] = command
         self.query:    Optional[ApiQuery]   = query
         self.payload:  Dict[str, str]       = payload

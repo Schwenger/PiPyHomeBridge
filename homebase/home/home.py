@@ -4,11 +4,11 @@ from typing import List, Optional, Tuple
 
 import lighting
 from comm import Topic
+from device import Addressable
 from enums import ApiCommand
-from home.device import Addressable
-from home.remote import Remote
 from home.room import Room
 from homebaseerror import HomeBaseError
+from remote import Remote
 
 
 class Home(Addressable, lighting.Collection):

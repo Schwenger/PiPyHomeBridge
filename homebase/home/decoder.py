@@ -7,8 +7,8 @@ import yaml
 from comm import Topic
 from enums import DeviceModel
 from home.home import Home
-from home.remote import Remote
 from home.room import Room
+from remote import Remote
 
 
 def read(path: str) -> Home:

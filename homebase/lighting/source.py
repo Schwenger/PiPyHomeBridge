@@ -7,7 +7,7 @@ import common
 from colour import Color
 from comm import Payload
 from enums import DeviceModel
-from home import Addressable, Device
+from device import Addressable, Device
 from lighting.config import Config, Override
 from lighting.state import State
 from paho.mqtt import client as mqtt

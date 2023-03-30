@@ -7,7 +7,7 @@ from comm.topic import Topic
 from enums import ApiCommand
 from home.device import Addressable
 from home.remote import Remote
-from home.room import Room, living_room, office
+from home.room import Room
 from homebaseerror import HomeBaseError
 
 
@@ -20,11 +20,8 @@ class Home(Addressable, lighting.Collection):
         static=lighting.State.max()
     )
 
-    def __init__(self):
-        self.rooms = [
-            living_room(),
-            office()
-        ]
+    def __init__(self, rooms: List[Room]):
+        self.rooms = rooms
 
     @property
     def topic(self) -> Topic:

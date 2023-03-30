@@ -131,6 +131,6 @@ dmypy.json
 common
 manual_get.py
 homebase/ideas.md
-home.yml
+config/
 .vscode
 __common

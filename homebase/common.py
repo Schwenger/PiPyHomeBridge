@@ -26,7 +26,7 @@ else:
     CLIENT_NAME = 'Pi'
 
 base_path = os.path.dirname(os.path.realpath(__file__))
-cfg_path = os.path.join(base_path, '..', 'config.yml')
+cfg_path = os.path.join(base_path, '..', 'config', 'config.yml')
 config = {}
 with open(cfg_path, "r", encoding="utf-8") as stream:
     try:

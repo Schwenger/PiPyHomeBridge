@@ -10,13 +10,12 @@ import time
 from queue import Queue
 from typing import List
 
+import common
 from api.api import Api
 from controller import Controller, Refresher
-from home.home import Home
+from home import decoder
 from web_api import WebAPI
 from worker import Worker
-
-import common
 
 if __name__ == "__main__":
     log_dir   = common.config["log"]["dir"]
@@ -32,7 +31,8 @@ if __name__ == "__main__":
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
 
-    home = Home()
+    home = decoder.read(common.config["home"]["dir"])
+
     cmd_q = Queue()
     resp_q = Queue()
 

@@ -62,11 +62,13 @@ class Group(Abstract, Collection):
     ################################################
     # INFORMATIONAL API
     ################################################
+    @property
     def is_dimmable(self) -> bool:
-        return any(map(Abstract.is_dimmable, self.all_lights))
+        return any(map(lambda l: l.is_dimmable, self.all_lights))
 
+    @property
     def is_color(self) -> bool:
-        return any(map(Abstract.is_color, self.all_lights))
+        return any(map(lambda l: l.is_color, self.all_lights))
 
     ################################################
     # COLLECTION API

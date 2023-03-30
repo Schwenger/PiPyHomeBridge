@@ -35,9 +35,11 @@ class SimpleLight(Concrete, Abstract):
     ################################################
     # Implement Abstract
     ################################################
+    @property
     def is_dimmable(self) -> bool:
         return False
 
+    @property
     def is_color(self) -> bool:
         return False
 
@@ -95,9 +97,11 @@ class DimmableLight(Concrete):
     ################################################
     # Implement Abstract
     ################################################
+    @property
     def is_dimmable(self) -> bool:
         return True
 
+    @property
     def is_color(self) -> bool:
         return False
 
@@ -119,9 +123,11 @@ class WhiteSpectrumLight(DimmableLight):
             ident=ident
         )
 
+    @property
     def is_dimmable(self) -> bool:
         return True
 
+    @property
     def is_color(self) -> bool:
         return False
 

@@ -90,10 +90,12 @@ class Abstract(Addressable, ABC, Collection):
     ################################################
     # INFORMATIONAL API
     ################################################
+    @property
     @abstractmethod
     def is_dimmable(self) -> bool:
         "Can the light be dimmed in any way?"
 
+    @property
     @abstractmethod
     def is_color(self) -> bool:
         "Determines if the light can display different colors"
@@ -292,10 +294,10 @@ class Concrete(Abstract, Device):
     def state_change_payload(self) -> Optional[Payload]:
         "Creates a payload to realize the current virtual state."
         payload = Payload().state(self.state.toggled_on)
-        if self.is_dimmable():
+        if self.is_dimmable:
             new_brightness = int(self.state.toggled_on) * self.state.brightness
             payload = payload.brightness(new_brightness)
-        if self.is_color():
+        if self.is_color:
             new_white = int(self.state.toggled_on) * self.state.white_temp
             payload = payload.white_temp(new_white, vendor=self.vendor)
             payload = payload.color(self.state.color, self.vendor)

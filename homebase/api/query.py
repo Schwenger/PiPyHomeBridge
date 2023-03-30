@@ -68,8 +68,8 @@ class ApiResponder:
             "id":       light.ident,
             "topic":    light.topic.string,
             "model":    light.model.value,
-            "dimmable": light.is_dimmable(),
-            "color":    light.is_color(),
+            "dimmable": light.is_dimmable,
+            "color":    light.is_color,
         }
 
     def __respond_light(self, topic) -> Dict:

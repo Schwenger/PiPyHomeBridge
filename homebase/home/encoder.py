@@ -31,9 +31,9 @@ def __encode_light_group(group: lighting.Group) -> dict:
     }
 
 def __encode_light(light: lighting.Concrete) -> Dict[str, str]:
-    if light.is_color():
+    if light.is_color:
         kind = "Color"
-    elif light.is_dimmable():
+    elif light.is_dimmable:
         kind = "Dimmable"
     else:
         kind = "Simple"

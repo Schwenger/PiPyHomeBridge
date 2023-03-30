@@ -1,4 +1,3 @@
-* is_dimmable and is_color as property rather than function
 * is_dimmable and is_color can be infered from model, same in swift.
 * Each abstract light in the app has a checkbox to define its parameters or inherit
   * This sets its full config or removes it.

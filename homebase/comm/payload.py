@@ -29,13 +29,13 @@ class Payload:
 
     def brightness(self, val: Optional[float]) -> 'Payload':
         "Sets the brightness to val or queries it if none"
-        target = _Bright.scaled(val) if val is not None else ""
+        target = Bright.scaled(val) if val is not None else ""
         self.body["brightness"] = target
         return self
 
     def white_temp(self, val: Optional[float], vendor: Vendor) -> 'Payload':
         "Sets the white temp to val or queries it if none"
-        target = _WhiteTemp.scaled(val, vendor) if val is not None else ""
+        target = WhiteTemp.scaled(val, vendor) if val is not None else ""
         self.body["color_temp"] = target
         return self
 
@@ -106,7 +106,7 @@ class Payload:
 # READING
 ################################################
 
-class _Bright:
+class Bright:
     "Deals with brightness values, translates relative brightnesses into absolute values."
     max: int = 254
     min: int = 0
@@ -114,17 +114,17 @@ class _Bright:
     @staticmethod
     def scaled(scale: float) -> int:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return int(_Bright.max * scale)
+        return int(Bright.max * scale)
 
     @staticmethod
     def from_device(val: int) -> float:
         "Returns the scalar based on the value retrieved from the device."
-        return float(val) / _Bright.max
+        return float(val) / Bright.max
 
 
-class _WhiteTemp:
+class WhiteTemp:
     "Deals with white color temperature"
-    cfg = {
+    _cfg = {
         Vendor.Ikea: {
             "min":  250,
             "max":  454,
@@ -140,11 +140,11 @@ class _WhiteTemp:
     @staticmethod
     def scaled(scale: float, vendor: Vendor) -> float:
         "Returns the absolute brightness for a scalar ∈ [0,1]."
-        return _WhiteTemp.cfg[vendor]["diff"] * (1 - scale) + _WhiteTemp.cfg[vendor]["min"]
+        return WhiteTemp._cfg[vendor]["diff"] * (1 - scale) + WhiteTemp._cfg[vendor]["min"]
 
     @staticmethod
     def read(val: int, vendor: Vendor) -> float:
         "Returns the scalar based on the value retrieved from the device."
-        upper = _WhiteTemp.cfg[vendor]["diff"]
-        val = val - _WhiteTemp.cfg[vendor]["min"]
+        upper = WhiteTemp._cfg[vendor]["diff"]
+        val = val - WhiteTemp._cfg[vendor]["min"]
         return 1 - (float(val) / upper)

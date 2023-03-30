@@ -102,7 +102,7 @@ class State:
     @staticmethod
     def __read_brightness(val: str) -> float:
         "Returns the white temperature as scale based on the value retrieved from the device."
-        return payload._Bright.from_device(int(val))
+        return payload.Bright.from_device(int(val))
 
     @staticmethod
     def __read_state(val: str) -> bool:

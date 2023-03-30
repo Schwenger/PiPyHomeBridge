@@ -1,4 +1,6 @@
 "What"
 import sys
 
-sys.path.append('..')
+from api.api import Api
+from api.command import Exec
+from api.query import Responder

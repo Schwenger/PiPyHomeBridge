@@ -3,7 +3,7 @@
 from typing import List, Optional
 
 from colour import Color
-from comm.topic import Topic
+from comm import Topic
 from lighting.config import Config
 from lighting.source import Abstract, Collection, Concrete
 from lighting.state import State

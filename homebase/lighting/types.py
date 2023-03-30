@@ -4,7 +4,7 @@ import threading
 import time
 from typing import Optional
 
-from comm.payload import Payload
+from comm import Payload
 from lighting.source import Abstract, Concrete
 from paho.mqtt import client as mqtt
 from enums import DeviceModel

@@ -4,7 +4,7 @@ from typing import Dict, List
 
 import lighting
 import yaml
-from comm.topic import Topic
+from comm import Topic
 from enums import DeviceModel
 from home.home import Home
 from home.remote import Remote

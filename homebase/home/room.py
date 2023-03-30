@@ -3,8 +3,7 @@
 from typing import List, Optional
 
 import lighting
-from comm.topic import Topic
-from enums import DeviceModel
+from comm import Topic
 from home.device import Addressable
 from home.remote import Remote
 from lighting import Concrete as ConcreteLight

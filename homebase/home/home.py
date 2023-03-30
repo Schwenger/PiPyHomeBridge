@@ -3,7 +3,7 @@
 from typing import List, Optional, Tuple
 
 import lighting
-from comm.topic import Topic
+from comm import Topic
 from enums import ApiCommand
 from home.device import Addressable
 from home.remote import Remote

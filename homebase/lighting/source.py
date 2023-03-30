@@ -5,9 +5,9 @@ from typing import List, Optional
 
 import common
 from colour import Color
-from comm.payload import Payload
-from enums.web import DeviceModel
-from home.device import Addressable, Device
+from comm import Payload
+from enums import DeviceModel
+from home import Addressable, Device
 from lighting.config import Config, Override
 from lighting.state import State
 from paho.mqtt import client as mqtt

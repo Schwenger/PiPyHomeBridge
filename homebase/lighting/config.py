@@ -5,7 +5,7 @@ from typing import Generic, Optional, Tuple, TypeVar
 
 from colour import Color
 from common import scale_relative
-from lighting.state import State
+import lighting
 
 T = TypeVar('T')
 class Override(Generic[T]):
@@ -83,13 +83,13 @@ class Modifier:
             color_offset=self.color_offset or parent.color_offset,
         )
 
-    def apply_to(self, state: State) -> State:
+    def apply_to(self, state: lighting.State) -> lighting.State:
         "Applies the modifier to the state."
         brightness = scale_relative(value=state.brightness, scale=self.brightness_mod)
         white_temp = scale_relative(value=state.white_temp, scale=self.white_temp_mod)
         color = state.color
         color.hue += 0.2 * self.color_offset
-        return State(
+        return lighting.State(
             toggled_on=state.toggled_on and brightness > 0,
             brightness=brightness,
             white_temp=white_temp,
@@ -110,7 +110,7 @@ class Overrides:
         self,
         colorful: Override[bool]  = Override.none(),
         dynamic:  Override[bool]  = Override.none(),
-        state:    Override[State] = Override.none(),
+        state:    Override[lighting.State] = Override.none(),
     ):
         self.colorful = colorful
         self.dynamic  = dynamic
@@ -128,12 +128,12 @@ class Overrides:
         return (
             f"Colorful: {self.colorful}\n"
             f"Dynamic: {self.dynamic}\n"
-            f"State: {self.state}\n"
+            f"lighting.State: {self.state}\n"
         )
 
 class Absolutes:
     "Contains light configuration values; absolute."
-    def __init__(self, colorful: bool, dynamic: bool, state: State):
+    def __init__(self, colorful: bool, dynamic: bool, state: lighting.State):
         self.colorful = colorful
         self.dynamic = dynamic
         self.state = state
@@ -167,7 +167,7 @@ class Config:
 class RootConfig:
     "A fully defined configuration typically specified as root."
 
-    def __init__(self, colorful: bool, dynamic: bool, static: State):
+    def __init__(self, colorful: bool, dynamic: bool, static: lighting.State):
         self.colorful = colorful
         self.dynamic = dynamic
         self.static = static
@@ -192,10 +192,10 @@ class RootConfig:
             f"Static: {self.static}\n"
         )
 
-def resolve(root: RootConfig, override: Config, dynamic: State) -> State:
+def resolve(root: RootConfig, override: Config, dynamic: lighting.State) -> lighting.State:
     "Applies the configuration to the root configuration and returns the appropriate state."
     config: RootConfig = root.overridden_by(override.absolute)
-    state: State = dynamic if config.dynamic else config.static
+    state: lighting.State = dynamic if config.dynamic else config.static
     res = override.relative.apply_to(state)
 
     if not config.colorful:

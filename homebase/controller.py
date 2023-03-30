@@ -7,9 +7,8 @@ from queue import Queue
 
 import common
 from enums import QoS, TopicTarget, ApiCommand
-from comm.queue_data import QData
-from comm.topic import Topic
-from home.home import Home
+from comm import QData, Topic
+from home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 from worker import Worker

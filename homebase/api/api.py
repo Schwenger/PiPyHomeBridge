@@ -3,11 +3,11 @@
 import logging
 from queue import Empty, Queue
 
-from api.command import ApiExec
-from api.query import ApiResponder
+from api.command import Exec
+from api.query import Responder
 from enums import QDataKind
-from comm.queue_data import QData
-from home.home import Home
+from comm import QData
+from home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 from worker import Worker
@@ -19,8 +19,8 @@ class Api(Worker):
     def __init__(self, request_q: Queue, response_q: Queue, home: Home, client: mqtt.Client):
         self.request_q  = request_q
         self.response_q = response_q
-        self.exec       = ApiExec(home, client)
-        self.responder  = ApiResponder(home, response_q, client)
+        self.exec       = Exec(home, client)
+        self.responder  = Responder(home, response_q, client)
 
     def _run(self):
         while True:

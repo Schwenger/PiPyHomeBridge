@@ -6,17 +6,14 @@ from queue import Queue
 from typing import Dict
 
 import lighting
-from comm.payload import Payload
-from comm.topic import Topic
+from comm import Payload, Topic
 from enums import ApiQuery
-from home.home import Home
-from home.remote import Remote
-from home.room import Room
+from home import Home, Remote, Room
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 
 
-class ApiResponder:
+class Responder:
     "Responds to API queries."
     def __init__(self, home: Home, response: Queue, _client: mqtt.Client):
         self.__home = home

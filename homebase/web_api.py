@@ -6,9 +6,8 @@ from queue import Empty, Queue
 from socketserver import TCPServer
 from typing import Dict, Optional, Tuple
 
+from comm import QData, Topic
 from enums import ApiCommand, ApiQuery, QDataKind
-from comm.queue_data import QData
-from comm.topic import Topic
 from homebaseerror import HomeBaseError
 from worker import Worker
 

@@ -6,15 +6,14 @@ from typing import Dict
 
 import lighting
 from colour import Color
-from comm.payload import Payload
-from comm.topic import Topic
+from comm import Payload, Topic
 from enums import ApiCommand
 from home.home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
 
 
-class ApiExec:
+class Exec:
     "Executes API command."
 
     def __init__(self, home: Home, client: mqtt.Client):

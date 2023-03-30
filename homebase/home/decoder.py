@@ -9,29 +9,31 @@ from enums import DeviceModel
 from home.home import Home
 from home.room import Room
 from remote import Remote
+from sensor import Sensor
 
 
 def read(path: str) -> Home:
-    "Parses a specification behind the given path into a Home or raises an error."
+    "Decodes a specification behind the given path into a Home or raises an error."
     home = __read(path)
-    rooms = []
-    for room in home["rooms"]:
-        name = room["name"]
-        main_group = __parse_light_group(room["lights"], name, [])
-        targets = __collect_viable_targets(main_group)
-        targets[name] = Topic.for_room(name)
-        remotes = __parse_remotes(room=room, room_name=name, targets=targets)
-        room = Room(name, main_group, remotes=remotes)
-        rooms.append(room)
+    rooms = list(map(__decode_room, home["rooms"]))
     return Home(rooms)
 
-def __parse_light_group(group: dict, room: str, hierarchie: List[str]) -> lighting.Group:
+def __decode_room(room: dict) -> Room:
+    name = room["name"]
+    main_group = __decode_light_group(room["lights"], name, [])
+    targets = __collect_viable_targets(main_group)
+    targets[name] = Topic.for_room(name)
+    remotes = __decode_remotes(room=room, room_name=name, targets=targets)
+    sensors = __decode_sensors(room=room, room_name=name)
+    return Room(name, main_group, remotes=remotes, sensors=sensors)
+
+def __decode_light_group(group: dict, room: str, hierarchie: List[str]) -> lighting.Group:
     name = group["name"]
-    singles = list(map(lambda l: __parse_light(l, room), group["singles"]))
+    singles = list(map(lambda l: __decode_light(l, room), group["singles"]))
     hierarchie.append(name)
     subs = []
     for sub in (group.get("subgroups") or []):
-        sub = __parse_light_group(sub, room, hierarchie)
+        sub = __decode_light_group(sub, room, hierarchie)
         subs.append(sub)
     return lighting.Group(
         single_lights=singles,
@@ -40,7 +42,7 @@ def __parse_light_group(group: dict, room: str, hierarchie: List[str]) -> lighti
         hierarchie=hierarchie
     )
 
-def __parse_light(light: dict, room: str) -> lighting.Concrete:
+def __decode_light(light: dict, room: str) -> lighting.Concrete:
     name = light["name"]
     kind = light["kind"]
     model = DeviceModel.from_str(light["model"])
@@ -56,15 +58,14 @@ def __parse_light(light: dict, room: str) -> lighting.Concrete:
         )
     assert False
 
-def __parse_remotes(room: dict, room_name: str, targets: Dict[str, Topic]) -> List[Remote]:
+def __decode_remotes(room: dict, room_name: str, targets: Dict[str, Topic]) -> List[Remote]:
     remotes = []
-    if "remotes" in room:
-        for remote in room["remotes"]:
-            rem = __parse_remote(remote, room=room_name, targets=targets)
-            remotes.append(rem)
+    for remote in (room.get("remotes") or []):
+        rem = __decode_remote(remote, room=room_name, targets=targets)
+        remotes.append(rem)
     return remotes
 
-def __parse_remote(remote: dict, room: str, targets: Dict[str, Topic]) -> Remote:
+def __decode_remote(remote: dict, room: str, targets: Dict[str, Topic]) -> Remote:
     name = remote["name"]
     kind = remote["kind"]
     ident = remote["id"]
@@ -85,6 +86,21 @@ def __parse_remote(remote: dict, room: str, targets: Dict[str, Topic]) -> Remote
             name=name
         )
     assert False
+
+def __decode_sensors(room: dict, room_name: str) -> List[Sensor]:
+    sensors = []
+    for sensor in (room.get("sensors") or []):
+        sens = __decode_sensor(sensor, room=room_name)
+        sensors.append(sens)
+    return sensors
+
+def __decode_sensor(sensor: dict, room: str) -> Sensor:
+    name  = sensor["name"]
+    model = sensor["model"]
+    ident = sensor["id"]
+    model = DeviceModel.from_str(model)
+    assert model is not None
+    return Sensor(name=name, room=room, model=model, ident=ident)
 
 def __collect_viable_targets(grp: lighting.Group) -> Dict[str, Topic]:
     res = { grp.name: grp.topic }

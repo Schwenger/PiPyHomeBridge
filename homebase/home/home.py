@@ -9,6 +9,7 @@ from enums import ApiCommand
 from home.room import Room
 from homebaseerror import HomeBaseError
 from remote import Remote
+from sensor import Sensor
 
 
 class Home(Addressable, lighting.Collection):
@@ -45,6 +46,10 @@ class Home(Addressable, lighting.Collection):
         "Returns all remotes in the home"
         return sum(map(lambda r: r.remotes, self.rooms), [])
 
+    def sensors(self) -> List[Sensor]:
+        "Returns all sensors in the home"
+        return sum(map(lambda r: r.sensors, self.rooms), [])
+
     def find_remote(self, topic: Topic) -> Optional[Remote]:
         "Find the remote with the given topic."
         for room in self.rooms:
@@ -59,6 +64,14 @@ class Home(Addressable, lighting.Collection):
             for light in room.group.flatten_lights():
                 if light.topic == topic:
                     return light
+        return None
+
+    def find_sensor(self, topic: Topic) -> Optional[Sensor]:
+        "Find the sensor with the given topic."
+        for room in self.rooms:
+            for sensor in room.sensors:
+                if sensor.topic == topic:
+                    return sensor
         return None
 
     def find_abstract_light(self, topic: Topic) -> Optional[lighting.Abstract]:

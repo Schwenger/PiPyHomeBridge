@@ -6,14 +6,23 @@ import lighting
 from comm import Topic
 from device import Addressable
 from remote import Remote
+from sensor import Sensor
+
 
 class Room(Addressable, lighting.Collection):
     "A room."
 
-    def __init__(self, name: str, group: lighting.Group, remotes: List[Remote]):
+    def __init__(
+        self,
+        name: str,
+        group: lighting.Group,
+        remotes: List[Remote],
+        sensors: List[Sensor]
+    ):
         self.name: str = name
         self.group: lighting.Group = group
         self.remotes: List[Remote] = remotes
+        self.sensors: List[Sensor] = sensors
 
     @property
     def topic(self) -> Topic:

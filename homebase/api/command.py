@@ -3,11 +3,13 @@ The logic for executing API commands
 """
 
 from typing import Dict
+import logging
 
 import lighting
+import lighting.config
 from colour import Color
 from comm import Payload, Topic
-from enums import ApiCommand
+from enums import ApiCommand, SensorQuantity
 from home.home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
@@ -68,8 +70,11 @@ class Exec:
             self.__query_physical_state(topic)
         elif cmd == ApiCommand.UpdateVirtualState:
             self.__update_virtual_state(topic, payload)
+        elif cmd == ApiCommand.UpdateSensorState:
+            self.__update_sensor_state(topic, payload)
 
     def __get_target(self, topic: Topic) -> lighting.Collection:
+        logging.debug(topic)
         light = self.__home.find_light(topic)
         if light is not None:
             return light
@@ -170,3 +175,17 @@ class Exec:
             raise HomeBaseError.InvalidPhysicalQuery
         state = lighting.State.read_light_state(payload)
         target.update_virtual_state(state)
+
+    def __update_sensor_state(self, topic: Topic, payload: Dict[str, str]):
+        target = self.__home.find_sensor(topic)
+        if target is None:
+            raise HomeBaseError.SensorNotFound
+        for key in payload:
+            quant = SensorQuantity.from_str(key)
+            if quant is None:
+                continue
+            try:
+                val = float(payload[key])
+                target.update_state(quant, val)
+            except ValueError as exc:
+                raise HomeBaseError.InvalidPhysicalQuantity from exc

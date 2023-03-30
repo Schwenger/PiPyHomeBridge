@@ -22,6 +22,7 @@ class DeviceKind(FfiEnum):
     Light  = auto()
     Remote = auto()
     Outlet = auto()
+    Sensor = auto()
 
 
 # pylint: disable="invalid-name"
@@ -29,6 +30,7 @@ class Vendor(FfiEnum):
     "List of known vendors"
     Ikea  = auto()
     Hue   = auto()
+    Tuya  = auto()
     Other = auto()
 
 # pylint: disable="invalid-name"
@@ -39,6 +41,7 @@ class DeviceModel(FfiEnum):
     IkeaDimmable    = auto()
     IkeaOutlet      = auto()
     HueColor        = auto()
+    TuyaHumidity    = auto()
 
     @property
     def vendor(self) -> Vendor:
@@ -49,6 +52,7 @@ class DeviceModel(FfiEnum):
             DeviceModel.IkeaMultiButton: Vendor.Ikea,
             DeviceModel.IkeaDimmable:    Vendor.Ikea,
             DeviceModel.HueColor:        Vendor.Hue,
+            DeviceModel.TuyaHumidity:    Vendor.Tuya,
         }[self]
 
     @property
@@ -60,6 +64,7 @@ class DeviceModel(FfiEnum):
             DeviceModel.IkeaMultiButton: DeviceKind.Remote,
             DeviceModel.IkeaDimmable:    DeviceKind.Light,
             DeviceModel.HueColor:        DeviceKind.Light,
+            DeviceModel.TuyaHumidity:    DeviceKind.Sensor,
         }[self]
 
     @property
@@ -71,6 +76,7 @@ class DeviceModel(FfiEnum):
             DeviceModel.IkeaMultiButton: False,
             DeviceModel.IkeaDimmable:    True,
             DeviceModel.HueColor:        True,
+            DeviceModel.TuyaHumidity:    False,
         }[self]
 
     @property
@@ -82,4 +88,11 @@ class DeviceModel(FfiEnum):
             DeviceModel.IkeaMultiButton: False,
             DeviceModel.IkeaDimmable:    False,
             DeviceModel.HueColor:        True,
+            DeviceModel.TuyaHumidity:    False,
         }[self]
+
+# pylint: disable="invalid-name"
+class SensorQuantity(FfiEnum):
+    "A list of potential sensor quantities."
+    Temperature = auto()
+    Humidity    = auto()

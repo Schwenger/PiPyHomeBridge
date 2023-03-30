@@ -1,6 +1,7 @@
 # General
 * Fix white temperatures and colors/brightness.
 * Remote does not have one universal target; separate targets for different actions.
+* Unify output format of structure query and encoder.
 
 # UI
 * Each abstract light in the app has a checkbox to define its parameters or inherit

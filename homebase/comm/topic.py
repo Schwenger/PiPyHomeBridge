@@ -40,6 +40,13 @@ class Topic:
         return self._join(self._comps)
 
     @property
+    def device_kind(self) -> Optional[str]:
+        "Returns a string representation of the device kind, if any."
+        if self.device_id is None:
+            return None
+        return self.device_id[0]
+
+    @property
     def without_base(self) -> str:
         "Returns the topic omitting the base."
         return self._join(self._comps[1:])

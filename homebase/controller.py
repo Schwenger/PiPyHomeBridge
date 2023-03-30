@@ -6,7 +6,7 @@ import time
 from queue import Queue
 
 import common
-from enums import QoS, TopicTarget, ApiCommand
+from enums import QoS, TopicTarget, ApiCommand, DeviceKind
 from comm import QData, Topic
 from home import Home
 from homebaseerror import HomeBaseError
@@ -67,7 +67,11 @@ class Controller(Worker):
             (cmd, target_topic) = remote_target
             qdata = QData.api_command(target_topic, cmd, payload={ })
             self.queue.put(qdata)
-        if "state" in data:
+        if "state" in data and sender.device_kind is DeviceKind.Sensor:
+            logging.debug("Received update for Sensor: %s", data)
+            qdata = QData.api_command(sender, ApiCommand.UpdateSensorState, payload=data)
+            self.queue.put(qdata)
+        elif "state" in data:
             qdata = QData.api_command(sender, ApiCommand.UpdateVirtualState, payload=data)
             self.queue.put(qdata)
 
@@ -82,6 +86,7 @@ class Controller(Worker):
     def __subscribe_to_all(self):
         self.__subscribe_to_lights()
         self.__subscribe_to_remotes()
+        self.__subscribe_to_sensors()
         self.__subscribe_to_bridge()
 
     def __subscribe_to_bridge(self):
@@ -92,6 +97,11 @@ class Controller(Worker):
         for remote in self.home.remotes():
             self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
 
+    def __subscribe_to_sensors(self):
+        "Subscribes to messages from all remotes"
+        for sensor in self.home.sensors():
+            self.client.subscribe(sensor.topic.string, QoS.AT_LEAST_ONCE.value)
+
     def __subscribe_to_lights(self):
         "Subscribes to messages from all lights"
         for light in self.home.flatten_lights():
@@ -100,7 +110,7 @@ class Controller(Worker):
             self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)
 
     def __query_physical_states(self):
-        "Queries the physical states of all lights"
+        "Queries the physical states of all relevant devices supporting a query, i.e. lights."
         for light in self.home.flatten_lights():
             data = QData.api_command(light.topic, ApiCommand.QueryPhysicalState, payload={ })
             self.queue.put(data)

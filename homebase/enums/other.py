@@ -46,6 +46,7 @@ class ApiCommand(Enum):
     Refresh                 = auto()
     QueryPhysicalState      = auto()
     UpdateVirtualState      = auto()
+    UpdateSensorState       = auto()
 
     @staticmethod
     def from_str(val: str) -> Optional['ApiCommand']:
@@ -58,8 +59,9 @@ class ApiCommand(Enum):
 # pylint: disable=invalid-name
 class ApiQuery(Enum):
     "A query retrieved over the Api"
-    Structure  = 1
-    LightState = 2
+    Structure   = auto()
+    LightState  = auto()
+    SensorState = auto()
 
     @staticmethod
     def from_str(val: str) -> Optional['ApiQuery']:

@@ -2,16 +2,18 @@
 The logic for executing API commands
 """
 
+import logging
 from queue import Queue
 from typing import Dict
 
 import lighting
 from comm import Payload, Topic
-from enums import ApiQuery
+from enums import ApiQuery, SensorQuantity
 from home import Home, Room
-from remote import Remote
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
+from remote import Remote
+from sensor import Sensor
 
 
 class Responder:
@@ -21,16 +23,17 @@ class Responder:
         self.__response = response
         # self.__client = client  # Send request to client for current state
 
+
     def respond(self, topic: Topic, query: ApiQuery):
         "Executes an API query."
-        if query == ApiQuery.Structure:
-            response = self.__respond_structure()
-        elif query == ApiQuery.LightState:
-            response = self.__respond_light(topic)
-        else:
-            raise ValueError("Unknown ApiQuery: " + str(query))
+        response = {
+            ApiQuery.Structure:   self.__respond_structure,
+            ApiQuery.LightState:  lambda: self.__respond_light(topic),
+            ApiQuery.SensorState: lambda: self.__respond_sensor(topic),
+        }[query]()
         data = Payload.prep_for_sending(response)
         self.__response.put(data)
+
 
     def __respond_structure(self) -> Dict:
         return {
@@ -42,6 +45,7 @@ class Responder:
             "name":     room.name,
             "lights":   self.__compile_group(room.group),
             "remotes":  list(map(self.__compile_remote, room.remotes)),
+            "sensors":  list(map(self.__compile_sensor, room.sensors)),
         }
 
     def __compile_remote(self, remote: Remote) -> Dict:
@@ -51,6 +55,14 @@ class Responder:
             "topic":  remote.topic.string,
             "model":  remote.model.value,
             "actions": list(map(lambda a: a.string, remote.actions())),
+        }
+
+    def __compile_sensor(self, sensor: Sensor) -> Dict:
+        return {
+            "name":   sensor.name,
+            "id":     sensor.ident,
+            "topic":  sensor.topic.string,
+            "model":  sensor.model.value,
         }
 
     def __compile_group(self, group: lighting.Group) -> Dict:
@@ -69,6 +81,7 @@ class Responder:
         }
 
     def __respond_light(self, topic) -> Dict:
+        logging.debug(topic)
         if topic is None:
             raise HomeBaseError.Unreachable
         light = self.__home.find_light(topic=topic)
@@ -82,3 +95,17 @@ class Responder:
             "hexColor": state.color.get_hex_l(),
             "toggledOn": state.toggled_on,
         }
+
+    def __respond_sensor(self, topic) -> Dict:
+        if topic is None:
+            raise HomeBaseError.Unreachable
+        sensor = self.__home.find_sensor(topic=topic)
+        if sensor is None:
+            raise HomeBaseError.LightNotFound
+        return self.__respond_sensor_state(sensor.state)
+
+    def __respond_sensor_state(self, state: Dict[SensorQuantity, float]) -> Dict[str, float]:
+        res = { }
+        for key in state:
+            res[key.value] = state[key]
+        return res

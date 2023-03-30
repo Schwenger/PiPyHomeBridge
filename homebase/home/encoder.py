@@ -8,6 +8,7 @@ from enums import DeviceModel
 from home.home import Home
 from home.room import Room
 from remote import Remote
+from sensor import Sensor
 
 
 def write(home: Home, path: str):
@@ -19,10 +20,12 @@ def write(home: Home, path: str):
 
 def __encode_room(room: Room) -> dict:
     remotes = list(map(__encode_remote, room.remotes))
+    sensors = list(map(__encode_sensor, room.sensors))
     return {
         "name": room.name,
         "lights": __encode_light_group(room.group),
-        "remotes": remotes
+        "remotes": remotes,
+        "sensors": sensors
     }
 
 def __encode_light_group(group: lighting.Group) -> dict:
@@ -60,6 +63,12 @@ def __encode_remote(remote: Remote) -> Dict[str, str]:
         "controls": remote.controls_topic.name
     }
 
+def __encode_sensor(sensor: Sensor) -> Dict[str, str]:
+    return {
+        "name": sensor.name,
+        "kind": sensor.model.value,
+        "id": sensor.ident
+    }
 
 def __write(path: str, data: dict):
     with open(path, "w", encoding="utf-8") as stream:

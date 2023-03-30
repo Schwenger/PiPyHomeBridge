@@ -45,6 +45,16 @@ class Abstract(Addressable, ABC, Collection):
         "Returns the light's current configuration."
         return self._config
 
+    @property
+    @abstractmethod
+    def is_dimmable(self) -> bool:
+        "Can the light be dimmed in any way?"
+
+    @property
+    @abstractmethod
+    def is_color(self) -> bool:
+        "Determines if the light can display different colors"
+
     ################################################
     # CONFIGURATIVE API
     ################################################
@@ -86,19 +96,6 @@ class Abstract(Addressable, ABC, Collection):
         "Permanently offsets the color."
         modifier = int(common.bounded(float(modifier), least=0.0, greatest=5.0))
         self._config.relative.color_offset = modifier
-
-    ################################################
-    # INFORMATIONAL API
-    ################################################
-    @property
-    @abstractmethod
-    def is_dimmable(self) -> bool:
-        "Can the light be dimmed in any way?"
-
-    @property
-    @abstractmethod
-    def is_color(self) -> bool:
-        "Determines if the light can display different colors"
 
     ################################################
     # FUNCTIONAL API
@@ -193,15 +190,13 @@ class Concrete(Abstract, Device):
     def state(self) -> State:
         return self._state
 
-    ################################################
-    # INFORMATIONAL API
-    ################################################
-    # Passed on:
-    # def is_dimmable(self) -> bool:
-    #     pass
+    @property
+    def is_dimmable(self) -> bool:
+        return self.model.is_dimmable
 
-    # def is_color(self) -> bool:
-    #     pass
+    @property
+    def is_color(self) -> bool:
+        return self.model.is_color
 
     ################################################
     # FUNCTIONAL API

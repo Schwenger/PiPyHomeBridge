@@ -33,17 +33,6 @@ class SimpleLight(Concrete, Abstract):
         self.__dimming = False
 
     ################################################
-    # Implement Abstract
-    ################################################
-    @property
-    def is_dimmable(self) -> bool:
-        return False
-
-    @property
-    def is_color(self) -> bool:
-        return False
-
-    ################################################
     # Overriding Functions
     ################################################
     def start_dim_down(self, client: mqtt.Client):
@@ -77,7 +66,7 @@ class SimpleLight(Concrete, Abstract):
             time.sleep(speed)
 
 
-class DimmableLight(Concrete):
+class RegularLight(Concrete):
     "A light of varying brightness."
 
     def __init__(
@@ -94,64 +83,6 @@ class DimmableLight(Concrete):
             ident=ident
         )
 
-    ################################################
-    # Implement Abstract
-    ################################################
-    @property
-    def is_dimmable(self) -> bool:
-        return True
-
-    @property
-    def is_color(self) -> bool:
-        return False
-
-
-class WhiteSpectrumLight(DimmableLight):
-    "A light of varying brightness."
-
-    def __init__(
-        self,
-        name: str,
-        room: str,
-        model: DeviceModel,
-        ident: str,
-    ):
-        super().__init__(
-            name=name,
-            room=room,
-            model=model,
-            ident=ident
-        )
-
-    @property
-    def is_dimmable(self) -> bool:
-        return True
-
-    @property
-    def is_color(self) -> bool:
-        return False
-
-
-class ColorLight(DimmableLight):
-    "A light of varying color"
-
-    def __init__(
-        self,
-        name: str,
-        room: str,
-        ident: str,
-        model: DeviceModel,
-    ):
-        super().__init__(
-            name=name,
-            room=room,
-            model=model,
-            ident=ident,
-        )
-
-    def is_color(self) -> bool:
-        return True
-
 #######################################
 # LIGHT CREATION
 #######################################
@@ -167,16 +98,6 @@ def simple(name: str, room: str, ident: str, model: DeviceModel) -> SimpleLight:
     )
 
 
-def dimmable(name: str, room: str, ident: str, model: DeviceModel) -> DimmableLight:
+def regular(name: str, room: str, ident: str, model: DeviceModel) -> RegularLight:
     "Creates a dimmable light"
-    return DimmableLight(name=name, room=room, ident=ident, model=model)
-
-
-def white(name: str, room: str, ident: str, model: DeviceModel) -> DimmableLight:
-    "Creates a white spectrum light"
-    return WhiteSpectrumLight(name=name, room=room, ident=ident, model=model)
-
-
-def color(name: str, room: str, ident: str, model: DeviceModel) -> ColorLight:
-    "Creates a color light"
-    return ColorLight(name=name, room=room, ident=ident, model=model)
+    return RegularLight(name=name, room=room, ident=ident, model=model)

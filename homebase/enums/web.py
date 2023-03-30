@@ -61,3 +61,25 @@ class DeviceModel(FfiEnum):
             DeviceModel.IkeaDimmable:    DeviceKind.Light,
             DeviceModel.HueColor:        DeviceKind.Light,
         }[self]
+
+    @property
+    def is_dimmable(self) -> bool:
+        "Indicates if the device is capable of being dimmed."
+        return {
+            DeviceModel.IkeaDimmer:      False,
+            DeviceModel.IkeaOutlet:      False,
+            DeviceModel.IkeaMultiButton: False,
+            DeviceModel.IkeaDimmable:    True,
+            DeviceModel.HueColor:        True,
+        }[self]
+
+    @property
+    def is_color(self) -> bool:
+        "Indicates if the device is capable of emitting colored light."
+        return {
+            DeviceModel.IkeaDimmer:      False,
+            DeviceModel.IkeaOutlet:      False,
+            DeviceModel.IkeaMultiButton: False,
+            DeviceModel.IkeaDimmable:    False,
+            DeviceModel.HueColor:        True,
+        }[self]

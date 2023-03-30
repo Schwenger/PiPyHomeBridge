@@ -23,7 +23,7 @@ def read(path: str) -> Home:
         remotes = __parse_remotes(room=room, room_name=name, targets=targets)
         room = Room(name, main_group, remotes=remotes)
         rooms.append(room)
-    return Home()#rooms)
+    return Home(rooms)
 
 def __parse_light_group(group: dict, room: str, hierarchie: List[str]) -> lighting.Group:
     name = group["name"]
@@ -50,12 +50,8 @@ def __parse_light(light: dict, room: str) -> lighting.Concrete:
         return lighting.simple(
             name=name, room=room, ident=ident, model=model
         )
-    if kind == "Dimmable":
-        return lighting.dimmable(
-            name=name, room=room, ident=ident, model=model
-        )
-    if kind == "Color":
-        return lighting.color(
+    if kind in ["Dimmable", "Color"]:
+        return lighting.regular(
             name=name, room=room, ident=ident, model=model
         )
     assert False

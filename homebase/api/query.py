@@ -21,7 +21,6 @@ class Responder:
     def __init__(self, home: Home, response: Queue, _client: mqtt.Client):
         self.__home = home
         self.__response = response
-        # self.__client = client  # Send request to client for current state
 
 
     def respond(self, topic: Topic, query: ApiQuery):
@@ -43,6 +42,7 @@ class Responder:
     def __compile_room(self, room: Room) -> Dict:
         return {
             "name":     room.name,
+            "icon":     room.icon,
             "lights":   self.__compile_group(room.group),
             "remotes":  list(map(self.__compile_remote, room.remotes)),
             "sensors":  list(map(self.__compile_sensor, room.sensors)),
@@ -52,6 +52,7 @@ class Responder:
         return {
             "name":   remote.name,
             "id":     remote.ident,
+            "icon":   remote.icon,
             "topic":  remote.topic.string,
             "model":  remote.model.value,
             "actions": list(map(lambda a: a.string, remote.actions())),
@@ -61,6 +62,7 @@ class Responder:
         return {
             "name":   sensor.name,
             "id":     sensor.ident,
+            "icon":   sensor.icon,
             "topic":  sensor.topic.string,
             "model":  sensor.model.value,
         }
@@ -76,6 +78,7 @@ class Responder:
         return {
             "name":     light.name,
             "id":       light.ident,
+            "icon":     light.icon,
             "topic":    light.topic.string,
             "model":    light.model.value,
         }

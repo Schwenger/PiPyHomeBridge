@@ -12,11 +12,12 @@ class Sensor(Device):
         self,
         name: str,
         room: str,
+        icon: str,
         model: DeviceModel,
         ident: str,
     ):
         super().__init__(
-            name=name, room=room, model=model, ident=ident
+            name=name, room=room, icon=icon, model=model, ident=ident
         )
         self._state = {}
 

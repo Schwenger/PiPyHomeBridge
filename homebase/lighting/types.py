@@ -20,12 +20,14 @@ class SimpleLight(Concrete, Abstract):
         self,
         name: str,
         room: str,
+        icon: str,
         model: DeviceModel,
         ident: str,
     ):
         super().__init__(
             name=name,
             room=room,
+            icon=icon,
             model=model,
             ident=ident
         )
@@ -73,12 +75,14 @@ class RegularLight(Concrete):
         self,
         name: str,
         room: str,
+        icon: str,
         ident: str,
         model: DeviceModel
     ):
         super().__init__(
             name=name,
             room=room,
+            icon=icon,
             model=model,
             ident=ident
         )
@@ -88,16 +92,17 @@ class RegularLight(Concrete):
 #######################################
 
 
-def simple(name: str, room: str, ident: str, model: DeviceModel) -> SimpleLight:
+def simple(name: str, room: str, icon: str, ident: str, model: DeviceModel) -> SimpleLight:
     "Creates a simple on-off light"
     return SimpleLight(
         name=name,
         room=room,
+        icon=icon,
         model=model,
         ident=ident
     )
 
 
-def regular(name: str, room: str, ident: str, model: DeviceModel) -> RegularLight:
+def regular(name: str, room: str, icon: str, ident: str, model: DeviceModel) -> RegularLight:
     "Creates a dimmable light"
-    return RegularLight(name=name, room=room, ident=ident, model=model)
+    return RegularLight(name=name, room=room, icon=icon, ident=ident, model=model)

@@ -179,11 +179,12 @@ class Concrete(Abstract, Device):
         self,
         name: str,
         room: str,
+        icon: str,
         model: DeviceModel,
         ident: str,
     ):
         Abstract.__init__(self, config=Config())
-        Device.__init__(self, name=name, room=room, model=model, ident=ident)
+        Device.__init__(self, name=name, room=room, icon=icon, model=model, ident=ident)
         self._state = State()
 
     @property

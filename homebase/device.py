@@ -29,11 +29,13 @@ class Device(Addressable, ABC):
         room: str,
         model: DeviceModel,
         ident: str,
+        icon: str,
     ):
         self.name = name
         self.room = room
         self.model = model
         self.ident = ident
+        self.icon = icon
         self._topic = Topic.for_device(
             name=self.name,
             kind=self.model.kind,

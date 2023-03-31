@@ -23,6 +23,7 @@ def __encode_room(room: Room) -> dict:
     sensors = list(map(__encode_sensor, room.sensors))
     return {
         "name": room.name,
+        "icon": room.icon,
         "lights": __encode_light_group(room.group),
         "remotes": remotes,
         "sensors": sensors
@@ -44,6 +45,7 @@ def __encode_light(light: lighting.Concrete) -> Dict[str, str]:
         kind = "Simple"
     return {
         "name": light.name,
+        "icon": light.icon,
         "kind": kind,
         "model": light.model.value,
         "id": light.ident,
@@ -59,6 +61,7 @@ def __encode_remote(remote: Remote) -> Dict[str, str]:
     return {
         "name": remote.name,
         "kind": kind,
+        "icon": remote.icon,
         "id": remote.ident,
         "controls": remote.controls_topic.name
     }
@@ -66,6 +69,7 @@ def __encode_remote(remote: Remote) -> Dict[str, str]:
 def __encode_sensor(sensor: Sensor) -> Dict[str, str]:
     return {
         "name": sensor.name,
+        "icon": sensor.icon,
         "kind": sensor.model.value,
         "id": sensor.ident
     }

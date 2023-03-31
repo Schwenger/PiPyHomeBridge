@@ -73,6 +73,7 @@ class Remote(Device):
         self,
         name: str,
         room: str,
+        icon: str,
         model: DeviceModel,
         ident: str,
         controls_topic: Topic,
@@ -82,6 +83,7 @@ class Remote(Device):
         super().__init__(
             name=name,
             room=room,
+            icon=icon,
             ident=ident,
             model=model
         )
@@ -102,7 +104,7 @@ class Remote(Device):
         return self._actions[button]
 
     @staticmethod
-    def default_dimmer(room: str, ident: str, controls: Topic, name: str = "Dimmer"):
+    def default_dimmer(room: str, icon: str, ident: str, controls: Topic, name: str = "Dimmer"):
         "Creates a default dimmer remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             DimmerButtons.ON:   ApiCommand.TurnOn,
@@ -114,6 +116,7 @@ class Remote(Device):
         return Remote(
             name=name,
             room=room,
+            icon=icon,
             model=DeviceModel.IkeaDimmer,
             controls_topic=controls,
             button_from_str=DimmerButtons.from_str,
@@ -122,7 +125,13 @@ class Remote(Device):
         )
 
     @staticmethod
-    def default_ikea_remote(room: str, ident: str, controls: Topic, name: str = "Remote"):
+    def default_ikea_remote(
+        room: str,
+        icon: str,
+        ident: str,
+        controls: Topic,
+        name: str = "Remote"
+    ):
         "Creates a default ikea remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             IkeaMultiButton.TOGGLE: ApiCommand.Toggle,
@@ -140,6 +149,7 @@ class Remote(Device):
         return Remote(
             name=name,
             room=room,
+            icon=icon,
             model=DeviceModel.IkeaMultiButton,
             controls_topic=controls,
             button_from_str=IkeaMultiButton.from_str,

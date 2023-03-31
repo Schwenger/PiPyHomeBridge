@@ -37,14 +37,19 @@ class Controller(Worker):
         self.client = self.__init_client(ip, int(port))
         self.queue  = queue
         self.home   = home
-        self.client.on_disconnect = Controller.__on_disconnect
+        self.client.on_disconnect = Controller.__on_disconnect_wrapper(ip, port)
         self.client.on_message    = self.__handle_message
         self.__subscribe_to_all()
         self.__query_physical_states()
 
     @staticmethod
-    def __on_disconnect(_client, _userdata,  _rc):
+    def __on_disconnect_wrapper(ip, port):
+        return lambda client, user, rc: Controller.__on_disconnect(ip, port, client, user, rc)
+
+    @staticmethod
+    def __on_disconnect(ip, port, client: mqtt.Client, _userdata,  _rc):
         logging.error("Client disconnected.")
+        client.connect(host=ip, port=port, keepalive=360)
 
     def _run(self):
         "Retrieves message from the queue and processes it."
@@ -54,8 +59,12 @@ class Controller(Worker):
         "Handles the reception of a message"
         logging.info("MQTT: Message received.")
         sender = Topic.from_str(message.topic)
+        if len(message.payload) == 0:
+            return
         logging.debug("MQTT: Message from %s received.", sender)
         data = json.loads(message.payload.decode("utf-8"))
+        print(f"Devicekind is {sender.device_kind}")
+        print(data)
         if sender.target is TopicTarget.Bridge:
             logging.debug("Received a message with bridge event.")
             logging.debug(str(sender))
@@ -67,7 +76,7 @@ class Controller(Worker):
             (cmd, target_topic) = remote_target
             qdata = QData.api_command(target_topic, cmd, payload={ })
             self.queue.put(qdata)
-        if "state" in data and sender.device_kind is DeviceKind.Sensor:
+        elif sender.device_kind == DeviceKind.Sensor.value:
             logging.debug("Received update for Sensor: %s", data)
             qdata = QData.api_command(sender, ApiCommand.UpdateSensorState, payload=data)
             self.queue.put(qdata)
@@ -101,6 +110,7 @@ class Controller(Worker):
         "Subscribes to messages from all remotes"
         for sensor in self.home.sensors():
             self.client.subscribe(sensor.topic.string, QoS.AT_LEAST_ONCE.value)
+            print(f"Subscribing to {sensor.topic.string}")
 
     def __subscribe_to_lights(self):
         "Subscribes to messages from all lights"

@@ -1,10 +1,10 @@
 "Everything regarding payloads"
 
 import json
-from typing import Optional
+from typing import Dict, Optional
 
 from colour import Color
-from enums import Vendor
+from enums import SensorQuantity, Vendor
 
 __DEFAULT_TRANS = 2
 DEFAULT_DIMMING_SPEED = 40
@@ -101,6 +101,14 @@ class Payload:
         as_str = Payload.__as_json(data)
         as_str = Payload.cleanse(as_str)
         return as_str
+
+    @staticmethod
+    def sensor_quant_mapping() -> Dict[str, SensorQuantity]:
+        "Returns a mapping from a payload string to a quantity."
+        return {
+            "temperature": SensorQuantity.Temperature,
+            "humidity":    SensorQuantity.Humidity,
+        }
 
 ################################################
 # READING

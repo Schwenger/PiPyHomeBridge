@@ -15,11 +15,13 @@ class Room(Addressable, lighting.Collection):
     def __init__(
         self,
         name: str,
+        icon: str,
         group: lighting.Group,
         remotes: List[Remote],
-        sensors: List[Sensor]
+        sensors: List[Sensor],
     ):
         self.name: str = name
+        self.icon: str = icon
         self.group: lighting.Group = group
         self.remotes: List[Remote] = remotes
         self.sensors: List[Sensor] = sensors

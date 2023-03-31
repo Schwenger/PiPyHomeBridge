@@ -9,7 +9,7 @@ import lighting
 import lighting.config
 from colour import Color
 from comm import Payload, Topic
-from enums import ApiCommand, SensorQuantity
+from enums import ApiCommand
 from home.home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
@@ -178,14 +178,19 @@ class Exec:
 
     def __update_sensor_state(self, topic: Topic, payload: Dict[str, str]):
         target = self.__home.find_sensor(topic)
+        logging.debug("Updating sensor with payload %s.", payload)
         if target is None:
+            logging.warning("Failed to find sensor.")
             raise HomeBaseError.SensorNotFound
         for key in payload:
-            quant = SensorQuantity.from_str(key)
+            logging.debug("Found key: %s", key)
+            quant = Payload.sensor_quant_mapping().get(key)
+            logging.debug("Results in quantity %s", quant)
             if quant is None:
                 continue
             try:
                 val = float(payload[key])
                 target.update_state(quant, val)
             except ValueError as exc:
+                logging.warning("Invalid quantity for sensor update: Not a float. %s", payload[key])
                 raise HomeBaseError.InvalidPhysicalQuantity from exc

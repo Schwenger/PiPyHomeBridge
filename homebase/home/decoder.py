@@ -20,12 +20,13 @@ def read(path: str) -> Home:
 
 def __decode_room(room: dict) -> Room:
     name = room["name"]
+    icon = room["icon"]
     main_group = __decode_light_group(room["lights"], name, [])
     targets = __collect_viable_targets(main_group)
     targets[name] = Topic.for_room(name)
     remotes = __decode_remotes(room=room, room_name=name, targets=targets)
     sensors = __decode_sensors(room=room, room_name=name)
-    return Room(name, main_group, remotes=remotes, sensors=sensors)
+    return Room(name, group=main_group, icon=icon, remotes=remotes, sensors=sensors)
 
 def __decode_light_group(group: dict, room: str, hierarchie: List[str]) -> lighting.Group:
     name = group["name"]
@@ -45,16 +46,17 @@ def __decode_light_group(group: dict, room: str, hierarchie: List[str]) -> light
 def __decode_light(light: dict, room: str) -> lighting.Concrete:
     name = light["name"]
     kind = light["kind"]
+    icon = light["icon"]
     model = DeviceModel.from_str(light["model"])
     assert model is not None
     ident = light["id"]
     if kind == "Simple":
         return lighting.simple(
-            name=name, room=room, ident=ident, model=model
+            name=name, room=room, icon=icon, ident=ident, model=model
         )
     if kind in ["Dimmable", "Color"]:
         return lighting.regular(
-            name=name, room=room, ident=ident, model=model
+            name=name, room=room, icon=icon, ident=ident, model=model
         )
     assert False
 
@@ -68,6 +70,7 @@ def __decode_remotes(room: dict, room_name: str, targets: Dict[str, Topic]) -> L
 def __decode_remote(remote: dict, room: str, targets: Dict[str, Topic]) -> Remote:
     name = remote["name"]
     kind = remote["kind"]
+    icon = remote["icon"]
     ident = remote["id"]
     target_name = remote["controls"]
     target = targets[target_name]
@@ -75,6 +78,7 @@ def __decode_remote(remote: dict, room: str, targets: Dict[str, Topic]) -> Remot
         return Remote.default_dimmer(
             room=room,
             ident=ident,
+            icon=icon,
             controls=target,
             name=name
         )
@@ -82,6 +86,7 @@ def __decode_remote(remote: dict, room: str, targets: Dict[str, Topic]) -> Remot
         return Remote.default_ikea_remote(
             room=room,
             ident=ident,
+            icon=icon,
             controls=target,
             name=name
         )
@@ -97,10 +102,11 @@ def __decode_sensors(room: dict, room_name: str) -> List[Sensor]:
 def __decode_sensor(sensor: dict, room: str) -> Sensor:
     name  = sensor["name"]
     model = sensor["model"]
+    icon = sensor["icon"]
     ident = sensor["id"]
     model = DeviceModel.from_str(model)
     assert model is not None
-    return Sensor(name=name, room=room, model=model, ident=ident)
+    return Sensor(name=name, room=room, icon=icon, model=model, ident=ident)
 
 def __collect_viable_targets(grp: lighting.Group) -> Dict[str, Topic]:
     res = { grp.name: grp.topic }
@@ -116,46 +122,3 @@ def __read(path) -> dict:
         except yaml.YAMLError as yml_exc:
             print("Failed to load config file config.yml.")
             raise yml_exc
-
-# def living_room() -> Room:
-#     "Creates an instance of the living room."
-#     name = "Living Room"
-#     lights_list: List[ConcreteLight] = [
-#         lighting.simple(
-#             name="Comfort Light",
-#             room=name,
-#             model=DeviceModel.IkeaOutlet,
-#             ident="aaaa",
-#         ),
-#         lighting.dimmable(
-#             name="Uplight/Reading",
-#             room=name,
-#             model=DeviceModel.IkeaDimmable,
-#             ident="aaab",
-#         ),
-#         lighting.white(
-#             name="Uplight/Main",
-#             room=name,
-#             model=DeviceModel.HueColor,
-#             ident="aaac",
-#         ),
-#         lighting.color(
-#             name="Orb",
-#             room=name,
-#             model=DeviceModel.HueColor,
-#             ident="aaad"
-#         ),
-#     ]
-
-#     lights = lighting.Group(
-#         name="Main",
-#         single_lights=lights_list,
-#         hierarchie=[name],
-#         groups=[]
-#     )
-#     room_topic = Topic.for_room(name)
-#     remotes = [
-#         Remote.default_ikea_remote(name, controls=room_topic, ident="bbbc"),
-#         Remote.default_dimmer(name, controls=room_topic, name="Dimmer", ident="bbbb")
-#     ]
-#     return Room(name, lights, remotes)

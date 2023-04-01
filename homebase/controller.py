@@ -33,8 +33,8 @@ class Controller(Worker):
     # pylint: disable=invalid-name
     def __init__(self, queue: Queue, home: Home):
         ip = common.config["mosquitto"]["ip"]
-        port = common.config["mosquitto"]["port"]
-        self.client = self.__init_client(ip, int(port))
+        port = int(common.config["mosquitto"]["port"])
+        self.client = self.__init_client(ip, port)
         self.queue  = queue
         self.home   = home
         self.client.on_disconnect = Controller.__on_disconnect_wrapper(ip, port)

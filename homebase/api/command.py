@@ -24,54 +24,28 @@ class Exec:
 
     def exec(self, topic: Topic, cmd: ApiCommand, payload: Dict[str, str]):
         "Executes an API command."
-        if cmd == ApiCommand.Toggle:
-            self.__toggle(topic)
-        elif cmd == ApiCommand.TurnOn:
-            self.__turn_on(topic)
-        elif cmd == ApiCommand.TurnOff:
-            self.__turn_off(topic)
-        elif cmd == ApiCommand.DimUp:
-            self.__dim_up(topic)
-        elif cmd == ApiCommand.DimDown:
-            self.__dim_down(topic)
-        elif cmd == ApiCommand.StartDimUp:
-            self.__start_dim_up(topic)
-        elif cmd == ApiCommand.StartDimDown:
-            self.__start_dim_down(topic)
-        elif cmd == ApiCommand.StopDimming:
-            self.__stop_dimming(topic)
-        elif cmd == ApiCommand.EnableDynamicDimming:
-            pass
-        elif cmd == ApiCommand.DisableDynamicDimming:
-            pass
-        elif cmd == ApiCommand.EnableDynamicColor:
-            pass
-        elif cmd == ApiCommand.DisableDynamicColor:
-            pass
-        elif cmd == ApiCommand.SetBrightness:
-            if payload is None:
-                raise HomeBaseError.PayloadNotFound
-            self.__set_brightness(topic, payload)
-        elif cmd == ApiCommand.SetWhiteTemp:
-            if payload is None:
-                raise HomeBaseError.PayloadNotFound
-            self.__set_white_temp(topic, payload)
-        elif cmd == ApiCommand.SetColor:
-            if payload is None:
-                raise HomeBaseError.PayloadNotFound
-            self.__set_color(topic, payload)
-        elif cmd == ApiCommand.Rename:
-            if payload is None:
-                raise HomeBaseError.PayloadNotFound
-            self.__rename_device(topic, payload)
-        elif cmd == ApiCommand.Refresh:
-            self.__refresh()
-        elif cmd == ApiCommand.QueryPhysicalState:
-            self.__query_physical_state(topic)
-        elif cmd == ApiCommand.UpdateVirtualState:
-            self.__update_virtual_state(topic, payload)
-        elif cmd == ApiCommand.UpdateSensorState:
-            self.__update_sensor_state(topic, payload)
+        {
+            ApiCommand.Toggle:                lambda: self.__toggle(topic),
+            ApiCommand.TurnOn:                lambda: self.__turn_on(topic),
+            ApiCommand.TurnOff:               lambda: self.__turn_off(topic),
+            ApiCommand.DimUp:                 lambda: self.__dim_up(topic),
+            ApiCommand.DimDown:               lambda: self.__dim_down(topic),
+            ApiCommand.StartDimUp:            lambda: self.__start_dim_up(topic),
+            ApiCommand.StartDimDown:          lambda: self.__start_dim_down(topic),
+            ApiCommand.StopDimming:           lambda: self.__stop_dimming(topic),
+            ApiCommand.EnableDynamicDimming:  None,
+            ApiCommand.DisableDynamicDimming: None,
+            ApiCommand.EnableDynamicColor:    None,
+            ApiCommand.DisableDynamicColor:   None,
+            ApiCommand.SetBrightness:         lambda: self.__set_brightness(topic, payload),
+            ApiCommand.SetWhiteTemp:          lambda: self.__set_white_temp(topic, payload),
+            ApiCommand.SetColor:              lambda: self.__set_color(topic, payload),
+            ApiCommand.Rename:                lambda: self.__rename_device(topic, payload),
+            ApiCommand.Refresh:               self.__refresh,
+            ApiCommand.QueryPhysicalState:    lambda: self.__query_physical_state(topic),
+            ApiCommand.UpdateVirtualState:    lambda: self.__update_virtual_state(topic, payload),
+            ApiCommand.UpdateSensorState:     lambda: self.__update_sensor_state(topic, payload),
+        }[cmd]()
 
     def __get_target(self, topic: Topic) -> lighting.Collection:
         logging.debug(topic)

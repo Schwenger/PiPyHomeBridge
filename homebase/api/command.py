@@ -149,7 +149,8 @@ class Exec:
             raise HomeBaseError.InvalidPhysicalQuery
         desired = lighting.State.read_light_state(payload)
         actual = get_configured_state(self.__home, target)
-        target.accommodate_state(actual=actual, desired=desired)
+        # TODO
+        # target.accommodate_state(actual=actual, desired=desired)
 
     def __update_sensor_state(self, target: Sensor, payload: Dict[str, str]):
         for key in payload:

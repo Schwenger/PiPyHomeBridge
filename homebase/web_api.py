@@ -38,7 +38,7 @@ class Handler(BaseHTTPRequestHandler):
         logging.info("WebAPI: %s", command)
         topic = Topic.from_str(query["topic"])
         logging.debug("WebAPI: %s to/of %s", command, topic)
-        if topic.target == "bridge":
+        if topic.category == "bridge":
             logging.debug("Received a bridge-targetted message over Web API.")
             logging.debug(self.path)
             logging.debug(command)

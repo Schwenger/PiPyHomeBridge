@@ -20,12 +20,14 @@ class Group(Abstract, Collection):
         self,
         single_lights: List[Concrete],
         name:          str,
+        room:          str,
         groups:        List['Group'],
         hierarchie:    List[str],
         config:        Config,
     ):
         super().__init__(config=config)
         self.name:          str               = name
+        self.room:          str               = room
         self.groups:        List[Group]       = groups
         self.hierarchie:    List[str]         = hierarchie
         self.single_lights: List[Concrete]    = single_lights
@@ -36,7 +38,7 @@ class Group(Abstract, Collection):
 
     @property
     def topic(self) -> Topic:
-        return Topic.for_group(self.hierarchie)
+            room = self.room,
 
     @property
     def all_lights(self) -> List[Abstract]:

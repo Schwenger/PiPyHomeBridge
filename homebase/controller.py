@@ -6,7 +6,7 @@ import time
 from queue import Queue
 
 import common
-from enums import QoS, TopicTarget, ApiCommand, DeviceKind
+from enums import QoS, TopicCategory, ApiCommand, DeviceKind
 from comm import QData, Topic
 from home import Home
 from homebaseerror import HomeBaseError
@@ -65,7 +65,7 @@ class Controller(Worker):
         data = json.loads(message.payload.decode("utf-8"))
         print(f"Devicekind is {sender.device_kind}")
         print(data)
-        if sender.target is TopicTarget.Bridge:
+        if sender.category is TopicCategory.Bridge:
             logging.debug("Received a message with bridge event.")
             logging.debug(str(sender))
             logging.debug(str(data))
@@ -99,7 +99,7 @@ class Controller(Worker):
         self.__subscribe_to_bridge()
 
     def __subscribe_to_bridge(self):
-        self.client.subscribe("zigbee2mqtt/bridge/event", QoS.AT_LEAST_ONCE.value)
+        self.client.subscribe(Topic.for_bridge().string, QoS.AT_LEAST_ONCE.value)
 
     def __subscribe_to_remotes(self):
         "Subscribes to messages from all remotes"

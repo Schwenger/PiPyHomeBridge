@@ -40,6 +40,7 @@ def __decode_light_group(group: dict, room: str, hierarchie: List[str]) -> light
     return lighting.Group(
         single_lights=singles,
         name=name,
+        room=room,
         groups=subs,
         hierarchie=hierarchie,
         config=__decode_config(group["config"])

@@ -9,7 +9,7 @@ import lighting
 import lighting.config
 from colour import Color
 from comm import Payload, Topic
-from enums import ApiCommand
+from enums import ApiCommand, TopicCategory
 from home.home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt

@@ -39,7 +39,7 @@ class Device(Addressable, ABC):
         self._topic = Topic.for_device(
             name=self.name,
             kind=self.model.kind,
-            ident=self.ident,
+            room=self.room,
             groups=[]
         )
 

@@ -80,18 +80,17 @@ class QDataKind(Enum):
 
 
 # pylint: disable=invalid-name
-class TopicTarget(str, Enum):
+class TopicCategory(str, Enum):
     "Entities addressable via a topic."
     Device = "Device"
-    Remote = "Remote"
     Home   = "Home"
     Room   = "Room"
     Group  = "Group"
     Bridge = "bridge"
 
     @staticmethod
-    def from_str(val: str) -> Optional['TopicTarget']:
+    def from_str(val: str) -> Optional['TopicCategory']:
         "Creates a topic target from a string if possible."
-        if val not in set(item.value for item in TopicTarget):
+        if val not in set(item.value for item in TopicCategory):
             return None
-        return TopicTarget(val)
+        return TopicCategory(val)

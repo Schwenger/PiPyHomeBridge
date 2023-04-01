@@ -101,9 +101,17 @@ class Config:
             static         = self.static.with_parent(         parent.static         ),
         )
 
+    def __str__(self):
+        res = f"Col: {self.colorful.value}; "
+        res += f"dyn: {self.dynamic.value}; "
+        res += f"brigh: {self.brightness_mod.value}; "
+        res += f"colδ: {self.color_offset.value}; "
+        res += f"static: {self.static.value}."
+        return res
+
 def resolve(cfg: Config, dynamic: State) -> State:
     "Returns the appropriate state of the dynamic state and given config."
-    if not cfg.dynamic.value_or(alt=False):
+    if not cfg.dynamic.value_or(alt=True):
         return cfg.static.value_or(alt=State.max())
     dynamic.brightness = scale_relative(
         value=dynamic.brightness,
@@ -117,6 +125,6 @@ def resolve(cfg: Config, dynamic: State) -> State:
     )
     dynamic.color.hue  += cfg.color_offset.value_or(alt=0) * 0.2
     dynamic.toggled_on = dynamic.toggled_on and dynamic.brightness > 0
-    if not cfg.colorful.value_or(alt=False):
+    if not cfg.colorful.value_or(alt=True):
         dynamic.color = Color("White")
     return dynamic

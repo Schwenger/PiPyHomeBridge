@@ -67,7 +67,8 @@ class SimpleLight(Concrete, Abstract):
         while self.__dimming:
             with self.__lock:
                 new_brightness = self.state.brightness + factor * speed * self.DIMMING_SPEED
-                super().set_brightness(client, new_brightness)
+                super().set_brightness(new_brightness)
+                super().realize_state(client, self.state)
             time.sleep(speed)
 
 

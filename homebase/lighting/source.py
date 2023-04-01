@@ -70,32 +70,60 @@ class Abstract(Addressable, ABC, Collection):
         "Permanently overrides parent's colorful-flag."
         self._config.colorful = Override.perm(colorful)
 
+    def override_colorful_temporarily(self, colorful: bool):
+        "Temporarily overrides parent's colorful-flag."
+        self._config.colorful = Override.perm(colorful)
+
     def inherit_colorful(self):
         "Inherit parent's colorful-flag."
         self._config.colorful = Override.none()
 
     def override_dynamic(self, dynamic: bool):
-        "Overrides parent's dynamic-flag."
+        "Permanently overrides parent's dynamic-flag."
+        self._config.dynamic = Override.perm(dynamic)
+
+    def override_dynamic_temporarily(self, dynamic: bool):
+        "Temporarily overrides parent's dynamic-flag."
         self._config.dynamic = Override.perm(dynamic)
 
     def inherit_dynamic(self):
         "Inherit parent's dynamic-flag."
         self._config.dynamic = Override.none()
 
-    def set_brightness_mod(self, modifier: float):
+    def adapt_brightness_mod(self, diff: float):
         "Permanently modifies the brightness."
-        modifier = common.bounded(modifier, least=-1.0, greatest=+1.0)
-        self._config.brightness_mod = Override.perm(modifier)
+        mod = self.__adapt_modifier(self._config.brightness_mod, diff)
+        self._config.brightness_mod = Override.perm(mod)
 
-    def set_white_temp_mod(self, modifier: float):
-        "Permanently modifies the white temperature."
-        modifier = common.bounded(modifier, least=-1.0, greatest=+1.0)
-        self._config.white_temp_mod = Override.perm(modifier)
+    def adapt_brightness_mod_temporarily(self, diff: float):
+        "Temporarily modifies the brightness."
+        mod = self.__adapt_modifier(self._config.brightness_mod, diff)
+        self._config.brightness_mod = Override.temp(mod)
 
-    def set_color_offset(self, modifier: int):
+    def set_brightness_mod_temporarily(self, val: float):
+        "Temporarily modifies the brightness."
+        self._config.brightness_mod = Override.temp(val)
+
+    # def set_white_temp_mod(self, modifier: float):
+    #     "Permanently modifies the white temperature."
+    #     modifier = common.bounded(modifier, least=-1.0, greatest=+1.0)
+    #     self._config.white_temp_mod = Override.perm(modifier)
+
+    def adapt_color_offset(self, modifier: int):
         "Permanently offsets the color."
-        modifier = int(common.bounded(float(modifier), least=0.0, greatest=5.0))
+        mod = self._config.brightness_mod.value_or(0)
+        modifier = int(common.bounded(float(mod), least=0.0, greatest=5.0))
         self._config.color_offset = Override.perm(modifier)
+
+    def adapt_color_offset_temporarily(self, modifier: int):
+        "Temporarily offsets the color."
+        mod = self._config.brightness_mod.value_or(0)
+        modifier = int(common.bounded(float(mod), least=0.0, greatest=5.0))
+        self._config.color_offset = Override.temp(modifier)
+
+    def __adapt_modifier(self, override: Override[float], diff: float) -> float:
+        mod = override.value_or(0) + diff
+        return common.bounded(mod, least=-1.0, greatest=+1.0)
 
     ################################################
     # FUNCTIONAL API
@@ -130,26 +158,25 @@ class Abstract(Addressable, ABC, Collection):
         "toggles all lights"
 
     @abstractmethod
-    def shift_color_clockwise(self, client: mqtt.Client):
+    def shift_color_clockwise(self):
         "Shift color clockwise"
 
     @abstractmethod
-    def shift_color_counter_clockwise(self, client: mqtt.Client):
+    def shift_color_counter_clockwise(self):
         "Shift color counter clockwise"
 
     @abstractmethod
-    def dim_up(self, client: mqtt.Client):
+    def dim_up(self):
         "Increases brightness"
 
     @abstractmethod
-    def dim_down(self, client: mqtt.Client):
+    def dim_down(self):
         "Decreases brightness"
 
     @abstractmethod
-    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
+    def set_brightness(self, brightness: float):
         """
             Updates internal state to claim the devices emits the given brightness.
-            Also physically realizes the state if a client is given.
         """
 
     @abstractmethod
@@ -160,10 +187,9 @@ class Abstract(Addressable, ABC, Collection):
         """
 
     @abstractmethod
-    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
+    def set_color_temp(self, color: Color):
         """
             Updates internal state to claim the device emits the given color.
-            Also physically realizes the state if a client is given.
         """
 
 
@@ -210,9 +236,9 @@ class Concrete(Abstract, Device):
 
     def realize_state(self, client: mqtt.Client, state: State):
         self._set_toggled_on(None, state.toggled_on)
-        self.set_brightness(None, state.brightness)
+        self.set_brightness(state.brightness)
         self.set_white_temp(None, state.white_temp)
-        self.set_color_temp(None, state.color)
+        self.set_color_temp(state.color)
         self._update_state(client)
 
     def start_dim_down(self, client: mqtt.Client):
@@ -233,34 +259,31 @@ class Concrete(Abstract, Device):
     def toggle(self, client: mqtt.Client):
         self._set_toggled_on(client, not self.state.toggled_on)
 
-    def shift_color_clockwise(self, client: mqtt.Client):
+    def shift_color_clockwise(self):
         self.state.color.hue += 0.2
-        self.set_color_temp(client, self.state.color)
 
-    def shift_color_counter_clockwise(self, client: mqtt.Client):
+    def shift_color_counter_clockwise(self):
         self.state.color.hue -= 0.2
-        self.set_color_temp(client, self.state.color)
 
-    def dim_up(self, client: mqtt.Client):
-        self.set_brightness(client, self.state.brightness + 0.2)
+    def dim_up(self):
+        self.adapt_brightness_mod_temporarily(+0.2)
 
-    def dim_down(self, client: mqtt.Client):
-        self.set_brightness(client, self.state.brightness - 0.2)
+    def dim_down(self):
+        self.adapt_brightness_mod_temporarily(-0.2)
 
-    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
-        self._state.brightness = max(0, min(1, brightness))
-        if client is not None:
-            self._update_state(client)
+    def set_brightness(self, brightness: float):
+        desired = brightness = max(0, min(1, brightness))
+        actual = self._state.brightness
+        modifier = common.engineer_modifier(actual, desired)
+        self.set_brightness_mod_temporarily(modifier)
 
     def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
         self._state.white_temp = temp
         if client is not None:
             self._update_state(client)
 
-    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
+    def set_color_temp(self, color: Color):
         self._state.color = color
-        if client is not None:
-            self._update_state(client)
 
 
     ################################################

@@ -40,7 +40,9 @@ class Group(Abstract, Collection):
     def topic(self) -> Topic:
         return Topic.for_group(
             room = self.room,
+            hierarchie = self.hierarchie,
             name = self.name,
+        )
 
     @property
     def all_lights(self) -> List[Abstract]:
@@ -114,33 +116,33 @@ class Group(Abstract, Collection):
         for light in self.all_lights:
             light.toggle(client)
 
-    def shift_color_clockwise(self, client: mqtt.Client):
+    def shift_color_clockwise(self):
         for light in self.all_lights:
-            light.shift_color_clockwise(client)
+            light.shift_color_clockwise()
 
-    def shift_color_counter_clockwise(self, client: mqtt.Client):
+    def shift_color_counter_clockwise(self):
         for light in self.all_lights:
-            light.shift_color_counter_clockwise(client)
+            light.shift_color_counter_clockwise()
 
-    def dim_up(self, client: mqtt.Client):
+    def dim_up(self):
         for light in self.all_lights:
-            light.dim_up(client)
+            light.dim_up()
 
-    def dim_down(self, client: mqtt.Client):
+    def dim_down(self):
         for light in self.all_lights:
-            light.dim_down(client)
+            light.dim_down()
 
-    def set_brightness(self, client: Optional[mqtt.Client], brightness: float):
+    def set_brightness(self, brightness: float):
         for light in self.all_lights:
-            light.set_brightness(client, brightness)
+            light.set_brightness(brightness)
 
     def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
         for light in self.all_lights:
             light.set_white_temp(client, temp)
 
-    def set_color_temp(self, client: Optional[mqtt.Client], color: Color):
+    def set_color_temp(self, color: Color):
         for light in self.all_lights:
-            light.set_color_temp(client, color)
+            light.set_color_temp(color)
 
     ################################################
     # PROTECTED

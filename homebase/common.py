@@ -17,7 +17,21 @@ def scale_relative(value: float, scale: float) -> float:
     "Scales a value between 0 and 1 by a factor between -1 and +1."
     if scale < 0.0:
         return value * -scale
-    return value + (1 - value) * scale
+    # Caution: Changes here must result in changes in engineer_modifier!
+    return value + scale * (1 - value)
+
+def engineer_modifier(actual: float, desired: float) -> float:
+    "Returns the factor required to transform actual to desired."
+    if desired > actual:
+        # actual + λ(1-actual) = desired
+        # λ(1-actual) = desired - actual
+        # λ = (desired-actual)/(1-actual)
+        return (desired - actual) / (1 - actual)
+    # actual * -λ = desired
+    # -λ = actual/desired
+    # λ = -actual/desired
+    return -actual/desired
+
 
 NODE_NAME = platform.node()
 if 'Mairxbook' in NODE_NAME:

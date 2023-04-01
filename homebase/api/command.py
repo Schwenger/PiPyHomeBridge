@@ -2,8 +2,8 @@
 The logic for executing API commands
 """
 
-from typing import Dict
 import logging
+from typing import Dict, Optional
 
 import lighting
 import lighting.config
@@ -13,6 +13,7 @@ from enums import ApiCommand, TopicCategory
 from home.home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
+from sensor import Sensor
 
 
 class Exec:
@@ -47,91 +48,120 @@ class Exec:
             ApiCommand.UpdateState:     lambda: self.__update_state(topic, payload),
         }[cmd]()
 
-    def __get_target(self, topic: Topic) -> lighting.Collection:
-        logging.debug(topic)
-        light = self.__home.find_light(topic)
-        if light is not None:
-            return light
-        room = self.__home.room_by_name(topic.name)
-        if room is None:
-            raise HomeBaseError.RoomNotFound
-        return room.group
+    def __get_abstract(self, topic: Topic) -> Optional[lighting.Abstract]:
+        conc = self.__home.find_light(topic)
+        if conc is not None:
+            return conc
+        for room in self.__home.rooms:
+            if topic in [room.group.topic, room.topic]:
+                return room.group
+        return None
+
+    def __get_abstract_force(self, topic: Topic) -> lighting.Abstract:
+        res = self.__get_abstract(topic)
+        if res is None:
+            logging.error("Cannot find device for %s", topic.string)
+            raise HomeBaseError.DeviceNotFound
+        return res
+
+    def __get_sensor(self, topic: Topic) -> Optional[Sensor]:
+        return self.__home.find_sensor(topic)
 
     def __toggle(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.toggle(self.__client)
-            if light.state.toggled_on:
-                self.__refresh_single(light)
+        light = self.__get_abstract_force(topic)
+        light.toggle(self.__client)
+        if light.state.toggled_on:
+            self.__refresh_single(light)
 
     def __turn_on(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.turn_on(self.__client)
-            self.__refresh_single(light)
+        light = self.__get_abstract_force(topic)
+        light.turn_on(self.__client)
+        self.__refresh_single(light)
 
     def __turn_off(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.turn_off(self.__client)
+        light = self.__get_abstract_force(topic)
+        light.turn_off(self.__client)
 
     def __dim_up(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.dim_up(self.__client)
+        light = self.__get_abstract_force(topic)
+        light.dim_up()
+        self.__refresh(topic)
 
     def __dim_down(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.dim_down(self.__client)
+        light = self.__get_abstract_force(topic)
+        light.dim_down()
+        self.__refresh(topic)
 
     def __start_dim_up(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.start_dim_up(self.__client)
+        light = self.__get_abstract_force(topic)
+        light.start_dim_up(self.__client)
 
     def __start_dim_down(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.start_dim_down(self.__client)
+        light = self.__get_abstract_force(topic)
+        light.start_dim_down(self.__client)
 
     def __stop_dimming(self, topic: Topic):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            light.stop_dim(self.__client)
+        light = self.__get_abstract_force(topic)
+        light.stop_dim(self.__client)
+        self.__query_state(topic)
+
+    def __set_dynamic(self, topic: Topic, val: bool):
+        abstract = self.__get_abstract_force(topic)
+        abstract.override_dynamic(val)
+        self.__refresh(topic)
+
+    def __set_colorful(self, topic: Topic, val: bool):
+        abstract = self.__get_abstract_force(topic)
+        abstract.override_colorful(val)
+        self.__refresh(topic)
 
     def __set_brightness(self, topic: Topic, payload: Dict[str, str]):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            brightness = float(payload["brightness"])
-            light.set_brightness(self.__client, brightness)
+        light = self.__get_abstract_force(topic)
+        brightness = float(payload["brightness"])
+        light.set_brightness(brightness)
+        self.__refresh(topic)
 
     def __set_white_temp(self, topic: Topic, payload: Dict[str, str]):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            white_temp = float(payload["white"])
-            light.set_white_temp(self.__client, white_temp)
+        light = self.__get_abstract_force(topic)
+        white_temp = float(payload["white"])
+        light.set_white_temp(self.__client, white_temp)
 
     def __set_color(self, topic: Topic, payload: Dict[str, str]):
-        coll = self.__get_target(topic)
-        for light in coll.flatten_lights():
-            color = Color(payload["color"])
-            light.set_color_temp(self.__client, color)
+        light = self.__get_abstract_force(topic)
+        color = Color(payload["color"])
+        light.set_color_temp(color)
+        self.__refresh(topic)
 
     def __rename_device(self, topic: Topic, payload: Dict[str, str]):
-        pay = Payload.rename(topic.without_base, payload["new_name"])
-        target = Topic.for_bridge(["request", "device"], "rename")
-        self.__client.publish(target.string, payload=pay)
+        # ToDo
+        raise NotImplementedError
+        # pay = Payload.rename(topic.without_base, payload["new_name"])
+        # target = Topic.for_bridge(["request", "device"], "rename")
+        # self.__client.publish(target.string, payload=pay)
 
-    def __refresh(self):
-        for light in self.__home.flatten_lights():
+    def __refresh(self, topic: Topic):
+        logging.debug("Refreshing Topic.")
+        if topic.category == TopicCategory.Home:
+            return self.__refresh_home()
+        target = self.__get_abstract_force(topic)
+        logging.debug("Refreshing abstract.")
+        for light in target.flatten_lights():
             self.__refresh_single(light)
 
-    def __refresh_single(self, light: lighting.Concrete):
+    def __refresh_home(self):
+        logging.debug("Refreshing home.")
+        for room in self.__home.rooms:
+            self.__refresh(room.group.topic)
+
+    def __refresh_single(self, light: lighting.Abstract):
+        logging.debug("Refreshing Single")
         dynamic = lighting.dynamic.recommended()
+        logging.debug(dynamic)
         config = self.__home.compile_config(light.topic)
+        logging.debug(config)
         assert config is not None
         target = lighting.config.resolve(config, dynamic)
+        logging.debug(target)
         if light.state.toggled_on and target.toggled_on:
             light.realize_state(self.__client, target)
 

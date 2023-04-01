@@ -7,6 +7,7 @@ from queue import Queue
 from typing import Dict
 
 import lighting
+from api.common import get_configured_state
 from comm import Payload, Topic
 from enums import ApiQuery, SensorQuantity
 from home import Home, Room
@@ -90,7 +91,8 @@ class Responder:
         light = self.__home.find_light(topic=topic)
         if light is None:
             raise HomeBaseError.DeviceNotFound
-        return self.__respond_light_state(light.state)
+        state = get_configured_state(self.__home, light)
+        return self.__respond_light_state(state)
 
     def __respond_light_state(self, state: lighting.State) -> Dict:
         return {

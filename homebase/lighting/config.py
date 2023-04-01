@@ -1,7 +1,7 @@
 "Configures an abstract light."
 
 from datetime import datetime as Timestamp
-from typing import Generic, Optional, Tuple, TypeVar
+from typing import Callable, Generic, Optional, Tuple, TypeVar
 
 from colour import Color
 from lighting.state import State
@@ -22,13 +22,14 @@ class Override(Generic[T]):
     @property
     def value(self) -> Optional[T]:
         "Provides the permanent or overriden value if any"
-        # Todo: Evict temporary configs after a while.
+        self.__evict()
         if self.temporary is not None:
             return self.temporary[0]
         return self.permanent
 
     def value_or(self, alt: T) -> T:
         "Provides the permanent or overriden value if any"
+        self.__evict()
         if self.temporary is not None:
             return self.temporary[0]
         if self.permanent is not None:
@@ -54,6 +55,14 @@ class Override(Generic[T]):
         "Sets the temporary override value."
         self.temporary = (tval, Timestamp.now())
 
+    def modify_temp(self, dft: T, func: Callable[[T], T]):
+        "Sets the temporary override value."
+        self.__evict()
+        if self.temporary is None:
+            self.set_temp(func(dft))
+            return
+        self.set_temp(func(self.temporary[0]))
+
     def set_permanent(self, pval: T):
         "Sets the permanent override value."
         self.permanent = pval
@@ -64,6 +73,10 @@ class Override(Generic[T]):
             permanent=self.permanent or parent.permanent,
             temporary=self.temporary or parent.temporary,
         )
+
+    def __evict(self):
+        # Todo: Evict temporary configs after a while.
+        pass
 
     def __str__(self) -> str:
         return (
@@ -78,23 +91,61 @@ class Config:
         self,
         colorful:       Override[bool]  = Override.none(),
         dynamic:        Override[bool]  = Override.none(),
+        toggled_on:     Override[bool]  = Override.none(),
         brightness_mod: Override[float] = Override.none(),
         white_temp_mod: Override[float] = Override.none(),
         color_offset:   Override[int]   = Override.none(),
         static:         Override[State] = Override.none(),
     ):
-        self.colorful:       Override[bool]  = colorful
-        self.dynamic:        Override[bool]  = dynamic
-        self.brightness_mod: Override[float] = brightness_mod
-        self.white_temp_mod: Override[float] = white_temp_mod
-        self.color_offset:   Override[int]   = color_offset
-        self.static:         Override[State] = static
+        self._colorful:       Override[bool]  = colorful
+        self._dynamic:        Override[bool]  = dynamic
+        self._toggled_on:     Override[bool]  = toggled_on
+        self._brightness_mod: Override[float] = brightness_mod
+        self._white_temp_mod: Override[float] = white_temp_mod
+        self._color_offset:   Override[int]   = color_offset
+        self._static:         Override[State] = static
+
+    @property
+    def colorful(self) -> Override[bool]:
+        "Returns the respective override object."
+        return self._colorful
+
+    @property
+    def dynamic(self) -> Override[bool]:
+        "Returns the respective override object."
+        return self._dynamic
+
+    @property
+    def toggled_on(self) -> Override[bool]:
+        "Returns the respective override object."
+        return self._toggled_on
+
+    @property
+    def brightness_mod(self) -> Override[float]:
+        "Returns the respective override object."
+        return self._brightness_mod
+
+    @property
+    def white_temp_mod(self) -> Override[float]:
+        "Returns the respective override object."
+        return self._white_temp_mod
+
+    @property
+    def color_offset(self) -> Override[int]:
+        "Returns the respective override object."
+        return self._color_offset
+
+    @property
+    def static(self) -> Override[State]:
+        "Returns the respective override object."
+        return self._static
 
     def with_parent(self, parent: 'Config') -> 'Config':
         "Creates a configuration with self's overrides if present, otherwise parent's."
         return Config(
             colorful       = self.colorful.with_parent(       parent.colorful       ),
             dynamic        = self.dynamic.with_parent(        parent.dynamic        ),
+            toggled_on     = self.toggled_on.with_parent(     parent.toggled_on     ),
             brightness_mod = self.brightness_mod.with_parent( parent.brightness_mod ),
             white_temp_mod = self.white_temp_mod.with_parent( parent.white_temp_mod ),
             color_offset   = self.color_offset.with_parent(   parent.color_offset   ),
@@ -104,6 +155,7 @@ class Config:
     def __str__(self):
         res = f"Col: {self.colorful.value}; "
         res += f"dyn: {self.dynamic.value}; "
+        res += f"dyn: {self.toggled_on.value}; "
         res += f"brigh: {self.brightness_mod.value}; "
         res += f"colδ: {self.color_offset.value}; "
         res += f"static: {self.static.value}."
@@ -124,7 +176,7 @@ def resolve(cfg: Config, dynamic: State) -> State:
         scale=cfg.white_temp_mod.value_or(alt=0)
     )
     dynamic.color.hue  += cfg.color_offset.value_or(alt=0) * 0.2
-    dynamic.toggled_on = dynamic.toggled_on and dynamic.brightness > 0
+    dynamic.toggled_on = cfg.toggled_on.value_or(dynamic.toggled_on) and dynamic.brightness > 0.0
     if not cfg.colorful.value_or(alt=True):
         dynamic.color = Color("White")
     return dynamic

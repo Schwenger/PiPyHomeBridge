@@ -102,19 +102,19 @@ class Controller(Worker):
         "Subscribes to messages from all remotes"
         for remote in self.home.remotes():
             self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
+            logging.debug("Subscribing to %s", remote.topic)
 
     def __subscribe_to_sensors(self):
         "Subscribes to messages from all remotes"
         for sensor in self.home.sensors():
             self.client.subscribe(sensor.topic.string, QoS.AT_LEAST_ONCE.value)
-            print(f"Subscribing to {sensor.topic.string}")
+            logging.debug("Subscribing to %s", sensor.topic)
 
     def __subscribe_to_lights(self):
         "Subscribes to messages from all lights"
         for light in self.home.flatten_lights():
-            # This currently works because there are no light groups, yet.
-            # Fix by having a function return physical lights from a room/group/home
             self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)
+            logging.debug("Subscribing to %s", light.topic)
 
     def __query_states(self):
         "Queries the physical states of all relevant devices supporting a query, i.e. lights."

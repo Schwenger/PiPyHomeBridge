@@ -22,14 +22,19 @@ def scale_relative(value: float, scale: float) -> float:
 
 def engineer_modifier(actual: float, desired: float) -> float:
     "Returns the factor required to transform actual to desired."
+    if desired == actual:
+        return 0
     if desired > actual:
         # actual + λ(1-actual) = desired
         # λ(1-actual) = desired - actual
         # λ = (desired-actual)/(1-actual)
+        # Denominator cannot be 0 because if actual were 1, desired couldn't be strictly greater.
         return (desired - actual) / (1 - actual)
     # actual * -λ = desired
     # -λ = actual/desired
     # λ = -actual/desired
+    # Denominator cannot be 0 because if desired were 0,
+    # actual would also be 0, which is handled in a separate case.
     return -actual/desired
 
 

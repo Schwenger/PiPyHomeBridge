@@ -32,6 +32,8 @@ if __name__ == "__main__":
         os.mkdir(log_dir)
 
     home = decoder.read(common.config["home"]["dir"])
+    # from home import encoder
+    # encoder.write(home, "/Users/schwenger/Workspace/smart_home/config/home.out.yml")
 
     cmd_q = Queue()
     resp_q = Queue()

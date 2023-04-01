@@ -21,9 +21,10 @@ class Group(Abstract, Collection):
         single_lights: List[Concrete],
         name:          str,
         groups:        List['Group'],
-        hierarchie:    List[str]
+        hierarchie:    List[str],
+        config:        Config,
     ):
-        super().__init__(config=Config())
+        super().__init__(config=config)
         self.name:          str               = name
         self.groups:        List[Group]       = groups
         self.hierarchie:    List[str]         = hierarchie

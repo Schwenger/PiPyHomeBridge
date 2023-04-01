@@ -1,8 +1,9 @@
 "Decodes a home specification."
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import lighting
+import lighting.config
 import yaml
 from comm import Topic
 from enums import DeviceModel
@@ -40,23 +41,51 @@ def __decode_light_group(group: dict, room: str, hierarchie: List[str]) -> light
         single_lights=singles,
         name=name,
         groups=subs,
-        hierarchie=hierarchie
+        hierarchie=hierarchie,
+        config=__decode_config(group["config"])
+    )
+
+def __decode_config(config: Optional[dict]) -> lighting.Config:
+    from lighting.config import Override  # pylint: disable=import-outside-toplevel
+    colorful = Override.none()
+    dynamic = Override.none()
+    white_temp_mod = Override.none()
+    brightness_mod = Override.none()
+    color_offset = Override.none()
+    if config is not None:
+        if "colorful" in config:
+            colorful = Override.perm(bool(config["colorful"]))
+        if "dynamic" in config:
+            dynamic = Override.perm(bool(config["dynamic"]))
+        if "brightness_mod" in config:
+            brightness_mod = Override.perm(float(config["brightness_mod"]))
+        if "white_temp_mod" in config:
+            white_temp_mod = Override.perm(float(config["white_temp_mod"]))
+        if "color_offset" in config:
+            color_offset = Override.perm(int(config["color_offset"]))
+    return lighting.Config(
+        colorful=colorful,
+        dynamic=dynamic,
+        brightness_mod=brightness_mod,
+        white_temp_mod=white_temp_mod,
+        color_offset=color_offset,
     )
 
 def __decode_light(light: dict, room: str) -> lighting.Concrete:
     name = light["name"]
     kind = light["kind"]
     icon = light["icon"]
+    config = __decode_config(light["config"])
     model = DeviceModel.from_str(light["model"])
     assert model is not None
     ident = light["id"]
     if kind == "Simple":
         return lighting.simple(
-            name=name, room=room, icon=icon, ident=ident, model=model
+            name=name, room=room, icon=icon, ident=ident, model=model, config=config
         )
     if kind in ["Dimmable", "Color"]:
         return lighting.regular(
-            name=name, room=room, icon=icon, ident=ident, model=model
+            name=name, room=room, icon=icon, ident=ident, model=model, config=config
         )
     assert False
 

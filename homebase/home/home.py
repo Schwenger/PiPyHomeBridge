@@ -15,12 +15,6 @@ from sensor import Sensor
 class Home(Addressable, lighting.Collection):
     "Collection of rooms"
 
-    ROOT_LIGHT_CONFIG = lighting.RootConfig(
-        colorful=True,
-        dynamic=True,
-        static=lighting.State.max()
-    )
-
     def __init__(self, rooms: List[Room]):
         self.rooms = rooms
 

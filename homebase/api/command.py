@@ -157,7 +157,7 @@ class Exec:
         dynamic = lighting.dynamic.recommended()
         config = self.__home.compile_config(light.topic)
         assert config is not None
-        target = lighting.config.resolve(self.__home.ROOT_LIGHT_CONFIG, config, dynamic)
+        target = lighting.config.resolve(config, dynamic)
         if light.state.toggled_on and target.toggled_on:
             light.realize_state(self.__client, target)
 

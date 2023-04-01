@@ -60,42 +60,42 @@ class Abstract(Addressable, ABC, Collection):
     ################################################
     def override_static(self, static: State):
         "Permanently overrides parent's static state."
-        self._config.absolute.state = Override.perm(static)
+        self._config.static = Override.perm(static)
 
     def inherit_static(self):
         "Inherit parent's static state."
-        self._config.absolute.state = Override.none()
+        self._config.static = Override.none()
 
     def override_colorful(self, colorful: bool):
         "Permanently overrides parent's colorful-flag."
-        self._config.absolute.colorful = Override.perm(colorful)
+        self._config.colorful = Override.perm(colorful)
 
     def inherit_colorful(self):
         "Inherit parent's colorful-flag."
-        self._config.absolute.colorful = Override.none()
+        self._config.colorful = Override.none()
 
     def override_dynamic(self, dynamic: bool):
         "Overrides parent's dynamic-flag."
-        self._config.absolute.dynamic = Override.perm(dynamic)
+        self._config.dynamic = Override.perm(dynamic)
 
     def inherit_dynamic(self):
         "Inherit parent's dynamic-flag."
-        self._config.absolute.dynamic = Override.none()
+        self._config.dynamic = Override.none()
 
     def set_brightness_mod(self, modifier: float):
         "Permanently modifies the brightness."
         modifier = common.bounded(modifier, least=-1.0, greatest=+1.0)
-        self._config.relative.brightness_mod = modifier
+        self._config.brightness_mod = Override.perm(modifier)
 
     def set_white_temp_mod(self, modifier: float):
         "Permanently modifies the white temperature."
         modifier = common.bounded(modifier, least=-1.0, greatest=+1.0)
-        self._config.relative.white_temp_mod = modifier
+        self._config.white_temp_mod = Override.perm(modifier)
 
     def set_color_offset(self, modifier: int):
         "Permanently offsets the color."
         modifier = int(common.bounded(float(modifier), least=0.0, greatest=5.0))
-        self._config.relative.color_offset = modifier
+        self._config.color_offset = Override.perm(modifier)
 
     ################################################
     # FUNCTIONAL API
@@ -177,13 +177,14 @@ class Concrete(Abstract, Device):
 
     def __init__(
         self,
-        name: str,
-        room: str,
-        icon: str,
-        model: DeviceModel,
-        ident: str,
+        name:   str,
+        room:   str,
+        icon:   str,
+        model:  DeviceModel,
+        ident:  str,
+        config: Config,
     ):
-        Abstract.__init__(self, config=Config())
+        Abstract.__init__(self, config=config)
         Device.__init__(self, name=name, room=room, icon=icon, model=model, ident=ident)
         self._state = State()
 

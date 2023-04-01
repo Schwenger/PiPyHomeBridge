@@ -4,8 +4,8 @@ from datetime import datetime as Timestamp
 from typing import Generic, Optional, Tuple, TypeVar
 
 from colour import Color
-from common import scale_relative
 from lighting.state import State
+from common import scale_relative
 
 T = TypeVar('T')
 class Override(Generic[T]):
@@ -26,6 +26,14 @@ class Override(Generic[T]):
         if self.temporary is not None:
             return self.temporary[0]
         return self.permanent
+
+    def value_or(self, alt: T) -> T:
+        "Provides the permanent or overriden value if any"
+        if self.temporary is not None:
+            return self.temporary[0]
+        if self.permanent is not None:
+            return self.permanent
+        return alt
 
     @staticmethod
     def none() -> 'Override[T]':
@@ -63,143 +71,52 @@ class Override(Generic[T]):
         )
 
 
-class Modifier:
-    "Contains modifications for light values; relative."
-    def __init__(
-        self,
-        brightness_mod: float = 0.0,  # ∈ [-1.0, +1.0]
-        white_temp_mod: float = 0.0,  # ∈ [-1.0, +1.0]
-        color_offset:   int   = 0,    # ∈ {0, 1, 2, 3, 4 5}
-    ):
-        self.brightness_mod   = brightness_mod
-        self.white_temp_mod   = white_temp_mod
-        self.color_offset = color_offset
-
-    def with_parent(self, parent: 'Modifier') -> 'Modifier':
-        "Keeps the current value if present, otherwise the parent's."
-        return Modifier(
-            brightness_mod=self.brightness_mod or parent.brightness_mod,
-            white_temp_mod=self.white_temp_mod or parent.white_temp_mod,
-            color_offset=self.color_offset or parent.color_offset,
-        )
-
-    def apply_to(self, state: State) -> State:
-        "Applies the modifier to the state."
-        brightness = scale_relative(value=state.brightness, scale=self.brightness_mod)
-        white_temp = scale_relative(value=state.white_temp, scale=self.white_temp_mod)
-        color = state.color
-        color.hue += 0.2 * self.color_offset
-        return State(
-            toggled_on=state.toggled_on and brightness > 0,
-            brightness=brightness,
-            white_temp=white_temp,
-            color=color,
-        )
-
-    def __str__(self) -> str:
-        return (
-            f"brightness_mod={self.brightness_mod}\n"
-            f"white_temp_mod={self.white_temp_mod}\n"
-            f"color_offset={self.color_offset}\n"
-        )
-
-
-class Overrides:
-    "A collection of overrides of absolute values."
-    def __init__(
-        self,
-        colorful: Override[bool]  = Override.none(),
-        dynamic:  Override[bool]  = Override.none(),
-        state:    Override[State] = Override.none(),
-    ):
-        self.colorful = colorful
-        self.dynamic  = dynamic
-        self.state    = state
-
-    def with_parent(self, parent: 'Overrides') -> 'Overrides':
-        "Keeps the current value if present, otherwise the parent's."
-        return Overrides(
-            colorful=self.colorful.with_parent(parent.colorful),
-            dynamic=self.dynamic.with_parent(parent.dynamic),
-            state=self.state.with_parent(parent.state),
-        )
-
-    def __str__(self) -> str:
-        return (
-            f"Colorful: {self.colorful}\n"
-            f"Dynamic: {self.dynamic}\n"
-            f"State: {self.state}\n"
-        )
-
-class Absolutes:
-    "Contains light configuration values; absolute."
-    def __init__(self, colorful: bool, dynamic: bool, state: State):
-        self.colorful = colorful
-        self.dynamic = dynamic
-        self.state = state
-
-    def __str__(self) -> str:
-        return f"colorful={self.colorful}, dynamic={self.dynamic}, state={self.state}"
-
 class Config:
-    "A full configuration for a light."
+    "A relative configuration for an abstract light."
+
     def __init__(
         self,
-        relative: Optional[Modifier]  = None,
-        absolute: Optional[Overrides] = None,
+        colorful:       Override[bool]  = Override.none(),
+        dynamic:        Override[bool]  = Override.none(),
+        brightness_mod: Override[float] = Override.none(),
+        white_temp_mod: Override[float] = Override.none(),
+        color_offset:   Override[int]   = Override.none(),
+        static:         Override[State] = Override.none(),
     ):
-        self.relative = relative or Modifier()
-        self.absolute = absolute or Overrides()
+        self.colorful:       Override[bool]  = colorful
+        self.dynamic:        Override[bool]  = dynamic
+        self.brightness_mod: Override[float] = brightness_mod
+        self.white_temp_mod: Override[float] = white_temp_mod
+        self.color_offset:   Override[int]   = color_offset
+        self.static:         Override[State] = static
 
     def with_parent(self, parent: 'Config') -> 'Config':
-        "Keeps the current value if present, otherwise the parent's."
+        "Creates a configuration with self's overrides if present, otherwise parent's."
         return Config(
-            relative=self.relative.with_parent(parent.relative),
-            absolute=self.absolute.with_parent(parent.absolute),
+            colorful       = self.colorful.with_parent(       parent.colorful       ),
+            dynamic        = self.dynamic.with_parent(        parent.dynamic        ),
+            brightness_mod = self.brightness_mod.with_parent( parent.brightness_mod ),
+            white_temp_mod = self.white_temp_mod.with_parent( parent.white_temp_mod ),
+            color_offset   = self.color_offset.with_parent(   parent.color_offset   ),
+            static         = self.static.with_parent(         parent.static         ),
         )
 
-    def __str__(self) -> str:
-        return (
-            f"Relative: {self.relative}\n"
-            f"Absolute: {self.absolute}\n"
-        )
-
-class RootConfig:
-    "A fully defined configuration typically specified as root."
-
-    def __init__(self, colorful: bool, dynamic: bool, static: State):
-        self.colorful = colorful
-        self.dynamic = dynamic
-        self.static = static
-
-    def overridden_by(self, overrides: Overrides) -> 'RootConfig':
-        "Applies the overrides to the root configuration."
-        static = self.static
-        if overrides.state.value is not None:
-            static = overrides.state.value
-        colorful = self.colorful
-        if overrides.colorful.value is not None:
-            colorful = overrides.colorful.value
-        dynamic = self.dynamic
-        if overrides.dynamic.value is not None:
-            dynamic = overrides.dynamic.value
-        return RootConfig(static=static, colorful=colorful, dynamic=dynamic)
-
-    def __str__(self) -> str:
-        return (
-            f"Colorful: {self.colorful}\n"
-            f"Dynamic: {self.dynamic}\n"
-            f"Static: {self.static}\n"
-        )
-
-def resolve(root: RootConfig, override: Config, dynamic: State) -> State:
-    "Applies the configuration to the root configuration and returns the appropriate state."
-    config: RootConfig = root.overridden_by(override.absolute)
-    state: State = dynamic if config.dynamic else config.static
-    res = override.relative.apply_to(state)
-
-    if not config.colorful:
-        res.white_temp = 1 if state.toggled_on else 0
-        res.color = Color("White")
-
-    return res
+def resolve(cfg: Config, dynamic: State) -> State:
+    "Returns the appropriate state of the dynamic state and given config."
+    if not cfg.dynamic.value_or(alt=False):
+        return cfg.static.value_or(alt=State.max())
+    dynamic.brightness = scale_relative(
+        value=dynamic.brightness,
+        scale=cfg.brightness_mod.value_or(alt=0)
+    )
+    if dynamic.brightness < 0.001:
+        dynamic.brightness = 0
+    dynamic.white_temp = scale_relative(
+        value=dynamic.white_temp,
+        scale=cfg.white_temp_mod.value_or(alt=0)
+    )
+    dynamic.color.hue  += cfg.color_offset.value_or(alt=0) * 0.2
+    dynamic.toggled_on = dynamic.toggled_on and dynamic.brightness > 0
+    if not cfg.colorful.value_or(alt=False):
+        dynamic.color = Color("White")
+    return dynamic

@@ -1,7 +1,7 @@
 "What"
 import sys
 
-from .decoder import read as decode
-from .encoder import write as encode
-from .home import Home
-from .room import Room
+from home.decoder import read as decode
+from home.encoder import write as encode
+from home.home import Home
+from home.room import Room

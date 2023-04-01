@@ -5,9 +5,10 @@ import time
 from typing import Optional
 
 from comm import Payload
+from enums import DeviceModel
+from lighting import Config
 from lighting.source import Abstract, Concrete
 from paho.mqtt import client as mqtt
-from enums import DeviceModel
 
 
 class SimpleLight(Concrete, Abstract):
@@ -23,13 +24,15 @@ class SimpleLight(Concrete, Abstract):
         icon: str,
         model: DeviceModel,
         ident: str,
+        config: Config,
     ):
         super().__init__(
             name=name,
             room=room,
             icon=icon,
             model=model,
-            ident=ident
+            ident=ident,
+            config=config,
         )
         self.__lock = threading.Lock()  # protects virtual brightness
         self.__dimming = False
@@ -77,14 +80,16 @@ class RegularLight(Concrete):
         room: str,
         icon: str,
         ident: str,
-        model: DeviceModel
+        model: DeviceModel,
+        config: Config
     ):
         super().__init__(
             name=name,
             room=room,
             icon=icon,
             model=model,
-            ident=ident
+            ident=ident,
+            config=config,
         )
 
 #######################################
@@ -92,17 +97,32 @@ class RegularLight(Concrete):
 #######################################
 
 
-def simple(name: str, room: str, icon: str, ident: str, model: DeviceModel) -> SimpleLight:
+def simple(
+    name: str,
+    room: str,
+    icon: str,
+    ident: str,
+    model: DeviceModel,
+    config: Config
+) -> SimpleLight:
     "Creates a simple on-off light"
     return SimpleLight(
         name=name,
         room=room,
         icon=icon,
         model=model,
-        ident=ident
+        ident=ident,
+        config=config,
     )
 
 
-def regular(name: str, room: str, icon: str, ident: str, model: DeviceModel) -> RegularLight:
+def regular(
+    name: str,
+    room: str,
+    icon: str,
+    ident: str,
+    model: DeviceModel,
+    config: Config
+) -> RegularLight:
     "Creates a dimmable light"
-    return RegularLight(name=name, room=room, icon=icon, ident=ident, model=model)
+    return RegularLight(name=name, room=room, icon=icon, ident=ident, model=model, config=config)

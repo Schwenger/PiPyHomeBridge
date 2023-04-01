@@ -40,7 +40,7 @@ class Controller(Worker):
         self.client.on_disconnect = Controller.__on_disconnect_wrapper(ip, port)
         self.client.on_message    = self.__handle_message
         self.__subscribe_to_all()
-        self.__query_physical_states()
+        self.__query_states()
 
     @staticmethod
     def __on_disconnect_wrapper(ip, port):
@@ -76,12 +76,9 @@ class Controller(Worker):
             (cmd, target_topic) = remote_target
             qdata = QData.api_command(target_topic, cmd, payload={ })
             self.queue.put(qdata)
-        elif sender.device_kind == DeviceKind.Sensor.value:
+        elif "state" in data or sender.device_kind == DeviceKind.Sensor.value:
             logging.debug("Received update for Sensor: %s", data)
-            qdata = QData.api_command(sender, ApiCommand.UpdateSensorState, payload=data)
-            self.queue.put(qdata)
-        elif "state" in data:
-            qdata = QData.api_command(sender, ApiCommand.UpdateVirtualState, payload=data)
+            qdata = QData.api_command(sender, ApiCommand.UpdateState, payload=data)
             self.queue.put(qdata)
 
 
@@ -119,10 +116,10 @@ class Controller(Worker):
             # Fix by having a function return physical lights from a room/group/home
             self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)
 
-    def __query_physical_states(self):
+    def __query_states(self):
         "Queries the physical states of all relevant devices supporting a query, i.e. lights."
         for light in self.home.flatten_lights():
-            data = QData.api_command(light.topic, ApiCommand.QueryPhysicalState, payload={ })
+            data = QData.api_command(light.topic, ApiCommand.QueryState, payload={ })
             self.queue.put(data)
 
 

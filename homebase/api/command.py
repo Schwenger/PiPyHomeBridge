@@ -24,27 +24,27 @@ class Exec:
 
     def exec(self, topic: Topic, cmd: ApiCommand, payload: Dict[str, str]):
         "Executes an API command."
+        logging.info("Executing %s for %s", cmd, topic)
         {
-            ApiCommand.Toggle:                lambda: self.__toggle(topic),
-            ApiCommand.TurnOn:                lambda: self.__turn_on(topic),
-            ApiCommand.TurnOff:               lambda: self.__turn_off(topic),
-            ApiCommand.DimUp:                 lambda: self.__dim_up(topic),
-            ApiCommand.DimDown:               lambda: self.__dim_down(topic),
-            ApiCommand.StartDimUp:            lambda: self.__start_dim_up(topic),
-            ApiCommand.StartDimDown:          lambda: self.__start_dim_down(topic),
-            ApiCommand.StopDimming:           lambda: self.__stop_dimming(topic),
-            ApiCommand.EnableDynamicDimming:  None,
-            ApiCommand.DisableDynamicDimming: None,
-            ApiCommand.EnableDynamicColor:    None,
-            ApiCommand.DisableDynamicColor:   None,
-            ApiCommand.SetBrightness:         lambda: self.__set_brightness(topic, payload),
-            ApiCommand.SetWhiteTemp:          lambda: self.__set_white_temp(topic, payload),
-            ApiCommand.SetColor:              lambda: self.__set_color(topic, payload),
-            ApiCommand.Rename:                lambda: self.__rename_device(topic, payload),
-            ApiCommand.Refresh:               self.__refresh,
-            ApiCommand.QueryPhysicalState:    lambda: self.__query_physical_state(topic),
-            ApiCommand.UpdateVirtualState:    lambda: self.__update_virtual_state(topic, payload),
-            ApiCommand.UpdateSensorState:     lambda: self.__update_sensor_state(topic, payload),
+            ApiCommand.Toggle:          lambda: self.__toggle(topic),
+            ApiCommand.TurnOn:          lambda: self.__turn_on(topic),
+            ApiCommand.TurnOff:         lambda: self.__turn_off(topic),
+            ApiCommand.DimUp:           lambda: self.__dim_up(topic),
+            ApiCommand.DimDown:         lambda: self.__dim_down(topic),
+            ApiCommand.StartDimUp:      lambda: self.__start_dim_up(topic),
+            ApiCommand.StartDimDown:    lambda: self.__start_dim_down(topic),
+            ApiCommand.StopDimming:     lambda: self.__stop_dimming(topic),
+            ApiCommand.EnableDynamic:   lambda: self.__set_dynamic(topic, True),
+            ApiCommand.DisableDynamic:  lambda: self.__set_dynamic(topic, False),
+            ApiCommand.EnableColorful:  lambda: self.__set_colorful(topic, True),
+            ApiCommand.DisableColorful: lambda: self.__set_colorful(topic, False),
+            ApiCommand.SetBrightness:   lambda: self.__set_brightness(topic, payload),
+            ApiCommand.SetWhiteTemp:    lambda: self.__set_white_temp(topic, payload),
+            ApiCommand.SetColor:        lambda: self.__set_color(topic, payload),
+            ApiCommand.Rename:          lambda: self.__rename_device(topic, payload),
+            ApiCommand.Refresh:         lambda: self.__refresh(topic),
+            ApiCommand.QueryState:      lambda: self.__query_state(topic),
+            ApiCommand.UpdateState:     lambda: self.__update_state(topic, payload),
         }[cmd]()
 
     def __get_target(self, topic: Topic) -> lighting.Collection:
@@ -135,31 +135,28 @@ class Exec:
         if light.state.toggled_on and target.toggled_on:
             light.realize_state(self.__client, target)
 
-    def __query_physical_state(self, topic: Topic):
-        target = self.__get_target(topic)
-        if not isinstance(target, lighting.Concrete):
-            raise HomeBaseError.InvalidPhysicalQuery
-        payload = Payload()
-        payload.state(None)
-        self.__client.publish(topic.as_get(), payload=payload.finalize())
+    def __query_state(self, topic: Topic):
+        payload = Payload().state(None).finalize()
+        self.__client.publish(topic.as_get(), payload=payload)
 
-    def __update_virtual_state(self, topic: Topic, payload: Dict[str, str]):
-        target = self.__get_target(topic)
+    def __update_state(self, topic: Topic, payload: Dict[str, str]):
+        light = self.__get_abstract(topic)
+        if light is not None:
+            return self.__update_light_state(light, payload)
+        sensor = self.__get_sensor(topic)
+        if sensor is not None:
+            return self.__update_sensor_state(sensor, payload)
+        raise HomeBaseError.DeviceNotFound
+
+    def __update_light_state(self, target: lighting.Collection, payload: Dict[str, str]):
         if not isinstance(target, lighting.Concrete):
             raise HomeBaseError.InvalidPhysicalQuery
         state = lighting.State.read_light_state(payload)
         target.update_virtual_state(state)
 
-    def __update_sensor_state(self, topic: Topic, payload: Dict[str, str]):
-        target = self.__home.find_sensor(topic)
-        logging.debug("Updating sensor with payload %s.", payload)
-        if target is None:
-            logging.warning("Failed to find sensor.")
-            raise HomeBaseError.SensorNotFound
+    def __update_sensor_state(self, target: Sensor, payload: Dict[str, str]):
         for key in payload:
-            logging.debug("Found key: %s", key)
             quant = Payload.sensor_quant_mapping().get(key)
-            logging.debug("Results in quantity %s", quant)
             if quant is None:
                 continue
             try:

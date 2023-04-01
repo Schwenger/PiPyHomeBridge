@@ -135,10 +135,10 @@ class Remote(Device):
         "Creates a default ikea remote for a room."
         actions: Dict[RemoteButton, ApiCommand] = {
             IkeaMultiButton.TOGGLE: ApiCommand.Toggle,
-            IkeaMultiButton.ARR_LEFT_CLICK: ApiCommand.DisableDynamicDimming,
-            IkeaMultiButton.ARR_RIGHT_CLICK: ApiCommand.EnableDynamicDimming,
-            IkeaMultiButton.ARR_LEFT_HOLD: ApiCommand.DisableDynamicColor,
-            IkeaMultiButton.ARR_RIGHT_HOLD: ApiCommand.EnableDynamicColor,
+            IkeaMultiButton.ARR_LEFT_CLICK: ApiCommand.DisableDynamic,
+            IkeaMultiButton.ARR_RIGHT_CLICK: ApiCommand.EnableDynamic,
+            IkeaMultiButton.ARR_LEFT_HOLD: ApiCommand.DisableColorful,
+            IkeaMultiButton.ARR_RIGHT_HOLD: ApiCommand.EnableColorful,
             IkeaMultiButton.BRI_UP_CLICK: ApiCommand.DimUp,
             IkeaMultiButton.BRI_UP_HOLD: ApiCommand.StartDimUp,
             IkeaMultiButton.BRI_UP_RELEASE: ApiCommand.StopDimming,

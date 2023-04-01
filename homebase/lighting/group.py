@@ -38,7 +38,9 @@ class Group(Abstract, Collection):
 
     @property
     def topic(self) -> Topic:
+        return Topic.for_group(
             room = self.room,
+            name = self.name,
 
     @property
     def all_lights(self) -> List[Abstract]:

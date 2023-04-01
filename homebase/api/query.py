@@ -89,7 +89,7 @@ class Responder:
             raise HomeBaseError.Unreachable
         light = self.__home.find_light(topic=topic)
         if light is None:
-            raise HomeBaseError.LightNotFound
+            raise HomeBaseError.DeviceNotFound
         return self.__respond_light_state(light.state)
 
     def __respond_light_state(self, state: lighting.State) -> Dict:
@@ -104,7 +104,7 @@ class Responder:
             raise HomeBaseError.Unreachable
         sensor = self.__home.find_sensor(topic=topic)
         if sensor is None:
-            raise HomeBaseError.LightNotFound
+            raise HomeBaseError.DeviceNotFound
         return self.__respond_sensor_state(sensor.state)
 
     def __respond_sensor_state(self, state: Dict[SensorQuantity, float]) -> Dict[str, float]:

@@ -49,26 +49,26 @@ def __decode_config(config: Optional[dict]) -> lighting.Config:
     from lighting.config import Override  # pylint: disable=import-outside-toplevel
     colorful = Override.none()
     dynamic = Override.none()
-    white_temp_mod = Override.none()
-    brightness_mod = Override.none()
-    color_offset = Override.none()
+    hue = Override.none()
+    saturation = Override.none()
+    lumin = Override.none()
     if config is not None:
         if "colorful" in config:
-            colorful = Override.perm(bool(config["colorful"]))
+            colorful   = Override.perm(bool(config["colorful"]))
         if "dynamic" in config:
-            dynamic = Override.perm(bool(config["dynamic"]))
-        if "brightness_mod" in config:
-            brightness_mod = Override.perm(float(config["brightness_mod"]))
-        if "white_temp_mod" in config:
-            white_temp_mod = Override.perm(float(config["white_temp_mod"]))
-        if "color_offset" in config:
-            color_offset = Override.perm(int(config["color_offset"]))
+            dynamic    = Override.perm(bool(config["dynamic"]))
+        if "hue" in config:
+            hue        = Override.perm(float(config["hue"]))
+        if "saturation" in config:
+            saturation = Override.perm(float(config["saturation"]))
+        if "lumin" in config:
+            lumin      = Override.perm(float(config["lumin"]))
     return lighting.Config(
         colorful=colorful,
         dynamic=dynamic,
-        brightness_mod=brightness_mod,
-        white_temp_mod=white_temp_mod,
-        color_offset=color_offset,
+        hue=hue,
+        saturation=saturation,
+        lumin=lumin,
     )
 
 def __decode_light(light: dict, room: str) -> lighting.Concrete:

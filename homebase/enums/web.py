@@ -80,6 +80,18 @@ class DeviceModel(FfiEnum):
         }[self]
 
     @property
+    def is_white_spec(self) -> bool:
+        "Indicates if the device is capable of displaying white spectrum light."
+        return {
+            DeviceModel.IkeaDimmer:      False,
+            DeviceModel.IkeaOutlet:      False,
+            DeviceModel.IkeaMultiButton: False,
+            DeviceModel.IkeaDimmable:    False,
+            DeviceModel.HueColor:        True,
+            DeviceModel.TuyaHumidity:    False,
+        }[self]
+
+    @property
     def is_color(self) -> bool:
         "Indicates if the device is capable of emitting colored light."
         return {

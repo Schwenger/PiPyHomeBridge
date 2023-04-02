@@ -3,7 +3,7 @@
 from datetime import datetime as Timestamp
 from typing import Callable, Generic, Optional, Tuple, TypeVar
 
-from colour import Color
+from colormath.color_objects import HSVColor
 from lighting.state import State
 from common import scale_relative
 
@@ -92,17 +92,17 @@ class Config:
         colorful:       Override[bool]  = Override.none(),
         dynamic:        Override[bool]  = Override.none(),
         toggled_on:     Override[bool]  = Override.none(),
-        brightness_mod: Override[float] = Override.none(),
-        white_temp_mod: Override[float] = Override.none(),
-        color_offset:   Override[int]   = Override.none(),
+        hue:            Override[float] = Override.none(),
+        saturation:     Override[float] = Override.none(),
+        lumin:          Override[float] = Override.none(),
         static:         Override[State] = Override.none(),
     ):
         self._colorful:       Override[bool]  = colorful
         self._dynamic:        Override[bool]  = dynamic
         self._toggled_on:     Override[bool]  = toggled_on
-        self._brightness_mod: Override[float] = brightness_mod
-        self._white_temp_mod: Override[float] = white_temp_mod
-        self._color_offset:   Override[int]   = color_offset
+        self._hue:            Override[float] = hue
+        self._saturation:     Override[float] = saturation
+        self._lumin:          Override[float] = lumin
         self._static:         Override[State] = static
 
     @property
@@ -121,19 +121,19 @@ class Config:
         return self._toggled_on
 
     @property
-    def brightness_mod(self) -> Override[float]:
+    def hue(self) -> Override[float]:
         "Returns the respective override object."
-        return self._brightness_mod
+        return self._hue
 
     @property
-    def white_temp_mod(self) -> Override[float]:
+    def saturation(self) -> Override[float]:
         "Returns the respective override object."
-        return self._white_temp_mod
+        return self._saturation
 
     @property
-    def color_offset(self) -> Override[int]:
+    def lumin(self) -> Override[float]:
         "Returns the respective override object."
-        return self._color_offset
+        return self._lumin
 
     @property
     def static(self) -> Override[State]:
@@ -143,40 +143,43 @@ class Config:
     def with_parent(self, parent: 'Config') -> 'Config':
         "Creates a configuration with self's overrides if present, otherwise parent's."
         return Config(
-            colorful       = self.colorful.with_parent(       parent.colorful       ),
-            dynamic        = self.dynamic.with_parent(        parent.dynamic        ),
-            toggled_on     = self.toggled_on.with_parent(     parent.toggled_on     ),
-            brightness_mod = self.brightness_mod.with_parent( parent.brightness_mod ),
-            white_temp_mod = self.white_temp_mod.with_parent( parent.white_temp_mod ),
-            color_offset   = self.color_offset.with_parent(   parent.color_offset   ),
-            static         = self.static.with_parent(         parent.static         ),
+            colorful   = self.colorful.with_parent(   parent.colorful   ),
+            dynamic    = self.dynamic.with_parent(    parent.dynamic    ),
+            toggled_on = self.toggled_on.with_parent( parent.toggled_on ),
+            hue        = self.hue.with_parent(        parent.hue        ),
+            saturation = self.saturation.with_parent( parent.saturation ),
+            lumin      = self.lumin.with_parent(      parent.lumin      ),
+            static     = self.static.with_parent(     parent.static     ),
         )
 
     def __str__(self):
         res = f"Col: {self.colorful.value}; "
         res += f"dyn: {self.dynamic.value}; "
         res += f"dyn: {self.toggled_on.value}; "
-        res += f"brigh: {self.brightness_mod.value}; "
-        res += f"colδ: {self.color_offset.value}; "
-        res += f"static: {self.static.value}."
+        res += f"""color: \
+{(self.hue.value or 0.0):.2f}/\
+{(self.saturation.value or 0.0):.2f}/\
+{(self.lumin.value or 0.0):.2f};"""
+        res += f"static: {self.static.value}"
         return res
 
 def resolve(cfg: Config, dynamic: State) -> State:
     "Returns the appropriate state of the dynamic state and given config."
     if not cfg.dynamic.value_or(alt=True):
         return cfg.static.value_or(alt=State.max())
-    dynamic.brightness = scale_relative(
-        value=dynamic.brightness,
-        scale=cfg.brightness_mod.value_or(alt=0)
-    )
-    if dynamic.brightness < 0.001:
-        dynamic.brightness = 0
-    dynamic.white_temp = scale_relative(
-        value=dynamic.white_temp,
-        scale=cfg.white_temp_mod.value_or(alt=0)
-    )
-    dynamic.color.hue  += cfg.color_offset.value_or(alt=0) * 0.2
-    dynamic.toggled_on = cfg.toggled_on.value_or(dynamic.toggled_on) and dynamic.brightness > 0.0
+    dynamic.color = __adapt_color(dynamic.color, cfg)
+    dynamic.toggled_on = cfg.toggled_on.value_or(dynamic.toggled_on) and dynamic.color.hsv_v > 0.0
     if not cfg.colorful.value_or(alt=True):
-        dynamic.color = Color("White")
+        dynamic.color = HSVColor(1, 0, 1)
     return dynamic
+
+def __adapt_color(col: HSVColor, cfg: Config) -> HSVColor:
+    val = scale_relative(value=col.hsv_v, scale=cfg.lumin.value_or(alt=0))
+    sat = scale_relative(value=col.hsv_s, scale=cfg.saturation.value_or(alt=0))
+    hue = scale_relative(value=col.hsv_h, scale=cfg.hue.value_or(alt=0))
+    if val < 0.001:
+        luvalmin = 0
+    assert 0 <= val <= 1
+    assert 0 <= sat <= 1
+    assert 0 <= hue <= 1
+    return HSVColor(hsv_v=val, hsv_h=hue, hsv_s=sat)

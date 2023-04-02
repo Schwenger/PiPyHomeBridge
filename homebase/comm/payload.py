@@ -3,7 +3,7 @@
 import json
 from typing import Dict, Optional
 
-from colour import Color
+from colormath.color_objects import HSVColor
 from enums import SensorQuantity, Vendor
 
 __DEFAULT_TRANS = 2
@@ -33,15 +33,19 @@ class Payload:
         self.body["brightness"] = target
         return self
 
-    def white_temp(self, val: Optional[float], vendor: Vendor) -> 'Payload':
-        "Sets the white temp to val or queries it if none"
-        target = WhiteTemp.scaled(val, vendor) if val is not None else ""
-        self.body["color_temp"] = target
-        return self
+    # def white_temp(self, val: Optional[float], vendor: Vendor) -> 'Payload':
+    #     "Sets the white temp to val or queries it if none"
+    #     target = WhiteTemp.scaled(val, vendor) if val is not None else ""
+    #     self.body["color_temp"] = target
+    #     return self
 
-    def color(self, col: Optional[Color], _vendor: Vendor) -> 'Payload':
+    def color(self, col: Optional[HSVColor], _vendor: Vendor) -> 'Payload':
         "Sets the color to col or queries it if none"
-        target = { "hex": col.get_hex_l().upper() } if col is not None else ""
+        target = ""
+        if col is not None:
+            target = { "hue": int(col.hsv_h * 360), "saturation": int(col.hsv_s*100) }
+        else:
+            target = { "hue": "", "saturation": "" }
         self.body["color"] = target
         return self
 
@@ -90,8 +94,6 @@ class Payload:
 
     @staticmethod
     def __remove_redundancy(data: dict) -> dict:
-        if "color" in data:
-            del data["color_temp"]
         return data
 
     @staticmethod

@@ -3,11 +3,13 @@ The logic for executing API commands
 """
 
 from typing import Callable, Dict
+from copy import deepcopy
 
 import lighting
 import lighting.config
 from api.api_common import (get_abstract, get_abstract_force,
                             get_configured_state, get_sensor)
+from colormath.color_objects import HSVColor
 from comm import Payload, Topic
 from common import Log
 from enums import ApiCommand, TopicCategory
@@ -26,7 +28,7 @@ class Exec:
 
     def exec(self, topic: Topic, cmd: ApiCommand, payload: Dict[str, str]):
         "Executes an API command."
-        Log.api.info("Executing command %s for %s", cmd, topic)
+        Log.api.info("Executing command %s for %s with %s", cmd, topic, payload)
         {
             ApiCommand.Toggle:          lambda: self.__toggle(topic),
             ApiCommand.TurnOn:          lambda: self.__turn_on(topic),
@@ -42,7 +44,7 @@ class Exec:
             ApiCommand.DisableColorful: lambda: self.__set_colorful(topic, False),
             ApiCommand.SetBrightness:   lambda: self.__set_brightness(topic, payload),
             # ApiCommand.SetWhiteTemp:    lambda: self.__set_white_temp(topic, payload),
-            # ApiCommand.SetColor:        lambda: self.__set_color(topic, payload),
+            ApiCommand.SetColor:        lambda: self.__set_color(topic, payload),
             ApiCommand.Rename:          lambda: self.__rename_device(topic, payload),
             ApiCommand.Refresh:         lambda: self.__refresh(topic),
             ApiCommand.QueryState:      lambda: self.__query_state(topic),
@@ -94,7 +96,9 @@ class Exec:
         def func(light: lighting.Abstract):
             Log.api.debug("Retrieving current state.")
             current = get_configured_state(self.__home, light)
-            light.accommodate_brightness(desired=brightness, actual=current.brightness)
+            desired = deepcopy(current.color)
+            desired.hsv_v = brightness
+            light.accommodate_color(desired=desired, actual=current.color)
         self.__light_operation(topic=topic, func=func)
 
     # def __set_white_temp(self, topic: Topic, payload: Dict[str, str]):
@@ -102,11 +106,20 @@ class Exec:
     #     white_temp = float(payload["white"])
     #     light.set_white_temp(self.__client, white_temp)
 
-    # def __set_color(self, topic: Topic, payload: Dict[str, str]):
-    #     light = self.__get_abstract_force(topic)
-    #     color = Color(payload["color"])
-    #     light.set_color_temp(color)
-    #     self.__refresh(topic)
+    def __set_color(self, topic: Topic, payload: Dict[str, str]):
+        hue = payload["hue"]
+        saturation = payload["saturation"]
+        value = payload["value"]
+        desired = HSVColor(hsv_h=hue, hsv_s=saturation, hsv_v=value)
+        Log.api.debug("Received: %.2f/%.2f/%.2f", float(hue), float(saturation), float(value))
+        def func(light: lighting.Abstract):
+            Log.api.debug("Retrieving current state.")
+            current = get_configured_state(self.__home, light)
+            Log.api.debug("Current: %.2f/%.2f/%.2f", current.color.hsv_h, current.color.hsv_s, current.color.hsv_v)
+            light.accommodate_color(desired=desired, actual=current.color)
+            new = get_configured_state(self.__home, light)
+            Log.api.debug("Current: %.2f/%.2f/%.2f", new.color.hsv_h, new.color.hsv_s, new.color.hsv_v)
+        self.__light_operation(topic=topic, func=func)
 
     def __rename_device(self, topic: Topic, payload: Dict[str, str]):
         # ToDo

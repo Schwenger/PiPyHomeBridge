@@ -8,7 +8,7 @@ from typing import Optional
 import yaml
 
 
-def bounded(value: float, bounds: range = range(-1, 1)) -> float:
+def bounded(value: float, bounds: range = range(-1, +1)) -> float:
     "Returns value bounded between min and max."
     least = float(bounds.start)
     greatest = float(bounds.stop)
@@ -19,16 +19,18 @@ def bounded(value: float, bounds: range = range(-1, 1)) -> float:
     return value
 
 def scale_relative(value: float, scale: float) -> float:
-    "Scales a value between 0 and 1 by a factor between -1 and +1."
+    "Modifies a value between 0 and 1 by a modifier ∈ [-1, +1]."
     if scale < 0.0:
         return value * (1 + scale)
     # Caution: Changes here must result in changes in engineer_modifier!
     return value + scale * (1 - value)
 
 def engineer_modifier(actual: float, desired: float) -> float:
-    "Returns the factor required to transform actual to desired."
+    "Returns the modifier ∈ [-1, +1] required to transform actual to desired."
+    actual  = bounded(actual, range(0, 1))
+    desired = bounded(desired, range(0, 1))
     if desired == actual:
-        return 0
+        return 0.0
     if desired > actual:
         # actual < desired -> scale > 0
         # actual + λ(1-actual) = desired
@@ -73,6 +75,7 @@ Log.web.setLevel(logging.INFO)
 Log.api.setLevel(logging.DEBUG)
 Log.rfs.setLevel(logging.INFO)
 Log.ctl.setLevel(logging.INFO)
+Log.utl.setLevel(logging.DEBUG)
 logging.getLogger().setLevel(logging.ERROR)  # color uses this logger :roll_eyes:
 
 log_dir = config["log"]["dir"]

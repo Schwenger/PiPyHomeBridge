@@ -2,11 +2,13 @@
 
 from abc import ABC, abstractmethod
 from typing import List, Optional
+from copy import deepcopy
 
 import common
+from colormath.color_objects import HSVColor
 from comm import Payload
-from enums import DeviceModel
 from device import Addressable, Device
+from enums import DeviceModel
 from lighting.config import Config
 from lighting.state import State
 from paho.mqtt import client as mqtt
@@ -43,6 +45,11 @@ class Abstract(Addressable, ABC, Collection):
     @abstractmethod
     def is_dimmable(self) -> bool:
         "Can the light be dimmed in any way?"
+
+    @property
+    @abstractmethod
+    def is_white_spec(self) -> bool:
+        "Can the light display white color?"
 
     @property
     @abstractmethod
@@ -86,15 +93,27 @@ class Abstract(Addressable, ABC, Collection):
 
     def accommodate_state(self, desired: State, actual: State):
         "Updates the internal config to result in the given physical state when refreshed."
-        self.accommodate_brightness(desired=desired.brightness, actual=actual.brightness)
+        self.accommodate_color(desired=desired.color, actual=actual.color)
+        copy = deepcopy(self.config)
+        self.accommodate_color(desired=desired.color, actual=actual.color)
+        assert copy == self.config  # ToDo: Remove eventually.
 
-    def accommodate_brightness(self, desired: float, actual: float):
-        "Changes config to result in the desired brightness after refresh."
-        common.Log.utl.debug("Engineering modifier; actual: %.4f, desired: %.4f", actual, desired)
-        modifier = common.engineer_modifier(actual, desired)
-        common.Log.utl.debug("Engineered modifier is %.2f.", modifier)
-        self.config.brightness_mod.modify_temp(0.0, lambda x: x + modifier)
-        common.Log.utl.debug("New modifier is %.2f.", self.config.brightness_mod.value)
+    def accommodate_color(self, desired: HSVColor, actual: HSVColor):
+        "Changes config to result in the desired color after refresh."
+        common.Log.utl.debug("Actual: %s", actual)
+        common.Log.utl.debug("Desired: %s", desired)
+        hue_mod = common.engineer_modifier(actual.hsv_h, desired.hsv_h)  # ∈ [-1, +1]
+        sat_mod = common.engineer_modifier(actual.hsv_s, desired.hsv_s)  # ∈ [-1, +1]
+        lum_mod = common.engineer_modifier(actual.hsv_v, desired.hsv_v)  # ∈ [-1, +1]
+        common.Log.utl.debug("Engineered hue modifier is %.2f.", hue_mod)
+        common.Log.utl.debug("Engineered sat modifier is %.2f.", sat_mod)
+        common.Log.utl.debug("Engineered lum modifier is %.2f.", lum_mod)
+        self.config.hue.modify_temp(       0.0, lambda x: common.bounded(x + hue_mod))
+        self.config.saturation.modify_temp(0.0, lambda x: common.bounded(x + sat_mod))
+        self.config.lumin.modify_temp(     0.0, lambda x: common.bounded(x + lum_mod))
+        common.Log.utl.debug("New modifier is %.2f.", self.config.hue.value)
+        common.Log.utl.debug("New modifier is %.2f.", self.config.saturation.value)
+        common.Log.utl.debug("New modifier is %.2f.", self.config.lumin.value)
 
     def turn_on(self):
         "Turn all lights on"
@@ -111,19 +130,19 @@ class Abstract(Addressable, ABC, Collection):
 
     def shift_color_clockwise(self):
         "Shift color clockwise"
-        self.config.color_offset.modify_temp(0, lambda val: (val + 1) % 5)
+        self.config.hue.modify_temp(0.0, lambda val: (val + 0.2) % 1)
 
     def shift_color_counter_clockwise(self):
         "Shift color counter clockwise"
-        self.config.color_offset.modify_temp(0, lambda val: (val - 1) % 5)
+        self.config.hue.modify_temp(0.0, lambda val: (val - 0.2) % 1)
 
     def dim_up(self):
         "Increases brightness"
-        self.config.brightness_mod.modify_temp(0, lambda v: common.bounded(v + 0.3))
+        self.config.lumin.modify_temp(0.0, lambda val: common.bounded(val + 0.3))
 
     def dim_down(self):
         "Decreases brightness"
-        self.config.brightness_mod.modify_temp(0, lambda v: common.bounded(v - 0.3))
+        self.config.lumin.modify_temp(0.0, lambda val: common.bounded(val - 0.3))
 
 class Concrete(Abstract, Device):
     """
@@ -148,6 +167,10 @@ class Concrete(Abstract, Device):
     @property
     def is_dimmable(self) -> bool:
         return self.model.is_dimmable
+
+    @property
+    def is_white_spec(self) -> bool:
+        return self.model.is_white_spec
 
     @property
     def is_color(self) -> bool:
@@ -186,10 +209,11 @@ class Concrete(Abstract, Device):
         "Creates a payload to realize the given state."
         payload = Payload().state(state.toggled_on)
         if self.is_dimmable:
-            new_brightness = int(state.toggled_on) * state.brightness
+            new_brightness = int(state.toggled_on) * state.color.hsv_v
             payload = payload.brightness(new_brightness)
+        if self.is_white_spec and not self.is_color:
+            # ToDo
+            pass
         if self.is_color:
-            new_white = int(state.toggled_on) * state.white_temp
-            payload = payload.white_temp(new_white, vendor=self.vendor)
             payload = payload.color(state.color, self.vendor)
         return payload

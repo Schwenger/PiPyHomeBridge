@@ -96,8 +96,9 @@ class Responder:
 
     def __respond_light_state(self, state: lighting.State) -> Dict:
         return {
-            "brightness": state.brightness,
-            "hexColor": state.color.get_hex_l(),
+            "hue": state.color.hsv_h,
+            "saturation": state.color.hsv_s,
+            "value": state.color.hsv_v,
             "toggledOn": state.toggled_on,
         }
 

@@ -69,6 +69,10 @@ class Group(Abstract, Collection):
         return any(map(lambda l: l.is_dimmable, self.all_lights))
 
     @property
+    def is_white_spec(self) -> bool:
+        return any(map(lambda l: l.is_white_spec, self.all_lights))
+
+    @property
     def is_color(self) -> bool:
         return any(map(lambda l: l.is_color, self.all_lights))
 

@@ -4,6 +4,11 @@
 * Unify output format of structure query and encoder.
 * common.bounded: range rather an least/greatest
 
+# Bugs
+* Restruct the number of requests sent when sliding brightness
+* Colors don't work.
+* Brightness is not uniform.
+
 # UI
 * Each abstract light in the app has a checkbox to define its parameters or inherit
   * This sets its full config or removes it.

@@ -1,4 +1,5 @@
 "Contains the WebAPI, handling get requests and passing it on over a queue."
+import traceback
 import urllib.parse as url
 from http.server import BaseHTTPRequestHandler
 from queue import Empty, Queue
@@ -25,8 +26,8 @@ class Handler(BaseHTTPRequestHandler):
             common.Log.web.info("Received GET request.")
             common.Log.web.debug("On path %s.", self.path)
             self.__handle_request()
-        except Exception as err:
-            common.Log.web.error(err.with_traceback(err.__traceback__))
+        except Exception:
+            common.Log.web.error(traceback.format_exc())
             self.send_response(401)
             self.end_headers()
 

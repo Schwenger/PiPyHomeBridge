@@ -17,6 +17,7 @@ def get_abstract(topic: Topic, home: Home) -> Optional[lighting.Abstract]:
     if conc is not None:
         return conc
     for room in home.rooms:
+        Log.api.debug("Looking for %s in room %s / group %s", topic, room.topic, room.group.topic)
         if topic in [room.group.topic, room.topic]:
             return room.group
     return None
@@ -35,11 +36,12 @@ def get_sensor(topic: Topic, home: Home) -> Optional[Sensor]:
 
 def get_configured_state(home: Home, light: lighting.Abstract) -> lighting.State:
     "Returns the currently relevant state for the current config of the light."
+    Log.api.debug("Computing configured state for %s.", light.topic)
     dynamic = lighting.dynamic.recommended()
-    Log.api.debug(dynamic)
+    Log.api.debug("Dynamic: %s", dynamic)
     config = home.compile_config(light.topic)
-    Log.api.debug(config)
+    Log.api.debug("Config: %s.", config)
     assert config is not None
     target = lighting.config.resolve(config, dynamic)
-    Log.api.debug(target)
+    Log.api.debug("Resolved: %s.", target)
     return target

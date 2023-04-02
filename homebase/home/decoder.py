@@ -32,10 +32,9 @@ def __decode_room(room: dict) -> Room:
 def __decode_light_group(group: dict, room: str, hierarchie: List[str]) -> lighting.Group:
     name = group["name"]
     singles = list(map(lambda l: __decode_light(l, room), group["singles"]))
-    hierarchie.append(name)
     subs = []
     for sub in (group.get("subgroups") or []):
-        sub = __decode_light_group(sub, room, hierarchie)
+        sub = __decode_light_group(sub, room, hierarchie + [name])
         subs.append(sub)
     return lighting.Group(
         single_lights=singles,

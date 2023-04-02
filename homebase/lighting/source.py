@@ -90,8 +90,11 @@ class Abstract(Addressable, ABC, Collection):
 
     def accommodate_brightness(self, desired: float, actual: float):
         "Changes config to result in the desired brightness after refresh."
+        common.Log.utl.debug("Engineering modifier; actual: %.4f, desired: %.4f", actual, desired)
         modifier = common.engineer_modifier(actual, desired)
+        common.Log.utl.debug("Engineered modifier is %.2f.", modifier)
         self.config.brightness_mod.set_temp(modifier)
+        common.Log.utl.debug("New modifier is %.2f.", self.config.brightness_mod.value)
 
     def turn_on(self):
         "Turn all lights on"
@@ -109,22 +112,22 @@ class Abstract(Addressable, ABC, Collection):
     def shift_color_clockwise(self):
         "Shift color clockwise"
         def func(val: int):
-            return int(common.bounded(val + 1, least=0, greatest=5))
+            return int(common.bounded(val + 1, bounds=range(0, 5)))
         self.config.color_offset.modify_temp(0, func)
 
     def shift_color_counter_clockwise(self):
         "Shift color counter clockwise"
         def func(val: int):
-            return int(common.bounded(val - 1, least=0, greatest=5))
+            return int(common.bounded(val - 1, bounds=range(0, 5)))
         self.config.color_offset.modify_temp(0, func)
 
     def dim_up(self):
         "Increases brightness"
-        self.config.brightness_mod.modify_temp(0, lambda v: common.bounded(v + 0.2))
+        self.config.brightness_mod.modify_temp(0, lambda v: common.bounded(v + 0.3))
 
     def dim_down(self):
         "Decreases brightness"
-        self.config.brightness_mod.modify_temp(0, lambda v: common.bounded(v - 0.2))
+        self.config.brightness_mod.modify_temp(0, lambda v: common.bounded(v - 0.3))
 
 class Concrete(Abstract, Device):
     """

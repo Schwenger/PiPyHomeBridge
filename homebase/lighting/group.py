@@ -2,7 +2,6 @@
 
 from typing import List, Optional
 
-from colour import Color
 from comm import Topic
 from lighting.config import Config
 from lighting.source import Abstract, Collection, Concrete
@@ -31,10 +30,6 @@ class Group(Abstract, Collection):
         self.groups:        List[Group]       = groups
         self.hierarchie:    List[str]         = hierarchie
         self.single_lights: List[Concrete]    = single_lights
-
-    @property
-    def state(self) -> State:
-        return State.average(list(map(lambda lig: lig.state, self.all_lights)))
 
     @property
     def topic(self) -> Topic:
@@ -103,50 +98,3 @@ class Group(Abstract, Collection):
     def stop_dim(self, client: mqtt.Client):
         for light in self.all_lights:
             light.stop_dim(client)
-
-    def turn_on(self, client: mqtt.Client):
-        for light in self.all_lights:
-            light.turn_on(client)
-
-    def turn_off(self, client: mqtt.Client):
-        for light in self.all_lights:
-            light.turn_off(client)
-
-    def toggle(self, client: mqtt.Client):
-        for light in self.all_lights:
-            light.toggle(client)
-
-    def shift_color_clockwise(self):
-        for light in self.all_lights:
-            light.shift_color_clockwise()
-
-    def shift_color_counter_clockwise(self):
-        for light in self.all_lights:
-            light.shift_color_counter_clockwise()
-
-    def dim_up(self):
-        for light in self.all_lights:
-            light.dim_up()
-
-    def dim_down(self):
-        for light in self.all_lights:
-            light.dim_down()
-
-    def set_brightness(self, brightness: float):
-        for light in self.all_lights:
-            light.set_brightness(brightness)
-
-    def set_white_temp(self, client: Optional[mqtt.Client], temp: float):
-        for light in self.all_lights:
-            light.set_white_temp(client, temp)
-
-    def set_color_temp(self, color: Color):
-        for light in self.all_lights:
-            light.set_color_temp(color)
-
-    ################################################
-    # PROTECTED
-    ################################################
-
-    def _any_on(self) -> bool:
-        return any(map(lambda light: light.state.toggled_on, self.all_lights))

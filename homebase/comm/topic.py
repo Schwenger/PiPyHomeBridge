@@ -119,8 +119,6 @@ class Topic:
     @staticmethod
     def for_group(room: str, hierarchie: List[str], name: str) -> 'Topic':
         'Creates a topic for refering to a group.'
-        if len(hierarchie) == 0:
-            raise HomeBaseError.Unreachable
         return Topic(
             category=TopicCategory.Group,
             device_kind=None,

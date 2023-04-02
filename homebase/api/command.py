@@ -90,7 +90,9 @@ class Exec:
 
     def __set_brightness(self, topic: Topic, payload: Dict[str, str]):
         brightness = float(payload["brightness"])
+        Log.api.debug("Setting brightness to %.2f", brightness*100)
         def func(light: lighting.Abstract):
+            Log.api.debug("Retrieving current state.")
             current = get_configured_state(self.__home, light)
             light.accommodate_brightness(desired=brightness, actual=current.brightness)
         self.__light_operation(topic=topic, func=func)

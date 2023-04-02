@@ -3,7 +3,6 @@
 import os
 import platform
 import logging
-from typing import Optional
 
 import yaml
 

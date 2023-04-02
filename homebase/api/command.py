@@ -115,10 +115,20 @@ class Exec:
         def func(light: lighting.Abstract):
             Log.api.debug("Retrieving current state.")
             current = get_configured_state(self.__home, light)
-            Log.api.debug("Current: %.2f/%.2f/%.2f", current.color.hsv_h, current.color.hsv_s, current.color.hsv_v)
+            Log.api.debug(
+                "Current: %.2f/%.2f/%.2f",
+                current.color.hsv_h,
+                current.color.hsv_s,
+                current.color.hsv_v
+            )
             light.accommodate_color(desired=desired, actual=current.color)
             new = get_configured_state(self.__home, light)
-            Log.api.debug("Current: %.2f/%.2f/%.2f", new.color.hsv_h, new.color.hsv_s, new.color.hsv_v)
+            Log.api.debug(
+                "Current: %.2f/%.2f/%.2f",
+                new.color.hsv_h,
+                new.color.hsv_s,
+                new.color.hsv_v
+            )
         self.__light_operation(topic=topic, func=func)
 
     def __rename_device(self, topic: Topic, payload: Dict[str, str]):

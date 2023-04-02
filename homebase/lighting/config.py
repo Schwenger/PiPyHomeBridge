@@ -155,7 +155,7 @@ class Config:
     def __str__(self):
         res = f"Col: {self.colorful.value}; "
         res += f"dyn: {self.dynamic.value}; "
-        res += f"dyn: {self.toggled_on.value}; "
+        res += f"on/off: {self.toggled_on.value}; "
         res += f"""color: \
 {(self.hue.value or 0.0):.2f}/\
 {(self.saturation.value or 0.0):.2f}/\
@@ -166,7 +166,9 @@ class Config:
 def resolve(cfg: Config, dynamic: State) -> State:
     "Returns the appropriate state of the dynamic state and given config."
     if not cfg.dynamic.value_or(alt=True):
-        return cfg.static.value_or(alt=State.max())
+        state = cfg.static.value_or(alt=State.max())
+        state.toggled_on = cfg.toggled_on.value_or(state.toggled_on)
+        return state
     dynamic.color = __adapt_color(dynamic.color, cfg)
     dynamic.toggled_on = cfg.toggled_on.value_or(dynamic.toggled_on) and dynamic.color.hsv_v > 0.0
     if not cfg.colorful.value_or(alt=True):
@@ -178,7 +180,7 @@ def __adapt_color(col: HSVColor, cfg: Config) -> HSVColor:
     sat = scale_relative(value=col.hsv_s, scale=cfg.saturation.value_or(alt=0))
     hue = scale_relative(value=col.hsv_h, scale=cfg.hue.value_or(alt=0))
     if val < 0.001:
-        luvalmin = 0
+        val = 0
     assert 0 <= val <= 1
     assert 0 <= sat <= 1
     assert 0 <= hue <= 1

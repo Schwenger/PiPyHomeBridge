@@ -1,10 +1,10 @@
 "Anything related to zigbee topics."
 
-import logging
 from typing import List, Optional
 
 from enums import DeviceKind, TopicCommand, TopicCategory
 from homebaseerror import HomeBaseError
+from common import Log
 
 
 class Topic:
@@ -165,31 +165,31 @@ class Topic:
         "Creates a topic from a string.  Asserts proper format. May not be a command."
         split = string.split(Topic.SEP)
         if len(split) < 3 or split[0] != Topic.BASE:
-            logging.error("Topic %s misses base or has less than 3 components.", string)
+            Log.tpc.error("Topic %s misses base or has less than 3 components.", string)
             raise HomeBaseError.TopicParseError
         cat = TopicCategory.from_str(split[1])
         if cat is None:
-            logging.error("Topic %s has an invalid target.", string)
+            Log.tpc.error("Topic %s has an invalid target.", string)
             raise HomeBaseError.TopicParseError
         if cat is TopicCategory.Home:
             if split[2] != 'home' or len(split) != 3:
-                logging.error("Topic with Category Home targets invalid name %s", split[2:])
+                Log.tpc.error("Topic with Category Home targets invalid name %s", split[2:])
                 raise HomeBaseError.TopicParseError
             return Topic.for_home()
         if cat is TopicCategory.Bridge:
             if split[2] != 'bridge' or len(split) != 3:
-                logging.error("Topic with Category Bridge targets invalid name %s", split[2:])
+                Log.tpc.error("Topic with Category Bridge targets invalid name %s", split[2:])
                 raise HomeBaseError.TopicParseError
             return Topic.for_bridge()
         if cat is TopicCategory.Room:
             if len(split) != 3:
-                logging.error("Topic with Category Room has superfluous components %s", split[3:])
+                Log.tpc.error("Topic with Category Room has superfluous components %s", split[3:])
                 raise HomeBaseError.TopicParseError
             name = split[2]
             return Topic.for_room(split[2])
         if cat is TopicCategory.Group:
             if len(split) < 4:
-                logging.error("Topic with Category Group has to few components %s", split)
+                Log.tpc.error("Topic with Category Group has to few components %s", split)
                 raise HomeBaseError.TopicParseError
             room = split[2]
             groups = split[3:-1]
@@ -197,15 +197,15 @@ class Topic:
             return Topic.for_group(room, groups, name)
         if cat is TopicCategory.Device:
             if len(split) < 5:
-                logging.error("Topic with Category Device has to few components %s", split)
+                Log.tpc.error("Topic with Category Device has to few components %s", split)
                 raise HomeBaseError.TopicParseError
             kind = DeviceKind.from_str(split[2])
             if kind is None:
-                logging.error("Invalid device kind %s", split[2])
+                Log.tpc.error("Invalid device kind %s", split[2])
                 raise HomeBaseError.TopicParseError
             room = split[3]
             groups = split[4:-1]
             name = split[-1]
             return Topic.for_device(name, kind, room, groups)
-        logging.error("Invalid Topic %s", split)
+        Log.tpc.error("Invalid Topic %s", split)
         raise HomeBaseError.TopicParseError

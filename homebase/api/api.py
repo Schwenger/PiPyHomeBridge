@@ -1,12 +1,11 @@
 "Bla"
 
-import logging
-from queue import Empty, Queue
+from queue import Queue
 
 from api.command import Exec
 from api.query import Responder
-from enums import QDataKind
 from comm import QData
+from enums import QDataKind
 from home import Home
 from homebaseerror import HomeBaseError
 from paho.mqtt import client as mqtt
@@ -24,16 +23,7 @@ class Api(Worker):
 
     def _run(self):
         while True:
-            try:
-                qdata: QData = self.request_q.get(block=True, timeout=60 * 15)
-            except Empty:
-                logging.info("API: Heartbeat.")
-                continue
-            logging.info(
-                "Command: %s, Topic: %s",
-                qdata.command or qdata.query,
-                str(qdata.topic)
-            )
+            qdata: QData = self.request_q.get(block=True)
             self.__process(qdata)
 
     def __process(self, qdata: QData):

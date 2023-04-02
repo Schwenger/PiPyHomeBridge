@@ -2,6 +2,7 @@
 
 import os
 import platform
+import logging
 
 import yaml
 
@@ -37,7 +38,6 @@ def engineer_modifier(actual: float, desired: float) -> float:
     # actual would also be 0, which is handled in a separate case.
     return -actual/desired
 
-
 NODE_NAME = platform.node()
 if 'Mairxbook' in NODE_NAME:
     CLIENT_NAME = 'Mac'
@@ -53,6 +53,36 @@ with open(cfg_path, "r", encoding="utf-8") as stream:
     except yaml.YAMLError as exc:
         print("Failed to load config file config.yml.")
         raise exc
+
+class Log:
+    "Collection of viable logs"
+    web = logging.getLogger("Web")
+    api = logging.getLogger("Api")
+    rfs = logging.getLogger("Rfs")
+    ctl = logging.getLogger("Ctl")
+    tpc = logging.getLogger("Tpc")
+
+Log.web.setLevel(logging.INFO)
+Log.api.setLevel(logging.DEBUG)
+Log.rfs.setLevel(logging.INFO)
+Log.ctl.setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.ERROR)  # color uses this logger :roll_eyes:
+
+log_dir = config["log"]["dir"]
+
+if not os.path.exists(log_dir):
+    os.mkdir(log_dir)
+
+log_fmt = config["log"]["format"]
+
+logging.basicConfig(
+    filename=os.path.join(log_dir, 'mylogs.log'),
+    format=log_fmt,
+    datefmt='%d/%H:%M:%S'
+)
+
+
+
 
 
 def read_home(home_path: str):

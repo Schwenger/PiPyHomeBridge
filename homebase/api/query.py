@@ -2,13 +2,13 @@
 The logic for executing API commands
 """
 
-import logging
 from queue import Queue
 from typing import Dict
 
 import lighting
-from api.common import get_configured_state
+from api.api_common import get_configured_state
 from comm import Payload, Topic
+from common import Log
 from enums import ApiQuery, SensorQuantity
 from home import Home, Room
 from homebaseerror import HomeBaseError
@@ -85,7 +85,7 @@ class Responder:
         }
 
     def __respond_light(self, topic) -> Dict:
-        logging.debug(topic)
+        Log.api.debug(topic)
         if topic is None:
             raise HomeBaseError.Unreachable
         light = self.__home.find_light(topic=topic)

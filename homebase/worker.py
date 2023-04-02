@@ -1,7 +1,6 @@
 "Module contains naught but an abstract base class for general workers."
 
 from abc import ABC, abstractmethod
-import logging
 
 
 class Worker(ABC):
@@ -9,7 +8,6 @@ class Worker(ABC):
 
     def run(self):
         "Starts running the worker; will never return."
-        logging.getLogger(self.__class__.__name__)
         self._run()
 
     @abstractmethod

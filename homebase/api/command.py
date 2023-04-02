@@ -2,13 +2,14 @@
 The logic for executing API commands
 """
 
-import logging
 from typing import Callable, Dict
 
 import lighting
 import lighting.config
-from api.common import get_abstract, get_abstract_force, get_configured_state, get_sensor
+from api.api_common import (get_abstract, get_abstract_force,
+                            get_configured_state, get_sensor)
 from comm import Payload, Topic
+from common import Log
 from enums import ApiCommand, TopicCategory
 from home.home import Home
 from homebaseerror import HomeBaseError
@@ -25,7 +26,7 @@ class Exec:
 
     def exec(self, topic: Topic, cmd: ApiCommand, payload: Dict[str, str]):
         "Executes an API command."
-        logging.info("Executing %s for %s", cmd, topic)
+        Log.api.info("Executing command %s for %s", cmd, topic)
         {
             ApiCommand.Toggle:          lambda: self.__toggle(topic),
             ApiCommand.TurnOn:          lambda: self.__turn_on(topic),
@@ -113,26 +114,24 @@ class Exec:
         # self.__client.publish(target.string, payload=pay)
 
     def __refresh(self, topic: Topic):
-        logging.debug("Refreshing Topic.")
+        Log.api.debug("Refreshing device with topic %s.", topic)
         if topic.category == TopicCategory.Home:
             return self.__refresh_home()
         target = get_abstract_force(topic, home=self.__home)
-        logging.debug("Refreshing abstract.")
         for light in target.flatten_lights():
             self.__refresh_single(light)
 
     def __refresh_home(self):
-        logging.debug("Refreshing home.")
         for room in self.__home.rooms:
             self.__refresh(room.group.topic)
 
     def __refresh_single(self, light: lighting.Abstract):
-        logging.debug("Refreshing Single")
         target = get_configured_state(self.__home, light)
         light.realize_state(self.__client, target)
 
     def __query_state(self, topic: Topic):
         payload = Payload().state(None).finalize()
+        Log.api.debug("Querying state of %s, which is %s.", topic, payload)
         self.__client.publish(topic.as_get(), payload=payload)
 
     def __update_state(self, topic: Topic, payload: Dict[str, str]):
@@ -161,5 +160,5 @@ class Exec:
                 val = float(payload[key])
                 target.update_state(quant, val)
             except ValueError as exc:
-                logging.warning("Invalid quantity for sensor update: Not a float. %s", payload[key])
+                Log.api.warning("Invalid quantity for sensor update: Not a float. %s", payload[key])
                 raise HomeBaseError.InvalidPhysicalQuantity from exc

@@ -1,7 +1,6 @@
 "Example for contorling tradfri devices over python."
 
 import json
-import logging
 import time
 from queue import Queue
 
@@ -21,9 +20,7 @@ PORT = common.config['mosquitto']['port']
 class PatchedClient(mqtt.Client):
     "Patches the publish command to also log the request."
     def publish(self: mqtt.Client, topic, payload=None, qos=0, retain=False, properties=None):
-        logging.info("MQTT: Sending message.")
-        if payload is not None:
-            logging.info("MQTT: Sending to %s: %s.", topic, payload)
+        common.Log.ctl.info("MQTT: Sending %s to %s.", payload, topic)
         super().publish(topic, payload, qos, retain, properties)
 
 
@@ -48,7 +45,7 @@ class Controller(Worker):
 
     @staticmethod
     def __on_disconnect(ip, port, client: mqtt.Client, _userdata,  _rc):
-        logging.error("Client disconnected.")
+        common.Log.ctl.error("Client disconnected.")
         client.connect(host=ip, port=port, keepalive=360)
 
     def _run(self):
@@ -57,19 +54,19 @@ class Controller(Worker):
 
     def __handle_message(self, _client, _userdata, message: mqtt.MQTTMessage):
         "Handles the reception of a message"
-        logging.info("MQTT: Message received.")
+        common.Log.ctl.info("MQTT: Message received from %s.", message.topic)
         sender = Topic.from_str(message.topic)
         if len(message.payload) == 0:
             return
-        logging.debug("MQTT: Message from %s received.", sender)
+        common.Log.ctl.debug("Topic parsed as %s.", sender)
         data = json.loads(message.payload.decode("utf-8"))
-        print(f"Devicekind is {sender.device_kind}")
-        print(data)
+        common.Log.ctl.debug("Payload: %s.", data)
         if sender.category is TopicCategory.Bridge:
-            logging.debug("Received a message with bridge event.")
-            logging.debug(str(sender))
-            logging.debug(str(data))
+            common.Log.ctl.info("Message is a bridge event.")
+            common.Log.ctl.debug(str(sender))
+            common.Log.ctl.debug(str(data))
         if "action" in data:
+            common.Log.ctl.info("Message is a remote action.")
             remote_target = self.home.remote_action(sender, data["action"])
             if remote_target is None:
                 raise HomeBaseError.RemoteNotFound
@@ -77,10 +74,11 @@ class Controller(Worker):
             qdata = QData.api_command(target_topic, cmd, payload={ })
             self.queue.put(qdata)
         elif "state" in data or sender.device_kind == DeviceKind.Sensor.value:
-            logging.debug("Received update for Sensor: %s", data)
+            common.Log.ctl.info("Message is a status update.")
             qdata = QData.api_command(sender, ApiCommand.UpdateState, payload=data)
             self.queue.put(qdata)
-
+        else:
+            common.Log.ctl.warning("Could not identify purpose of message.")
 
     # pylint: disable=invalid-name
     def __init_client(self, ip: str, port: int) -> mqtt.Client:
@@ -90,31 +88,33 @@ class Controller(Worker):
         return res
 
     def __subscribe_to_all(self):
+        common.Log.ctl.info("Subscribing to devices.")
         self.__subscribe_to_lights()
         self.__subscribe_to_remotes()
         self.__subscribe_to_sensors()
         self.__subscribe_to_bridge()
 
     def __subscribe_to_bridge(self):
+        common.Log.ctl.debug("Subscribing to bridge.")
         self.client.subscribe(Topic.for_bridge().string, QoS.AT_LEAST_ONCE.value)
 
     def __subscribe_to_remotes(self):
         "Subscribes to messages from all remotes"
         for remote in self.home.remotes():
             self.client.subscribe(remote.topic.string, QoS.AT_LEAST_ONCE.value)
-            logging.debug("Subscribing to %s", remote.topic)
+            common.Log.ctl.debug("Subscribing to %s", remote.topic)
 
     def __subscribe_to_sensors(self):
         "Subscribes to messages from all remotes"
         for sensor in self.home.sensors():
             self.client.subscribe(sensor.topic.string, QoS.AT_LEAST_ONCE.value)
-            logging.debug("Subscribing to %s", sensor.topic)
+            common.Log.ctl.debug("Subscribing to %s", sensor.topic)
 
     def __subscribe_to_lights(self):
         "Subscribes to messages from all lights"
         for light in self.home.flatten_lights():
             self.client.subscribe(light.topic.string, QoS.AT_LEAST_ONCE.value)
-            logging.debug("Subscribing to %s", light.topic)
+            common.Log.ctl.debug("Subscribing to %s", light.topic)
 
     def __query_states(self):
         "Queries the physical states of all relevant devices supporting a query, i.e. lights."

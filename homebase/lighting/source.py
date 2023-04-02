@@ -93,7 +93,7 @@ class Abstract(Addressable, ABC, Collection):
         common.Log.utl.debug("Engineering modifier; actual: %.4f, desired: %.4f", actual, desired)
         modifier = common.engineer_modifier(actual, desired)
         common.Log.utl.debug("Engineered modifier is %.2f.", modifier)
-        self.config.brightness_mod.set_temp(modifier)
+        self.config.brightness_mod.modify_temp(0.0, lambda x: x + modifier)
         common.Log.utl.debug("New modifier is %.2f.", self.config.brightness_mod.value)
 
     def turn_on(self):
@@ -111,15 +111,11 @@ class Abstract(Addressable, ABC, Collection):
 
     def shift_color_clockwise(self):
         "Shift color clockwise"
-        def func(val: int):
-            return int(common.bounded(val + 1, bounds=range(0, 5)))
-        self.config.color_offset.modify_temp(0, func)
+        self.config.color_offset.modify_temp(0, lambda val: (val + 1) % 5)
 
     def shift_color_counter_clockwise(self):
         "Shift color counter clockwise"
-        def func(val: int):
-            return int(common.bounded(val - 1, bounds=range(0, 5)))
-        self.config.color_offset.modify_temp(0, func)
+        self.config.color_offset.modify_temp(0, lambda val: (val - 1) % 5)
 
     def dim_up(self):
         "Increases brightness"

@@ -2,12 +2,9 @@
 * Fix white temperatures and colors/brightness.
 * Remote does not have one universal target; separate targets for different actions.
 * Unify output format of structure query and encoder.
-* common.bounded: range rather an least/greatest
 
 # Bugs
-* Restruct the number of requests sent when sliding brightness
 * Colors don't work.
-* Brightness is not uniform.
 
 # UI
 * Each abstract light in the app has a checkbox to define its parameters or inherit

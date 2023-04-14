@@ -8,21 +8,23 @@ from colormath.color_objects import HSVColor
 from lighting.state import State
 
 colors = {
-    "DarkGreen": HSVColor(hsv_h=0.33, hsv_s=1, hsv_v=0.2),
-    "Red":       HSVColor(hsv_h=0.00, hsv_s=1, hsv_v=1.0),
-    "Orange":    HSVColor(hsv_h=0.10, hsv_s=1, hsv_v=1.0),
-    "Yellow":    HSVColor(hsv_h=0.17, hsv_s=1, hsv_v=1.0),
-    "White":     HSVColor(hsv_h=0.00, hsv_s=0, hsv_v=1.0),
+    "LightGreen": HSVColor(hsv_h=0.33, hsv_s=1, hsv_v=0.6),
+    "DarkGreen":  HSVColor(hsv_h=0.33, hsv_s=1, hsv_v=0.2),
+    "Red":        HSVColor(hsv_h=0.00, hsv_s=1, hsv_v=1.0),
+    "Orange":     HSVColor(hsv_h=0.10, hsv_s=1, hsv_v=1.0),
+    "Yellow":     HSVColor(hsv_h=0.17, hsv_s=1, hsv_v=1.0),
+    "White":      HSVColor(hsv_h=0.00, hsv_s=0, hsv_v=1.0),
 }
 
 zones = [
-    ( 0, colors["DarkGreen"], "midnight"),
-    ( 2, colors["Red"],       "night"),
-    ( 4, colors["Orange"],    "early morning"),
-    ( 7, colors["Yellow"],    "morning"),
-    (11, colors["White"],     "day"),
-    (15, colors["Yellow"],    "afternoon"),
-    (18, colors["Orange"],    "evening"),
+    ( 0, colors["DarkGreen"],  "midnight"),
+    ( 2, colors["DarkGreen"],  "night"),
+    ( 4, colors["LightGreen"], "early morning"),
+    ( 7, colors["Yellow"],     "morning"),
+    (11, colors["White"],      "day"),
+    (15, colors["Yellow"],     "afternoon"),
+    (18, colors["LightGreen"], "evening"),
+    (22, colors["DarkGreen"],  "late evening"),
 ]
 
 
@@ -41,7 +43,7 @@ def _recommended(time: float) -> State:
     color = _recommended_color(time)
     brightness = _recommended_brightness(time)
     color.hsv_v = brightness
-    return State(True, color)
+    return State(color)
 
 def _recommended_brightness(time: float) -> float:
     return 1 - (abs(12 - time) / 12)
@@ -69,10 +71,10 @@ def _color_in_zone(
     end_rgb: sRGBColor = convert_color(end_color, sRGBColor)
     range_start = Color(start_rgb.get_rgb_hex())
     range_end = Color(end_rgb.get_rgb_hex())
-    colors = list(range_start.range_to(range_end, resolution))
+    color_list = list(range_start.range_to(range_end, resolution))
     steps_in_zone = (math.floor(time) - start) * 2
     if time % 1 > 0.5:
         steps_in_zone += 1
-    target = colors[steps_in_zone]
+    target = color_list[steps_in_zone]
     target_rgb = sRGBColor(rgb_b=target.blue, rgb_g=target.green, rgb_r=target.red)
     return convert_color(target_rgb, HSVColor)

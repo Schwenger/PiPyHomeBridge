@@ -143,13 +143,13 @@ class Config:
     def with_parent(self, parent: 'Config') -> 'Config':
         "Creates a configuration with self's overrides if present, otherwise parent's."
         return Config(
-            colorful   = self.colorful.with_parent(   parent.colorful   ),
-            dynamic    = self.dynamic.with_parent(    parent.dynamic    ),
-            toggled_on = self.toggled_on.with_parent( parent.toggled_on ),
             hue        = self.hue.with_parent(        parent.hue        ),
-            saturation = self.saturation.with_parent( parent.saturation ),
             lumin      = self.lumin.with_parent(      parent.lumin      ),
             static     = self.static.with_parent(     parent.static     ),
+            dynamic    = self.dynamic.with_parent(    parent.dynamic    ),
+            colorful   = self.colorful.with_parent(   parent.colorful   ),
+            toggled_on = self.toggled_on.with_parent( parent.toggled_on ),
+            saturation = self.saturation.with_parent( parent.saturation ),
         )
 
     def __str__(self):
@@ -164,7 +164,7 @@ class Config:
         return res
 
 def resolve(cfg: Config, dynamic: State) -> State:
-    "Returns the appropriate state of the dynamic state and given config."
+    "Returns the appropriate state for the computed dynamic state and given config."
     if not cfg.dynamic.value_or(alt=True):
         state = cfg.static.value_or(alt=State.max())
         state.toggled_on = cfg.toggled_on.value_or(state.toggled_on)

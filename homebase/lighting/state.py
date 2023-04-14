@@ -9,21 +9,41 @@ class State:
     "Represents the state of a light."
     def __init__(
         self,
-        toggled_on: bool = False,
         color: HSVColor = HSVColor(0, 0, 1)
     ):
-        self.toggled_on: bool = toggled_on
-        self.color: HSVColor = color
+        self._color: HSVColor = color
+
+    @property
+    def toggled_on(self) -> bool:
+        "Whether the state claims to be on or off."
+        return self._color.hsv_v > 0.0
+
+    @toggled_on.setter
+    def toggled_on(self, is_on: bool):
+        "Sets the state ot be toggled on or off."
+        if is_on:
+            self._color.hsv_v = max(self._color.hsv_v, 0.05)
+        else:
+            self._color.hsv_v = 0.0
+
+    @property
+    def color(self) -> HSVColor:
+        "Color of the state."
+        return self._color
+
+    @color.setter
+    def color(self, new: HSVColor):
+        "Sets the color of the state."
+        self._color = new
 
     def __str__(self) -> str:
         onoff = "On" if self.toggled_on else "Off"
-        return f"<{onoff} with color {self.color}>"
+        return f"<{onoff} with color {self._color}>"
 
     @staticmethod
     def max() -> 'State':
         "Returns a maximal state, full light emission."
         return State(
-            toggled_on=True,
             color=HSVColor(0, 0, 1)
         )
 
@@ -31,7 +51,6 @@ class State:
     def read_light_state(desc: dict) -> 'State':
         "Returns the state of the light."
         state = State()
-        state.toggled_on = State.__read_state(desc["state"])
         bright = 0
         if "brightness" in desc:
             bright = State.__read_brightness(desc["brightness"])
@@ -41,6 +60,10 @@ class State:
                 val_y = desc["color"]["y"]
                 xyy = xyYColor(xyy_x=val_x, xyy_y=val_y, xyy_Y=bright)
                 state.color = convert_color(xyy, HSVColor)
+        if State.__read_state(desc["state"]):
+            bright = max(0.05, bright)
+        else:
+            bright = 0
         return state
 
     @staticmethod

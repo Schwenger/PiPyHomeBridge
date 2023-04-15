@@ -5,7 +5,7 @@ from typing import Callable, Generic, Optional, Tuple, TypeVar
 
 from colormath.color_objects import HSVColor
 from lighting.state import State
-from common import scale_relative
+from common import scale_relative, Log
 
 T = TypeVar('T')
 class Override(Generic[T]):
@@ -89,21 +89,21 @@ class Config:
 
     def __init__(
         self,
-        colorful:       Override[bool]  = Override.none(),
-        dynamic:        Override[bool]  = Override.none(),
-        toggled_on:     Override[bool]  = Override.none(),
-        hue:            Override[float] = Override.none(),
-        saturation:     Override[float] = Override.none(),
-        lumin:          Override[float] = Override.none(),
-        static:         Override[State] = Override.none(),
+        toggled_on: Override[bool],
+        colorful:   Optional[Override[bool]]  = None,
+        dynamic:    Optional[Override[bool]]  = None,
+        hue:        Optional[Override[float]] = None,
+        saturation: Optional[Override[float]] = None,
+        lumin_mod:  Optional[Override[float]] = None,
+        static:     Optional[Override[State]] = None,
     ):
-        self._colorful:       Override[bool]  = colorful
-        self._dynamic:        Override[bool]  = dynamic
-        self._toggled_on:     Override[bool]  = toggled_on
-        self._hue:            Override[float] = hue
-        self._saturation:     Override[float] = saturation
-        self._lumin:          Override[float] = lumin
-        self._static:         Override[State] = static
+        self._toggled_on:   Override[bool]  = toggled_on
+        self._colorful:     Override[bool]  = colorful    or Override.none()
+        self._dynamic:      Override[bool]  = dynamic     or Override.none()
+        self._hue:          Override[float] = hue         or Override.none()
+        self._saturation:   Override[float] = saturation  or Override.none()
+        self._lumin_mod:    Override[float] = lumin_mod   or Override.none()
+        self._static:       Override[State] = static      or Override.none()
 
     @property
     def colorful(self) -> Override[bool]:
@@ -131,9 +131,9 @@ class Config:
         return self._saturation
 
     @property
-    def lumin(self) -> Override[float]:
+    def lumin_mod(self) -> Override[float]:
         "Returns the respective override object."
-        return self._lumin
+        return self._lumin_mod
 
     @property
     def static(self) -> Override[State]:
@@ -144,7 +144,7 @@ class Config:
         "Creates a configuration with self's overrides if present, otherwise parent's."
         return Config(
             hue        = self.hue.with_parent(        parent.hue        ),
-            lumin      = self.lumin.with_parent(      parent.lumin      ),
+            lumin_mod  = self.lumin_mod.with_parent(  parent.lumin_mod      ),
             static     = self.static.with_parent(     parent.static     ),
             dynamic    = self.dynamic.with_parent(    parent.dynamic    ),
             colorful   = self.colorful.with_parent(   parent.colorful   ),
@@ -159,26 +159,31 @@ class Config:
         res += f"""color: \
 {(self.hue.value or 0.0):.2f}/\
 {(self.saturation.value or 0.0):.2f}/\
-{(self.lumin.value or 0.0):.2f};"""
+{(self.lumin_mod.value or 0.0):.2f};"""
         res += f"static: {self.static.value}"
         return res
 
 def resolve(cfg: Config, dynamic: State) -> State:
     "Returns the appropriate state for the computed dynamic state and given config."
+    Log.utl.debug("Resolving config %s with dynamic %s.", cfg, dynamic)
     if not cfg.dynamic.value_or(alt=True):
+        Log.utl.debug("Using static state.")
         state = cfg.static.value_or(alt=State.max())
         state.toggled_on = cfg.toggled_on.value_or(state.toggled_on)
         return state
+    Log.utl.debug("Using dynamic state; adapting color. Was: %s", dynamic.color)
     dynamic.color = __adapt_color(dynamic.color, cfg)
+    Log.utl.debug("Color is now %s.", dynamic.color)
     dynamic.toggled_on = cfg.toggled_on.value_or(dynamic.toggled_on) and dynamic.color.hsv_v > 0.0
     if not cfg.colorful.value_or(alt=True):
+        Log.utl.debug("Erasing color since colorful is off.")
         dynamic.color = HSVColor(1, 0, 1)
     return dynamic
 
 def __adapt_color(col: HSVColor, cfg: Config) -> HSVColor:
-    val = scale_relative(value=col.hsv_v, scale=cfg.lumin.value_or(alt=0))
-    sat = scale_relative(value=col.hsv_s, scale=cfg.saturation.value_or(alt=0))
-    hue = scale_relative(value=col.hsv_h, scale=cfg.hue.value_or(alt=0))
+    val = scale_relative(value=col.hsv_v, scale=cfg.lumin_mod.value_or(alt=0))
+    sat = cfg.saturation.value_or(alt=0)
+    hue = cfg.hue.value_or(alt=0)
     if val < 0.001:
         val = 0
     assert 0 <= val <= 1

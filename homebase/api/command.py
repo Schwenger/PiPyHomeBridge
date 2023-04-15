@@ -98,7 +98,7 @@ class Exec:
             current = get_configured_state(self.__home, light)
             desired = deepcopy(current.color)
             desired.hsv_v = brightness
-            light.accommodate_color(desired=desired, actual=current.color)
+            light.update_color(desired=desired)
         self.__light_operation(topic=topic, func=func)
 
     # def __set_white_temp(self, topic: Topic, payload: Dict[str, str]):
@@ -121,7 +121,7 @@ class Exec:
                 current.color.hsv_s,
                 current.color.hsv_v
             )
-            light.accommodate_color(desired=desired, actual=current.color)
+            light.update_color(desired=desired)
             new = get_configured_state(self.__home, light)
             Log.api.debug(
                 "Current: %.2f/%.2f/%.2f",
@@ -172,9 +172,7 @@ class Exec:
         if not isinstance(target, lighting.Concrete):
             raise HomeBaseError.InvalidPhysicalQuery
         desired = lighting.State.read_light_state(payload)
-        actual = get_configured_state(self.__home, target)
-        # TODO
-        # target.accommodate_state(actual=actual, desired=desired)
+        target.update_state(desired=desired)
 
     def __update_sensor_state(self, target: Sensor, payload: Dict[str, str]):
         for key in payload:

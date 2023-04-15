@@ -64,11 +64,12 @@ def __decode_config(config: Optional[dict]) -> lighting.Config:
         if "lumin" in config:
             lumin      = Override.perm(float(config["lumin"]))
     return lighting.Config(
+        toggled_on=Override.perm(False),
         colorful=colorful,
         dynamic=dynamic,
         hue=hue,
         saturation=saturation,
-        lumin=lumin,
+        lumin_mod=lumin,
     )
 
 def __decode_light(light: dict, room: str) -> lighting.Concrete:

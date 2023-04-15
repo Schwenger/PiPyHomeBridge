@@ -2,7 +2,6 @@
 
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from copy import deepcopy
 
 import common
 from colormath.color_objects import HSVColor
@@ -91,29 +90,38 @@ class Abstract(Addressable, ABC, Collection):
     # FUNCTIONAL API -- Implementations
     ################################################
 
-    def accommodate_state(self, desired: State, actual: State):
-        "Updates the internal config to result in the given physical state when refreshed."
-        self.accommodate_color(desired=desired.color, actual=actual.color)
-        copy = deepcopy(self.config)
-        self.accommodate_color(desired=desired.color, actual=actual.color)
-        assert copy == self.config  # ToDo: Remove eventually.
+    # def accommodate_state(self, desired: State, actual: State):
+    #     "Updates the internal config to result in the given physical state when refreshed."
+    #     self.accommodate_color(desired=desired.color, actual=actual.color)
 
-    def accommodate_color(self, desired: HSVColor, actual: HSVColor):
-        "Changes config to result in the desired color after refresh."
-        common.Log.utl.debug("Actual: %s", actual)
+    # def accommodate_color(self, desired: HSVColor, actual: HSVColor):
+    #     "Changes config to result in the desired color after refresh."
+    #     common.Log.utl.debug("Actual: %s", actual)
+    #     common.Log.utl.debug("Desired: %s", desired)
+    #     hue_mod = common.engineer_modifier(actual.hsv_h, desired.hsv_h)  # ∈ [-1, +1]
+    #     sat_mod = common.engineer_modifier(actual.hsv_s, desired.hsv_s)  # ∈ [-1, +1]
+    #     lum_mod = common.engineer_modifier(actual.hsv_v, desired.hsv_v)  # ∈ [-1, +1]
+    #     common.Log.utl.debug("Engineered hue modifier is %.2f.", hue_mod)
+    #     common.Log.utl.debug("Engineered sat modifier is %.2f.", sat_mod)
+    #     common.Log.utl.debug("Engineered lum modifier is %.2f.", lum_mod)
+    #     self.config.hue.modify_temp(       0.0, lambda x: common.bounded(x + hue_mod))
+    #     self.config.saturation.modify_temp(0.0, lambda x: common.bounded(x + sat_mod))
+    #     self.config.lumin.modify_temp(     0.0, lambda x: common.bounded(x + lum_mod))
+    #     common.Log.utl.debug("New modifier is %.2f.", self.config.hue.value)
+    #     common.Log.utl.debug("New modifier is %.2f.", self.config.saturation.value)
+    #     common.Log.utl.debug("New modifier is %.2f.", self.config.lumin.value)
+
+    def update_state(self, desired: State):
+        "Updates the internal config to result in the given physical state when refreshed."
+        self.update_color(desired=desired.color)
+
+    def update_color(self, desired: HSVColor):
+        "Overrides the current color."
         common.Log.utl.debug("Desired: %s", desired)
-        hue_mod = common.engineer_modifier(actual.hsv_h, desired.hsv_h)  # ∈ [-1, +1]
-        sat_mod = common.engineer_modifier(actual.hsv_s, desired.hsv_s)  # ∈ [-1, +1]
-        lum_mod = common.engineer_modifier(actual.hsv_v, desired.hsv_v)  # ∈ [-1, +1]
-        common.Log.utl.debug("Engineered hue modifier is %.2f.", hue_mod)
-        common.Log.utl.debug("Engineered sat modifier is %.2f.", sat_mod)
-        common.Log.utl.debug("Engineered lum modifier is %.2f.", lum_mod)
-        self.config.hue.modify_temp(       0.0, lambda x: common.bounded(x + hue_mod))
-        self.config.saturation.modify_temp(0.0, lambda x: common.bounded(x + sat_mod))
-        self.config.lumin.modify_temp(     0.0, lambda x: common.bounded(x + lum_mod))
-        common.Log.utl.debug("New modifier is %.2f.", self.config.hue.value)
-        common.Log.utl.debug("New modifier is %.2f.", self.config.saturation.value)
-        common.Log.utl.debug("New modifier is %.2f.", self.config.lumin.value)
+        self.config.hue.set_temp(desired.hsv_h)
+        self.config.saturation.set_temp(desired.hsv_s)
+        lum_mod = common.engineer_modifier(1.0, desired.hsv_v)  # ∈ [-1, +1]
+        self.config.lumin_mod.set_temp(lum_mod)
 
     def turn_on(self):
         "Turn all lights on"
@@ -138,11 +146,11 @@ class Abstract(Addressable, ABC, Collection):
 
     def dim_up(self):
         "Increases brightness"
-        self.config.lumin.modify_temp(0.0, lambda val: common.bounded(val + 0.3))
+        self.config.lumin_mod.modify_temp(0.0, lambda val: common.bounded(val + 0.3))
 
     def dim_down(self):
         "Decreases brightness"
-        self.config.lumin.modify_temp(0.0, lambda val: common.bounded(val - 0.3))
+        self.config.lumin_mod.modify_temp(0.0, lambda val: common.bounded(val - 0.3))
 
 class Concrete(Abstract, Device):
     """

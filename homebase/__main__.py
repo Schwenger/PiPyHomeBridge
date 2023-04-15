@@ -39,6 +39,12 @@ if __name__ == "__main__":
 
     zipped = list(zip(workers, threads))
 
+    # import json
+    # time.sleep(2)
+    # pl = {"state": "ON", "color": { "saturation": 100, "hue": 240} }
+    # ctrl.client.publish('zigbee2mqtt/Device/Light/Living Room/Orb/set', json.dumps(pl))
+    # print("Published")
+
     while True:
         time.sleep(600)
         for idx, (worker, thread) in enumerate(zipped):

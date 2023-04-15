@@ -1,11 +1,12 @@
 "Configures an abstract light."
 
+import math
 from datetime import datetime as Timestamp
 from typing import Callable, Generic, Optional, Tuple, TypeVar
 
 from colormath.color_objects import HSVColor
 from lighting.state import State
-from common import scale_relative, Log
+from common import scale_relative, Log, bounded
 
 T = TypeVar('T')
 class Override(Generic[T]):
@@ -171,9 +172,8 @@ def resolve(cfg: Config, dynamic: State) -> State:
         state = cfg.static.value_or(alt=State.max())
         state.toggled_on = cfg.toggled_on.value_or(state.toggled_on)
         return state
-    Log.utl.debug("Using dynamic state; adapting color. Was: %s", dynamic.color)
+    Log.utl.debug("Using dynamic state")
     dynamic.color = __adapt_color(dynamic.color, cfg)
-    Log.utl.debug("Color is now %s.", dynamic.color)
     dynamic.toggled_on = cfg.toggled_on.value_or(dynamic.toggled_on) and dynamic.color.hsv_v > 0.0
     if not cfg.colorful.value_or(alt=True):
         Log.utl.debug("Erasing color since colorful is off.")
@@ -181,12 +181,20 @@ def resolve(cfg: Config, dynamic: State) -> State:
     return dynamic
 
 def __adapt_color(col: HSVColor, cfg: Config) -> HSVColor:
+    Log.utl.debug("Adapting %s with config %s.", col, cfg)
     val = scale_relative(value=col.hsv_v, scale=cfg.lumin_mod.value_or(alt=0))
+    Log.utl.debug("New brightness (value) %s.", val)
     sat = cfg.saturation.value_or(alt=0)
+    Log.utl.debug("New saturation %s.", sat)
     hue = cfg.hue.value_or(alt=0)
-    if val < 0.001:
+    Log.utl.debug("New hue %s.", hue)
+    if val < 0.05:
         val = 0
-    assert 0 <= val <= 1
-    assert 0 <= sat <= 1
-    assert 0 <= hue <= 1
+    def sanitize(value: float):
+        assert value >= 0 or math.isclose(value, 0, abs_tol=1e-4)
+        assert value <= 1 or math.isclose(value, 1, abs_tol=1e-4)
+        return bounded(value, bounds=range(0, 1))
+    val = sanitize(val)
+    hue = sanitize(hue)
+    sat = sanitize(sat)
     return HSVColor(hsv_v=val, hsv_h=hue, hsv_s=sat)
